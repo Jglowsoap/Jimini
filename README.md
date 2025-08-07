@@ -1,0 +1,2 @@
+# Jimini
+AI project
