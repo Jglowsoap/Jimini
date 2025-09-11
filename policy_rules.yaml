@@ -1,8 +1,210 @@
 rules:
+  # -------------------------
+  # PII (general & Illinois)
+  # -------------------------
   - id: "IL-AI-4.2"
     title: "PII: Social Security Numbers"
     text: "Block any full SSN patterns"
-    pattern: "\\b\\d{3}-\\d{2}-\\d{4}\\b"
+    pattern: '\b\d{3}-\d{2}-\d{4}\b'
     severity: "error"
     action: "block"
     tags: ["PII","personal_data"]
+
+  - id: "EMAIL-1.0"
+    title: "PII: Email Address"
+    text: "Flag any standard email address"
+    pattern: '\b[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}\b'
+    severity: "warning"
+    action: "flag"
+    tags: ["PII","personal_data"]
+
+  - id: "PHONE-1.0"
+    title: "PII: Phone Number (US)"
+    text: "Flag common US phone formats"
+    pattern: '\b(?:\+?1[-.\s]?)?(?:\(\d{3}\)|\d{3})[-.\s]?\d{3}[-.\s]?\d{4}\b'
+    severity: "warning"
+    action: "flag"
+    tags: ["PII","personal_data"]
+
+  - id: "DL-1.0"
+    title: "PII: Illinois Driver’s License or State ID"
+    text: "Block IL DL (1 letter + 11 digits) or IL ID (11 digits + 1 letter), dashes optional"
+    pattern: '\b(?:[A-Za-z](?:\d{3}-?\d{4}-?\d{4}|\d{11})|(?:\d{4}-?\d{4}-?\d{3}[A-Za-z]|\d{11}[A-Za-z]))\b'
+    severity: "error"
+    action: "block"
+    tags: ["PII","personal_data","drivers_license"]
+    shadow_override: "enforce"
+
+  - id: "LN-1.0"
+    title: "PII: Last Name (sample list)"
+    text: "Flag if these common last names appear (tune list per tenant)"
+    pattern: '\b(Smith|Johnson|Williams|Brown|Jones)\b'
+    severity: "warning"
+    action: "flag"
+    tags: ["PII","personal_data"]
+
+  # ---------------------------------
+  # Secrets / Credentials (specific)
+  # ---------------------------------
+  - id: "GITHUB-TOKEN-1.0"
+    title: "Secret: GitHub Personal Access Token"
+    pattern: '\bghp_[A-Za-z0-9]{36}\b'
+    severity: "error"
+    action: "block"
+    tags: ["secret","github"]
+    shadow_override: "enforce"
+
+  - id: "AWS-ACCESS-KEY-1.0"
+    title: "Secret: AWS Access Key ID"
+    pattern: '\bAKIA[0-9A-Z]{16}\b'
+    severity: "error"
+    action: "block"
+    tags: ["secret","aws"]
+    shadow_override: "enforce"
+
+  - id: "AWS-SECRET-KEY-1.0"
+    title: "Secret: AWS Secret Access Key (heuristic)"
+    text: "40-char base64-ish token (heuristic)"
+    pattern: '(?<![A-Za-z0-9/+_=])[A-Za-z0-9/+_=]{40}(?![A-Za-z0-9/+_=])'
+    severity: "error"
+    action: "block"
+    tags: ["secret","aws"]
+    shadow_override: "enforce"
+
+  - id: "OPENAI-KEY-1.0"
+    title: "Secret: OpenAI API Key"
+    pattern: '\bsk-[A-Za-z0-9]{20,}\b'
+    severity: "error"
+    action: "block"
+    tags: ["secret","openai"]
+    shadow_override: "enforce"
+
+  - id: "SLACK-BOT-1.0"
+    title: "Secret: Slack Bot Token"
+    pattern: '\bxoxb-\d+-\d+-[A-Za-z0-9]{24,}\b'
+    severity: "error"
+    action: "block"
+    tags: ["secret","slack"]
+    shadow_override: "enforce"
+
+  - id: "GOOGLE-API-KEY-1.0"
+    title: "Secret: Google API Key"
+    pattern: '\bAIza[0-9A-Za-z\-_]{35}\b'
+    severity: "error"
+    action: "block"
+    tags: ["secret","google"]
+    shadow_override: "enforce"
+
+  - id: "STRIPE-KEY-1.0"
+    title: "Secret: Stripe Secret Key"
+    pattern: '\bsk_(?:live|test)_[A-Za-z0-9]{20,}\b'
+    severity: "error"
+    action: "block"
+    tags: ["secret","stripe"]
+    shadow_override: "enforce"
+
+  - id: "JWT-1.0"
+    title: "Secret: JSON Web Token (JWT) structure"
+    pattern: '\beyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\b'
+    severity: "error"
+    action: "block"
+    tags: ["secret","jwt"]
+    shadow_override: "enforce"
+
+  # ----------------------------
+  # Generic long-sequence catch
+  # ----------------------------
+  - id: "API-1.0"
+    title: "Security: Generic long alphanumeric sequence"
+    text: "Flag long alphanumeric blobs (specific secret rules will take precedence)"
+    pattern: '\b[A-Za-z0-9_\-]{20,}\b'
+    severity: "warning"
+    action: "flag"
+    tags: ["security","credentials"]
+
+  # -------------------------
+  # Injection indicators
+  # -------------------------
+  - id: "INJ-1.0"
+    title: "Injection: Prompt-Injection Keywords (basic)"
+    text: "Flag if the content references system/assistant prompts explicitly"
+    pattern: '\b(system prompt|assistant prompt)\b'
+    severity: "warning"
+    action: "flag"
+    tags: ["injection","security"]
+
+  - id: "INJ-2.0"
+    title: "Injection: Override/Ignore Directives"
+    text: "Flag common instruction-subversion phrases"
+    pattern: '\b(ignore previous|as system|developer message|tool output)\b'
+    severity: "warning"
+    action: "flag"
+    tags: ["injection","security"]
+
+  # -------------------------
+  # CJIS / HIPAA specifics
+  # -------------------------
+  - id: "CJIS-BIOMETRIC-1.0"
+    title: "CJIS: Biometric data exposure"
+    text: "Block biometric terms on CJIS endpoints"
+    pattern: '(?i)\b(fingerprint|mugshot|iris scan|retina scan|palm print|dna profile|voiceprint|biometric record)\b'
+    severity: "error"
+    action: "block"
+    tags: ["cjis","biometric"]
+    applies_to: ["inbound","outbound"]
+    endpoints: ["/api/cjis/*"]
+    shadow_override: "enforce"
+
+  - id: "HIPAA-PHI-EMAIL-1.0"
+    title: "HIPAA: Email addresses (PHI risk)"
+    text: "Flag emails in healthcare contexts; tune with endpoint scoping if desired"
+    pattern: '(?i)\b[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}\b'
+    severity: "warning"
+    action: "flag"
+    tags: ["hipaa","phi","pii"]
+
+  # ------------------------------------
+  # Bulk / Exfiltration Heuristics
+  # ------------------------------------
+  - id: "MAX-DUMP-5K"
+    title: "Bulk output: >5,000 characters"
+    text: "Block unusually large outputs (tune per endpoint)"
+    max_chars: 5000
+    severity: "error"
+    action: "block"
+    tags: ["exfiltration","bulk"]
+    applies_to: ["outbound"]
+
+  - id: "BULK-EMAIL-3"
+    title: "Bulk email leakage"
+    text: "Block if 3+ email addresses appear in a single response"
+    pattern: '(?i)[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}'
+    min_count: 3
+    severity: "error"
+    action: "block"
+    tags: ["exfiltration","bulk","pii"]
+    applies_to: ["outbound"]
+
+  - id: "INTERNAL-URL-TOKEN"
+    title: "Internal URL with token leakage"
+    text: "Flag URLs that look internal and include query tokens"
+    pattern: '(?i)\bhttps?://(?:[^/\s]+\.)?(?:illinois\.gov|state\.il\.us|il\.gov)/[^\s?]+(?:\?[^ \n]*token=|&token=)[^ \n]+'
+    severity: "warning"
+    action: "flag"
+    tags: ["exfiltration","internal"]
+    applies_to: ["outbound"]
+
+  # -------------------------
+  # Hallucination heuristic
+  # -------------------------
+  - id: "HALLUC-1.0"
+    title: "AI Hallucination Check"
+    text: "Flag if the agent output seems hallucinated (not factual or not sourceable)"
+    llm_prompt: |
+      You are a strict compliance checker. The user provided an AI output.
+      Determine if it is likely hallucinated or non-factual (i.e., contains
+      claims not supported by citations or reliable sources). Reply with exactly:
+      "Yes" if likely hallucinated, or "No" if not.
+    severity: "warning"
+    action: "flag"
+    tags: ["AI","hallucination"]

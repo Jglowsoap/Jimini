@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "jimini-cli"
+version = "0.1.0"
+requires-python = ">=3.10"
+dependencies = ["PyYAML>=6.0"]  # yaml loader for the CLI
+
+[project.scripts]
+jimini = "jimini_cli.main:main"
+
+[tool.setuptools]
+# **Only** ship the CLI package, ignore app/, logs/, etc.
+packages = ["jimini_cli"]

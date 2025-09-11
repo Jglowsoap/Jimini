@@ -15,11 +15,12 @@ class RulesHandler(FileSystemEventHandler):
 
     def load_rules(self):
         with open(self.path) as f:
-            data = yaml.safe_load(f)
+            data = yaml.safe_load(f) or {}
         self.store.clear()
         for item in data.get('rules', []):
             rule = Rule(**item)
-            self.store[rule.id] = (rule, re.compile(rule.pattern))
+            compiled = re.compile(rule.pattern) if rule.pattern else None
+            self.store[rule.id] = (rule, compiled)
         print(f"Loaded {len(self.store)} rules.")
 
     def on_modified(self, event):

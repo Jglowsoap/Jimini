@@ -4,3 +4,4 @@ pydantic
 PyYAML
 watchdog
 python-dotenv
+cryptography>=42.0.0
