@@ -1,5 +1,5 @@
 # app/enforcement.py
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, Tuple, List, Optional, Any
 import fnmatch
 
@@ -42,7 +42,7 @@ def llm_policy_check(text: str, prompt: str, model: str = "gpt-4o-mini") -> bool
     except Exception:
         return False
 
-def _regex_hit(compiled_regex, text: str, min_count: Optional[int]) -> bool:
+def _regex_hit(compiled_regex: Optional[Any], text: str, min_count: Optional[int]) -> bool:
     """
     Support both search() and findall() with optional min_count threshold.
     """
@@ -50,14 +50,14 @@ def _regex_hit(compiled_regex, text: str, min_count: Optional[int]) -> bool:
         return False
     # Try findall first for countable matches; fallback to search.
     try:
-        found = compiled_regex.findall(text)
+        found = compiled_regex.findall(text) if hasattr(compiled_regex, 'findall') else []
         if isinstance(found, list):
             return len(found) >= (min_count or 1)
     except Exception:
         pass
     # Fallback to simple search (min_count treated as 1)
     try:
-        return bool(compiled_regex.search(text))
+        return bool(compiled_regex.search(text)) if hasattr(compiled_regex, 'search') else False
     except Exception as re_err:
         print(f"[Jimini] Regex error: {re_err}")
         return False
@@ -116,28 +116,34 @@ def evaluate(
             rule = entry
             compiled_regex = None
 
-        # Scope by direction and endpoint
-        if direction and getattr(rule, "applies_to", None) and direction not in rule.applies_to:
+        # Only operate if rule is a Rule instance
+        if not isinstance(rule, Rule):
             continue
-        if not _endpoint_matches(getattr(rule, "endpoints", None), endpoint):
+
+        # Scope by direction and endpoint
+        if direction and rule.applies_to and direction not in rule.applies_to:
+            continue
+        if not _endpoint_matches(rule.endpoints, endpoint):
             continue
 
         hit = False
 
         # Regex (with optional min_count)
-        if _regex_hit(compiled_regex, text, getattr(rule, "min_count", None)):
+        if _regex_hit(compiled_regex, text, rule.min_count):
             hit = True
 
         # Length threshold
-        if not hit and getattr(rule, "max_chars", None) is not None:
+        max_chars = rule.max_chars
+        if not hit and max_chars is not None:
             try:
-                if len(text) > int(rule.max_chars):
-                    hit = True
-            except Exception:
-                pass
+                max_chars_int = int(max_chars)
+            except (TypeError, ValueError):
+                max_chars_int = None
+            if max_chars_int is not None and len(text) > max_chars_int:
+                hit = True
 
         # LLM policy check (only if still no hit and rule has llm_prompt)
-        if not hit and getattr(rule, "llm_prompt", None):
+        if not hit and rule.llm_prompt:
             if llm_policy_check(text, rule.llm_prompt):
                 hit = True
 
@@ -176,8 +182,7 @@ def evaluate(
 
     # 5) Audit
     record = AuditRecord(
-        timestamp=datetime.utcnow().isoformat() + "Z",
-        agent_id=agent_id,
+        timestamp=datetime.now(timezone.utc).isoformat(),        agent_id=agent_id,
         decision=decision,
         rule_ids=rule_ids,
         excerpt=text[:200],
