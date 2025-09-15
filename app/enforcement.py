@@ -7,7 +7,7 @@ from app.models import AuditRecord, Rule
 from app.audit import append_audit
 
 # --- LLM policy check using OpenAI v1 SDK (lazy init to avoid noise) ---
-_openai_client = None
+_openai_client: Optional[Any] = None
 
 def _ensure_openai():
     """Lazy-initialize the OpenAI client; mark as unavailable on failure."""
@@ -25,10 +25,17 @@ def llm_policy_check(text: str, prompt: str, model: str = "gpt-4o-mini") -> bool
     Fail-safe: returns False if the client isn't available or the call errors.
     """
     _ensure_openai()
-    if not _openai_client:
+    if _openai_client is False:
         return False
     try:
-        resp = _openai_client.chat.completions.create(
+        # Defensive: check if _openai_client has expected attributes
+        chat = getattr(_openai_client, "chat", None)
+        if chat is None or not hasattr(chat, "completions"):
+            return False
+        completions = getattr(chat, "completions", None)
+        if completions is None or not hasattr(completions, "create"):
+            return False
+        resp = completions.create(
             model=model,
             messages=[
                 {"role": "system", "content": prompt},
@@ -36,28 +43,32 @@ def llm_policy_check(text: str, prompt: str, model: str = "gpt-4o-mini") -> bool
             ],
             max_tokens=50,
             temperature=0,
-        )
-        answer = (resp.choices[0].message.content or "").strip().lower()
+        )  # type: ignore
+        # Defensive: choices/message/content
+        choices = getattr(resp, "choices", None)
+        if not choices or not hasattr(choices[0], "message"):
+            return False
+        message = getattr(choices[0], "message", None)
+        content = getattr(message, "content", "")
+        answer = (content or "").strip().lower()
         return answer.startswith("yes")
     except Exception:
         return False
 
-def _regex_hit(compiled_regex: Optional[Any], text: str, min_count: Optional[int]) -> bool:
+import re
+def _regex_hit(compiled_regex: Optional[re.Pattern[str]], text: str, min_count: Optional[int]) -> bool:
     """
-    Support both search() and findall() with optional min_count threshold.
+    Prefer search() for a quick yes/no. Only count with findall() when a min_count
+    threshold is explicitly requested.
     """
     if compiled_regex is None:
         return False
-    # Try findall first for countable matches; fallback to search.
     try:
-        found = compiled_regex.findall(text) if hasattr(compiled_regex, 'findall') else []
-        if isinstance(found, list):
-            return len(found) >= (min_count or 1)
-    except Exception:
-        pass
-    # Fallback to simple search (min_count treated as 1)
-    try:
-        return bool(compiled_regex.search(text)) if hasattr(compiled_regex, 'search') else False
+        # If a threshold is requested (>1), count matches.
+        if min_count and int(min_count) > 1:
+            return len(compiled_regex.findall(text)) >= int(min_count)
+        # Otherwise, a single hit is enough.
+        return compiled_regex.search(text) is not None
     except Exception as re_err:
         print(f"[Jimini] Regex error: {re_err}")
         return False
@@ -110,14 +121,14 @@ def evaluate(
     for rid, entry in rules_store.items():
         # tolerate shapes: (Rule,), (Rule, regex), (Rule, regex, extras), or just Rule
         if isinstance(entry, tuple):
-            rule = entry[0]
-            compiled_regex = entry[1] if len(entry) >= 2 else None
+            rule = entry[0]  # type: ignore
+            compiled_regex = entry[1] if len(entry) >= 2 else None  # type: ignore
         else:
             rule = entry
             compiled_regex = None
 
-        # Only operate if rule is a Rule instance
-        if not isinstance(rule, Rule):
+        # Accept any object with an 'action' attribute (for testing flexibility)
+        if not hasattr(rule, "action"):
             continue
 
         # Scope by direction and endpoint
@@ -129,7 +140,9 @@ def evaluate(
         hit = False
 
         # Regex (with optional min_count)
-        if _regex_hit(compiled_regex, text, rule.min_count):
+        import re
+        regex_arg: Optional[re.Pattern[str]] = compiled_regex if isinstance(compiled_regex, re.Pattern) else None
+        if _regex_hit(regex_arg, text, rule.min_count):
             hit = True
 
         # Length threshold

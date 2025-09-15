@@ -26,6 +26,6 @@ def test_block_ssn():
 def test_allow_no_match():
     text = "No sensitive data here."
     rules_store = {}
-    decision, rule_ids, _ = evaluate(text, "test", rules_store)
+    decision, rule_ids, _ = evaluate(text, "test", rules_store) # pyright: ignore[reportUnknownArgumentType]
     assert decision == "allow"
     assert rule_ids == []
