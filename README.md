@@ -1,3 +1,5 @@
+[![CI](https://github.com/Jglowsoap/Jimini/actions/workflows/ci.yml/badge.svg)](https://github.com/Jglowsoap/Jimini/actions/workflows/ci.yml)
+
 Jimini — AI Policy Enforcement & Oversight
 
 Jimini is a lightweight AI governance gateway that sits between your agents and the outside world. It acts as a compliance firewall with:
@@ -254,3 +256,14 @@ MCP/Function-call gating with signed short-lived exec tokens
 Policy-aware routing (risk → model/provider selection)
 
 License
+
+### Run locally (shadow mode)
+```bash
+jimini run-local --rules policy_rules.yaml --port 9000 --shadow
+# health
+curl -s http://localhost:9000/health | jq
+# metrics
+curl -s http://localhost:9000/v1/metrics | jq
+# sarif (today)
+curl -s "http://localhost:9000/v1/audit/sarif?only_today=true" | jq
+````

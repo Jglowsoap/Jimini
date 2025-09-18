@@ -1,18 +1,20 @@
 # app/main.py
 from __future__ import annotations
-
+from app.telemetry import incr as tele_incr, snapshot as tele_snapshot, push_last
 from collections import defaultdict
-from datetime import date
+from datetime import date, datetime, timezone
 from fastapi import FastAPI, HTTPException
 from re import Pattern
 from typing import Any, DefaultDict, Dict, List, Optional, Tuple
 
-from app.config import API_KEY, RULES_PATH
+from app.config import API_KEY, RULES_PATH, WEBHOOK_URL
 from app.rules_loader import RulesHandler
 from app.enforcement import evaluate
 from app.models import EvaluateRequest, EvaluateResponse, Rule
 from app.audit import verify_chain, iter_audits
+from app.notifier import notify_block
 
+import httpx
 import os
 
 app = FastAPI()
@@ -47,23 +49,93 @@ async def evaluate_endpoint(req: EvaluateRequest) -> EvaluateResponse:
     for rid in rule_ids:
         METRICS_RULES[rid] += 1
 
-    # shadow handling
-    if SHADOW and decision in ("block", "flag") and not enforce_even_in_shadow:
-        METRICS_SHADOW[decision] += 1
-        return EvaluateResponse(decision="allow", rule_ids=rule_ids)
+    # --- Alert webhook for high-severity blocks ---
+    if WEBHOOK_URL and decision == "block":
+        # Find triggered rules and check severity
+        triggered_rules = []
+        for rid in rule_ids:
+            entry = rules_store.get(rid)
+            if entry:
+                rule = entry[0] if isinstance(entry, tuple) else entry
+                triggered_rules.append(rule)
+        error_rules = [r for r in triggered_rules if hasattr(r, "severity") and getattr(r, "severity", None) == "error"]
+        if error_rules:
+            payload = {
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "agent_id": req.agent_id,
+                "endpoint": getattr(req, "endpoint", None),
+                "rule_ids": rule_ids[:3],
+                "shadow": SHADOW,
+                "decision": decision,
+                "audit_excerpt": req.text[:200],
+                "audit_chain_hash": None,
+            }
+            # Try to get audit chain hash from latest audit record if available
+            try:
+                from app.audit import iter_audits
+                audits = list(iter_audits())
+                if audits:
+                    payload["audit_chain_hash"] = getattr(audits[-1], "hash", None)
+            except Exception:
+                pass
+            try:
+                async with httpx.AsyncClient() as client:
+                    await client.post(WEBHOOK_URL, json=payload)
+            except Exception as e:
+                print(f"[Jimini] Webhook alert failed: {e}")
 
-    return EvaluateResponse(decision=decision, rule_ids=rule_ids)
+    # Was enforcement overridden by SHADOW?
+    shadow_overridden = False
+    effective_decision = decision
+    if SHADOW and decision in ("block", "flag") and not enforce_even_in_shadow:
+        shadow_overridden = True
+        effective_decision = "allow"
+
+    # Telemetry
+    tele_incr(
+        decision=decision,
+        rule_ids=rule_ids,
+        endpoint=getattr(req, "endpoint", None),
+        direction=getattr(req, "direction", None),
+        shadow_overridden=shadow_overridden,
+    )
+    push_last({
+        "agent_id": req.agent_id,
+        "endpoint": getattr(req, "endpoint", None),
+        "direction": getattr(req, "direction", None),
+        "decision": decision,
+        "effective": effective_decision,
+        "rule_ids": rule_ids,
+    })
+
+    # shadow handling
+    if shadow_overridden:
+        METRICS_SHADOW[decision] += 1
+        result = EvaluateResponse(decision=effective_decision, rule_ids=rule_ids)
+        notify_block(
+            agent_id=req.agent_id,
+            decision=decision,              # original decision from engine
+            rule_ids=rule_ids,
+            endpoint=getattr(req, "endpoint", None),
+            excerpt=req.text,
+        )
+        return result
+
+    result = EvaluateResponse(decision=decision, rule_ids=rule_ids)
+    notify_block(
+        agent_id=req.agent_id,
+        decision=decision,              # original decision from engine
+        rule_ids=rule_ids,
+        endpoint=getattr(req, "endpoint", None),
+        excerpt=req.text,
+    )
+    return result
 
 @app.get("/v1/metrics")
-async def metrics() -> Dict[str, Any]:
-    """Lightweight JSON for dashboards/polling."""
-    return {
-        "shadow_mode": SHADOW,
-        "totals": dict(METRICS_TOTALS),           # Dict[str, int]
-        "rules": dict(METRICS_RULES),             # Dict[str, int]
-        "shadow_overrides": dict(METRICS_SHADOW), # Dict[str, int]
-        "loaded_rules": int(len(rules_store)),
-    }
+async def metrics():
+    snap = tele_snapshot(loaded_rules=len(rules_store))
+    snap["shadow_mode"] = SHADOW
+    return snap
 
 @app.get("/v1/audit/verify")
 async def audit_verify() -> Dict[str, Any]:
