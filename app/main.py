@@ -1,138 +1,90 @@
 # app/main.py
-from __future__ import annotations
-from app.telemetry import incr as tele_incr, snapshot as tele_snapshot, push_last
+import os
 from collections import defaultdict
-from datetime import date, datetime, timezone
-from fastapi import FastAPI, HTTPException
-from re import Pattern
-from typing import Any, DefaultDict, Dict, List, Optional, Tuple
+from datetime import date
+from typing import Any, Dict, List, Optional, Tuple
 
-from app.config import API_KEY, RULES_PATH, WEBHOOK_URL
+from fastapi import FastAPI, HTTPException
+from app.config import API_KEY, RULES_PATH
 from app.rules_loader import RulesHandler
 from app.enforcement import evaluate
-from app.models import EvaluateRequest, EvaluateResponse, Rule
+from app.models import EvaluateRequest, EvaluateResponse
 from app.audit import verify_chain, iter_audits
-from app.notifier import notify_block
-
-import httpx
-import os
+from app.telemetry import init_tracing, snapshot as tele_snapshot
 
 app = FastAPI()
 
-# ---- rule store (rule_id -> (Rule, compiled_regex_or_None)) ----
-rules_store: Dict[str, Tuple[Rule, Optional[Pattern[str]]]] = {}
+rules_store: Dict[str, Tuple[object, object]] = {}
 RulesHandler(RULES_PATH, rules_store)
 
-# ---- shadow mode ----
-SHADOW: bool = (os.getenv("JIMINI_SHADOW") == "1")  # type: ignore[name-defined]
+TRACER = init_tracing()  # None if OTEL not configured
 
-# ---- in-memory metrics ----
-METRICS_TOTALS: DefaultDict[str, int] = defaultdict(int)   # allow/flag/block counts
-METRICS_RULES: DefaultDict[str, int] = defaultdict(int)    # rule_id -> hits
-METRICS_SHADOW: DefaultDict[str, int] = defaultdict(int)   # shadow overrides
+SHADOW: bool = (os.getenv("JIMINI_SHADOW") == "1")
 
-@app.post("/v1/evaluate", response_model=EvaluateResponse)
-async def evaluate_endpoint(req: EvaluateRequest) -> EvaluateResponse:
+# simple in-memory metrics
+METRICS_TOTALS: Dict[str, int] = defaultdict(int)
+METRICS_RULES: Dict[str, int] = defaultdict(int)
+METRICS_SHADOW: Dict[str, int] = defaultdict(int)
+
+@app.post('/v1/evaluate', response_model=EvaluateResponse)
+async def evaluate_endpoint(req: EvaluateRequest):
     if req.api_key != API_KEY:
-        raise HTTPException(401, "Unauthorized")
+        raise HTTPException(401, 'Unauthorized')
 
+    # start span if tracer is active
+    if TRACER:
+        with TRACER.start_as_current_span("jimini.evaluate") as span:
+            span.set_attribute("agent.id", req.agent_id)
+            span.set_attribute("endpoint", getattr(req, "endpoint", None) or "")
+            span.set_attribute("direction", getattr(req, "direction", None) or "")
+            span.set_attribute("shadow.enabled", SHADOW)
+
+            decision, rule_ids, enforce_even_in_shadow = evaluate(
+                req.text, req.agent_id, rules_store,
+                direction=getattr(req, "direction", None),
+                endpoint=getattr(req, "endpoint", None)
+            )
+
+            # metrics
+            METRICS_TOTALS[decision] += 1
+            for rid in rule_ids:
+                METRICS_RULES[rid] += 1
+
+            # shadow handling
+            effective_decision = decision
+            if SHADOW and decision in ("block", "flag") and not enforce_even_in_shadow:
+                METRICS_SHADOW[decision] += 1
+                effective_decision = "allow"
+
+            # annotate span with outcome
+            span.set_attribute("decision.original", decision)
+            span.set_attribute("decision.effective", effective_decision)
+            span.set_attribute("decision.enforce_even_in_shadow", enforce_even_in_shadow)
+            if rule_ids:
+                # keep it small; join into a single string attribute
+                span.set_attribute("rules.triggered", ",".join(rule_ids))
+
+            return EvaluateResponse(decision=effective_decision, rule_ids=rule_ids)
+
+    # === fallback path when TRACER is None ===
     decision, rule_ids, enforce_even_in_shadow = evaluate(
-        text=req.text,
-        agent_id=req.agent_id,
-        rules_store=rules_store,
+        req.text, req.agent_id, rules_store,
         direction=getattr(req, "direction", None),
-        endpoint=getattr(req, "endpoint", None),
+        endpoint=getattr(req, "endpoint", None)
     )
-
-    # metrics
     METRICS_TOTALS[decision] += 1
     for rid in rule_ids:
         METRICS_RULES[rid] += 1
 
-    # --- Alert webhook for high-severity blocks ---
-    if WEBHOOK_URL and decision == "block":
-        # Find triggered rules and check severity
-        triggered_rules = []
-        for rid in rule_ids:
-            entry = rules_store.get(rid)
-            if entry:
-                rule = entry[0] if isinstance(entry, tuple) else entry
-                triggered_rules.append(rule)
-        error_rules = [r for r in triggered_rules if hasattr(r, "severity") and getattr(r, "severity", None) == "error"]
-        if error_rules:
-            payload = {
-                "timestamp": datetime.now(timezone.utc).isoformat(),
-                "agent_id": req.agent_id,
-                "endpoint": getattr(req, "endpoint", None),
-                "rule_ids": rule_ids[:3],
-                "shadow": SHADOW,
-                "decision": decision,
-                "audit_excerpt": req.text[:200],
-                "audit_chain_hash": None,
-            }
-            # Try to get audit chain hash from latest audit record if available
-            try:
-                from app.audit import iter_audits
-                audits = list(iter_audits())
-                if audits:
-                    payload["audit_chain_hash"] = getattr(audits[-1], "hash", None)
-            except Exception:
-                pass
-            try:
-                async with httpx.AsyncClient() as client:
-                    await client.post(WEBHOOK_URL, json=payload)
-            except Exception as e:
-                print(f"[Jimini] Webhook alert failed: {e}")
-
-    # Was enforcement overridden by SHADOW?
-    shadow_overridden = False
     effective_decision = decision
     if SHADOW and decision in ("block", "flag") and not enforce_even_in_shadow:
-        shadow_overridden = True
+        METRICS_SHADOW[decision] += 1
         effective_decision = "allow"
 
-    # Telemetry
-    tele_incr(
-        decision=decision,
-        rule_ids=rule_ids,
-        endpoint=getattr(req, "endpoint", None),
-        direction=getattr(req, "direction", None),
-        shadow_overridden=shadow_overridden,
-    )
-    push_last({
-        "agent_id": req.agent_id,
-        "endpoint": getattr(req, "endpoint", None),
-        "direction": getattr(req, "direction", None),
-        "decision": decision,
-        "effective": effective_decision,
-        "rule_ids": rule_ids,
-    })
-
-    # shadow handling
-    if shadow_overridden:
-        METRICS_SHADOW[decision] += 1
-        result = EvaluateResponse(decision=effective_decision, rule_ids=rule_ids)
-        notify_block(
-            agent_id=req.agent_id,
-            decision=decision,              # original decision from engine
-            rule_ids=rule_ids,
-            endpoint=getattr(req, "endpoint", None),
-            excerpt=req.text,
-        )
-        return result
-
-    result = EvaluateResponse(decision=decision, rule_ids=rule_ids)
-    notify_block(
-        agent_id=req.agent_id,
-        decision=decision,              # original decision from engine
-        rule_ids=rule_ids,
-        endpoint=getattr(req, "endpoint", None),
-        excerpt=req.text,
-    )
-    return result
+    return EvaluateResponse(decision=effective_decision, rule_ids=rule_ids)
 
 @app.get("/v1/metrics")
-async def metrics():
+async def metrics() -> Dict[str, Any]:
     snap = tele_snapshot(loaded_rules=len(rules_store))
     snap["shadow_mode"] = SHADOW
     return snap
