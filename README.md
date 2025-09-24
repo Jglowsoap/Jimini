@@ -57,9 +57,6 @@ Response
 }
 
 
-decision is one of: allow | flag | block
-
-rule_ids are the triggered rules (generic API-1.0 may be suppressed if a specific secret matched)
 
 Shadow mode: If JIMINI_SHADOW=1 and the decision is block/flag, the HTTP response returns allow but still includes the rule_ids. Use this to pilot Jimini without breaking flows.
 
@@ -73,6 +70,152 @@ GET /health
 
 Basic health + shadow-mode flag:
 
+## Phase 2 Features
+
+Jimini now includes observability, shadow-mode telemetry, and enterprise-friendly exports.
+
+✅ Metrics Endpoint
+
+Every request is counted by decision, rule, endpoint, and direction.
+Recent decisions are tracked in-memory (last 100).
+
+Example:
+
+```bash
+curl -s http://localhost:9000/v1/metrics | jq
+```
+
+Response:
+
+```json
+{
+  "shadow_mode": true,
+  "totals": { "block": 1 },
+  "rules": { "IL-AI-4.2": 1, "EMAIL-1.0": 1 },
+  "shadow_overrides": { "block": 1 },
+  "endpoints": { "/api/export": 1 },
+  "directions": { "outbound": 1 },
+  "recent": [
+    {
+      "agent_id": "cli:test",
+      "decision": "block",
+      "rule_ids": ["IL-AI-4.2"],
+      "excerpt": "SSN 123-45-6789"
+    }
+  ],
+  "loaded_rules": 22
+}
+```
+
+✅ SARIF Export for SIEM
+
+Jimini can output SARIF logs (Static Analysis Results Interchange Format).
+This makes audit events consumable by Splunk, Elastic, and other security tooling.
+
+Example:
+
+```bash
+curl -s "http://localhost:9000/v1/audit/sarif?only_today=true" | jq
+```
+
+Response (truncated):
+
+```json
+{
+  "version": "2.1.0",
+  "runs": [
+    {
+      "tool": { "driver": { "name": "Jimini" } },
+      "results": [
+        {
+          "ruleId": "IL-AI-4.2",
+          "level": "error",
+          "message": {
+            "text": "block by IL-AI-4.2 for test_agent"
+          }
+        }
+      ]
+    }
+  ]
+}
+```
+
+✅ Shadow Mode with Overrides
+
+Global shadow mode (JIMINI_SHADOW=1) allows you to simulate enforcement.
+Requests are evaluated, but blocks/flags are downgraded to allow.
+
+Certain rules can override shadow mode by setting in the YAML:
+
+```yaml
+id: GITHUB-TOKEN-1.0
+title: GitHub Token
+pattern: ghp_[A-Za-z0-9]{36}
+action: block
+severity: error
+shadow_override: enforce
+```
+
+✅ Webhook Alerts (Slack/Teams/Discord)
+
+High-severity block decisions can trigger a JSON POST to a webhook.
+Configure in .env:
+
+```bash
+WEBHOOK_URL=https://hooks.slack.com/services/XXX/YYY/ZZZ
+```
+
+Alerts look like:
+
+```
+[Jimini] decision=block agent_id=cli:test endpoint=/api/export direction=outbound rules=['IL-AI-4.2']
+excerpt: SSN 123-45-6789
+```
+
+✅ OpenTelemetry Traces (Optional)
+
+If you already run an OTEL collector, Jimini can emit spans.
+Enable by setting in .env:
+
+```bash
+OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318/v1/traces
+```
+
+Attributes per span:
+
+- jimini.agent_id
+- jimini.endpoint
+- jimini.direction
+- jimini.decision
+- jimini.rule_ids_json
+
+If unset, telemetry is disabled automatically (no performance impact).
+
+✅ CI Workflow
+
+Jimini ships with a ready-to-use GitHub Actions pipeline at `.github/workflows/ci.yml`.
+
+It runs on every push:
+
+```yaml
+- run: pip install -r requirements.txt
+- run: pip install -e .
+- run: PYTHONPATH=$PWD pytest -q
+```
+
+Add a badge to the top of your README:
+
+```
+![CI](https://github.com/Jglowsoap/Jimini/actions/workflows/ci.yml/badge.svg)
+```
+
+📌 With these, Phase 2 is fully wrapped:
+
+You can measure, export, alert, and trace.
+
+All features are opt-in via .env.
+
+Defaults are zero-config, safe, and developer-friendly.
 {"ok": true, "shadow": false}
 
 Rules

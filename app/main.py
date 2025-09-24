@@ -1,8 +1,8 @@
 # app/main.py
 import os
-from collections import defaultdict
+from collections import defaultdict, deque
 from datetime import date
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, Deque
 
 from fastapi import FastAPI, HTTPException
 from app.config import API_KEY, RULES_PATH
@@ -10,14 +10,13 @@ from app.rules_loader import RulesHandler
 from app.enforcement import evaluate
 from app.models import EvaluateRequest, EvaluateResponse
 from app.audit import verify_chain, iter_audits
-from app.telemetry import init_tracing, snapshot as tele_snapshot
+from app.telemetry import emit_decision_span, post_webhook_alert
 
 app = FastAPI()
 
-rules_store: Dict[str, Tuple[object, object]] = {}
+from app.models import Rule
+rules_store: Dict[str, Tuple[Rule, object]] = {}
 RulesHandler(RULES_PATH, rules_store)
-
-TRACER = init_tracing()  # None if OTEL not configured
 
 SHADOW: bool = (os.getenv("JIMINI_SHADOW") == "1")
 
@@ -25,69 +24,76 @@ SHADOW: bool = (os.getenv("JIMINI_SHADOW") == "1")
 METRICS_TOTALS: Dict[str, int] = defaultdict(int)
 METRICS_RULES: Dict[str, int] = defaultdict(int)
 METRICS_SHADOW: Dict[str, int] = defaultdict(int)
+METRICS_ENDPOINTS: Dict[str, int] = defaultdict(int)
+METRICS_DIRECTIONS: Dict[str, int] = defaultdict(int)
+RECENT_DECISIONS: Deque[Dict[str, Any]] = deque(maxlen=100)
 
 @app.post('/v1/evaluate', response_model=EvaluateResponse)
 async def evaluate_endpoint(req: EvaluateRequest):
     if req.api_key != API_KEY:
         raise HTTPException(401, 'Unauthorized')
 
-    # start span if tracer is active
-    if TRACER:
-        with TRACER.start_as_current_span("jimini.evaluate") as span:
-            span.set_attribute("agent.id", req.agent_id)
-            span.set_attribute("endpoint", getattr(req, "endpoint", None) or "")
-            span.set_attribute("direction", getattr(req, "direction", None) or "")
-            span.set_attribute("shadow.enabled", SHADOW)
-
-            decision, rule_ids, enforce_even_in_shadow = evaluate(
-                req.text, req.agent_id, rules_store,
-                direction=getattr(req, "direction", None),
-                endpoint=getattr(req, "endpoint", None)
-            )
-
-            # metrics
-            METRICS_TOTALS[decision] += 1
-            for rid in rule_ids:
-                METRICS_RULES[rid] += 1
-
-            # shadow handling
-            effective_decision = decision
-            if SHADOW and decision in ("block", "flag") and not enforce_even_in_shadow:
-                METRICS_SHADOW[decision] += 1
-                effective_decision = "allow"
-
-            # annotate span with outcome
-            span.set_attribute("decision.original", decision)
-            span.set_attribute("decision.effective", effective_decision)
-            span.set_attribute("decision.enforce_even_in_shadow", enforce_even_in_shadow)
-            if rule_ids:
-                # keep it small; join into a single string attribute
-                span.set_attribute("rules.triggered", ",".join(rule_ids))
-
-            return EvaluateResponse(decision=effective_decision, rule_ids=rule_ids)
-
-    # === fallback path when TRACER is None ===
     decision, rule_ids, enforce_even_in_shadow = evaluate(
         req.text, req.agent_id, rules_store,
         direction=getattr(req, "direction", None),
         endpoint=getattr(req, "endpoint", None)
     )
+
+    # OTEL span (safe if not configured)
+    emit_decision_span(
+        agent_id=req.agent_id,
+        endpoint=getattr(req, "endpoint", None),
+        direction=getattr(req, "direction", None),
+        decision=decision,
+        rule_ids=rule_ids,
+    )
+
+    # Metrics counters
     METRICS_TOTALS[decision] += 1
     for rid in rule_ids:
         METRICS_RULES[rid] += 1
+    ep = getattr(req, "endpoint", None)
+    if ep is not None:
+        METRICS_ENDPOINTS[ep] += 1
+    dr = getattr(req, "direction", None)
+    if dr is not None:
+        METRICS_DIRECTIONS[dr] += 1
+    RECENT_DECISIONS.append({
+        "agent_id": req.agent_id,
+        "decision": decision,
+        "rule_ids": rule_ids,
+        "excerpt": req.text[:120],
+    })
 
-    effective_decision = decision
+    # Webhook alert for blocks and severe flags (customize as needed)
+    if decision == "block" or ("HALLUC-1.0" in rule_ids and decision == "flag"):
+        post_webhook_alert(
+            agent_id=req.agent_id,
+            endpoint=getattr(req, "endpoint", None),
+            direction=getattr(req, "direction", None),
+            decision=decision,
+            rule_ids=rule_ids,
+            excerpt=req.text[:200],
+        )
+
     if SHADOW and decision in ("block", "flag") and not enforce_even_in_shadow:
         METRICS_SHADOW[decision] += 1
-        effective_decision = "allow"
+        return EvaluateResponse(decision="allow", rule_ids=rule_ids)
 
-    return EvaluateResponse(decision=effective_decision, rule_ids=rule_ids)
+    return EvaluateResponse(decision=decision, rule_ids=rule_ids)
 
 @app.get("/v1/metrics")
 async def metrics() -> Dict[str, Any]:
-    snap = tele_snapshot(loaded_rules=len(rules_store))
-    snap["shadow_mode"] = SHADOW
-    return snap
+    return {
+        "shadow_mode": SHADOW,
+        "totals": dict(METRICS_TOTALS),
+        "rules": dict(METRICS_RULES),
+        "shadow_overrides": dict(METRICS_SHADOW),
+        "endpoints": dict(METRICS_ENDPOINTS),
+        "directions": dict(METRICS_DIRECTIONS),
+        "recent": list(RECENT_DECISIONS),
+        "loaded_rules": len(rules_store),
+    }
 
 @app.get("/v1/audit/verify")
 async def audit_verify() -> Dict[str, Any]:
