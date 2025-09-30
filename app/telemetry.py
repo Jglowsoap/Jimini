@@ -1,9 +1,138 @@
 from __future__ import annotations
-import os
-from typing import Iterable, List, Optional, Any
 import json
+import os
 import threading
-import requests  # lightweight dep
+import time
+import urllib.request
+from collections import Counter
+from dataclasses import dataclass, asdict
+from typing import Dict, Any, Optional, Iterable, Tuple, List
+
+from app.config import get_config
+from app.forwarders import JsonlForwarder, SplunkHECForwarder, ElasticForwarder
+from app.notifier import Notifier
+
+
+@dataclass
+class TelemetryEvent:
+    ts: str
+    endpoint: str  # e.g., /v1/evaluate
+    direction: str  # inbound|outbound
+    decision: str  # ALLOW|BLOCK|FLAG|SHADOW
+    shadow_mode: bool
+    rule_ids: Iterable[str]
+    request_id: Optional[str] = None
+    latency_ms: Optional[float] = None
+    meta: Optional[Dict[str, Any]] = None
+
+
+class Telemetry:
+    _instance = None
+    _lock = threading.Lock()
+
+    def __init__(self, flush_sec: int = 5):
+        self.cfg = get_config()
+        self.flush_sec = flush_sec
+        self.events: list[TelemetryEvent] = []
+        self.counters = Counter()
+        self.lock = threading.RLock()
+        self.stop_event = threading.Event()
+
+        # forwarders
+        self.forwarders = []
+        if self.cfg.siem.jsonl.enabled:
+            self.forwarders.append(JsonlForwarder(self.cfg.siem.jsonl.path))
+        if self.cfg.siem.splunk_hec.enabled:
+            self.forwarders.append(
+                SplunkHECForwarder(
+                    url=self.cfg.siem.splunk_hec.url,
+                    token=self.cfg.siem.splunk_hec.token,
+                    sourcetype=self.cfg.siem.splunk_hec.sourcetype,
+                    verify=self.cfg.siem.splunk_hec.verify_tls,
+                )
+            )
+        if self.cfg.siem.elastic.enabled:
+            self.forwarders.append(
+                ElasticForwarder(
+                    url=self.cfg.siem.elastic.url,
+                    auth=(
+                        self.cfg.siem.elastic.basic_auth_user,
+                        self.cfg.siem.elastic.basic_auth_pass,
+                    ),
+                    verify=self.cfg.siem.elastic.verify_tls,
+                )
+            )
+
+        self.notifier = Notifier(self.cfg.notifiers)
+
+        self.thread = threading.Thread(target=self._loop, daemon=True)
+        self.thread.start()
+
+    @classmethod
+    def instance(cls) -> "Telemetry":
+        with cls._lock:
+            if cls._instance is None:
+                cls._instance = Telemetry()
+            return cls._instance
+
+    def record_event(self, evt: TelemetryEvent):
+        with self.lock:
+            self.events.append(evt)
+            # counters
+            for rule in evt.rule_ids or []:
+                key = (evt.endpoint, evt.direction, rule, evt.decision)
+                self.counters[key] += 1
+
+            # notify on BLOCK/FLAG
+            if evt.decision in ("BLOCK", "FLAG"):
+                self.notifier.notify(evt)
+
+    def snapshot_counters(self) -> Dict[str, int]:
+        with self.lock:
+            return {self._fmt_key(k): v for k, v in self.counters.items()}
+
+    def flush(self):
+        with self.lock:
+            batch = self.events[:]
+            self.events.clear()
+        if not batch:
+            return
+        payloads = [asdict(e) for e in batch]
+        for fwd in self.forwarders:
+            try:
+                fwd.send_many(payloads)
+            except Exception as e:
+                # In Phase 4 we'll add robust error pipelines/retry
+                print(f"[telemetry] forwarder {type(fwd).__name__} error: {e}")
+
+    def _loop(self):
+        while not self.stop_event.is_set():
+            time.sleep(self.flush_sec)
+            self.flush()
+
+    def stop(self):
+        self.stop_event.set()
+        self.thread.join(timeout=1)
+        self.flush()
+
+    @staticmethod
+    def _fmt_key(k: Tuple[str, str, str, str]) -> str:
+        endpoint, direction, rule, decision = k
+        return f"{endpoint}|{direction}|{rule}|{decision}"
+
+    @staticmethod
+    def _post_json(url, payload):
+        """Post JSON payload to URL."""
+        data = json.dumps(payload).encode("utf-8")
+        req = urllib.request.Request(
+            url, data=data, headers={"Content-Type": "application/json"}
+        )
+        try:
+            with urllib.request.urlopen(req, timeout=3) as _:
+                pass
+        except Exception:
+            pass
+
 
 # --- Optional OpenTelemetry (zero-config if not installed or not configured) ---
 _tracer: Optional[Any] = None
@@ -99,8 +228,23 @@ def post_webhook_alert(
             )
         }
         try:
-            requests.post(url, json=payload, timeout=3)
+            _post_webhook(url, payload)
         except Exception:
             pass
 
     threading.Thread(target=_send, daemon=True).start()
+
+
+def _post_webhook(url, payload):
+    """Post JSON payload to webhook URL."""
+    try:
+        req = urllib.request.Request(
+            url,
+            data=json.dumps(payload).encode("utf-8"),
+            headers={"Content-Type": "application/json"},
+        )
+        with urllib.request.urlopen(req, timeout=3) as _:
+            pass
+    except Exception:
+        # Don't let webhook failures impact the main flow
+        pass
