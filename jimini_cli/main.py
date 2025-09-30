@@ -1,5 +1,5 @@
 # jimini_cli/main.py
-import argparse, json, os, sys, subprocess
+import argparse, json, os, sys, subprocess, time
 from typing import List
 
 # Ensure we can import the local `app` package when running the CLI
@@ -15,6 +15,35 @@ def cmd_verify_audit(_args):
     result = verify_chain()
     print(json.dumps(result, indent=2))
     sys.exit(0 if result.get("valid") else 1)
+
+def cmd_telemetry_counters(_args):
+    """Print current telemetry counters as JSON."""
+    from app.telemetry import Telemetry
+    tel = Telemetry.instance()
+    print(json.dumps(tel.snapshot_counters(), indent=2))
+
+def cmd_telemetry_flush(_args):
+    """Force flush telemetry events to all forwarders."""
+    from app.telemetry import Telemetry
+    tel = Telemetry.instance()
+    tel.flush()
+    print("flushed")
+
+def cmd_telemetry_tail(args):
+    """Tail a JSONL telemetry file."""
+    import pathlib
+    path = pathlib.Path(args.file)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.touch(exist_ok=True)
+    
+    with open(path, "r", encoding="utf-8") as f:
+        f.seek(0, 2)  # seek to end
+        while True:
+            line = f.readline()
+            if not line:
+                time.sleep(0.5)
+                continue
+            print(line, end="")
 
 # ---------- helpers ----------
 def _load_store(args):
@@ -161,6 +190,20 @@ def build_parser():
     # verify
     p_verify = sub.add_parser("verify-audit", help="Verify local audit hash chain")
     p_verify.set_defaults(func=cmd_verify_audit)
+
+    # telemetry
+    p_telemetry = sub.add_parser("telemetry", help="Telemetry commands")
+    ts_sub = p_telemetry.add_subparsers(dest="tcmd", required=True)
+    
+    ts_counters = ts_sub.add_parser("counters", help="Show current telemetry counters")
+    ts_counters.set_defaults(func=cmd_telemetry_counters)
+    
+    ts_flush = ts_sub.add_parser("flush", help="Force flush telemetry events")
+    ts_flush.set_defaults(func=cmd_telemetry_flush)
+    
+    ts_tail = ts_sub.add_parser("tail", help="Tail a JSONL telemetry file")
+    ts_tail.add_argument("--file", default="logs/jimini_events.jsonl", help="Path to JSONL file")
+    ts_tail.set_defaults(func=cmd_telemetry_tail)
 
     return p
 
