@@ -1,0 +1,2 @@
+[console_scripts]
+jimini = jimini_cli.main:main

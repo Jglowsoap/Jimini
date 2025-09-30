@@ -7,6 +7,7 @@ from typing import Dict, Any, Iterator
 _OTEL_ENABLED = False
 _tracer = None
 
+
 def init_otel() -> None:
     """Initialize OTEL if endpoint is configured. No-op otherwise."""
     global _OTEL_ENABLED, _tracer
@@ -16,7 +17,9 @@ def init_otel() -> None:
     try:
         # pip install opentelemetry-sdk opentelemetry-exporter-otlp
         from opentelemetry import trace
-        from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
+        from opentelemetry.exporter.otlp.proto.http.trace_exporter import (
+            OTLPSpanExporter,
+        )
         from opentelemetry.sdk.trace import TracerProvider
         from opentelemetry.sdk.trace.export import BatchSpanProcessor
 
@@ -30,6 +33,7 @@ def init_otel() -> None:
         # best effort: keep disabled if libs missing
         _OTEL_ENABLED = False
         _tracer = None
+
 
 @contextmanager
 def span(name: str, attributes: Dict[str, Any] | None = None) -> Iterator[None]:

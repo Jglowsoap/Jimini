@@ -1,5 +1,6 @@
 README.md
 pyproject.toml
+setup.py
 jimini_cli/__init__.py
 jimini_cli/loader.py
 jimini_cli/main.py

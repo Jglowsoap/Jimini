@@ -2,10 +2,14 @@ from __future__ import annotations
 import os
 from typing import Iterable, List, Optional, Any
 import json
+import threading
+import requests  # lightweight dep
 
 # --- Optional OpenTelemetry (zero-config if not installed or not configured) ---
 _tracer: Optional[Any] = None
 _otel_inited: bool = False
+
+
 def _init_tracer_once():
     global _tracer, _otel_inited
     if _otel_inited:
@@ -20,7 +24,9 @@ def _init_tracer_once():
         from opentelemetry.sdk.resources import Resource
         from opentelemetry.sdk.trace import TracerProvider
         from opentelemetry.sdk.trace.export import BatchSpanProcessor
-        from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
+        from opentelemetry.exporter.otlp.proto.http.trace_exporter import (
+            OTLPSpanExporter,
+        )
 
         resource = Resource.create({"service.name": "jimini-gateway"})
         provider = TracerProvider(resource=resource)
@@ -30,6 +36,7 @@ def _init_tracer_once():
         _tracer = trace.get_tracer("jimini")
     except Exception:
         _tracer = None  # gracefully disable if anything fails
+
 
 def emit_decision_span(
     *,
@@ -60,11 +67,11 @@ def emit_decision_span(
     except Exception:
         pass  # never break the request path
 
+
 # --- Minimal webhook notifier (Slack/Teams/Discord/etc.) ---
-import threading
-import requests  # lightweight dep
 
 _WEBHOOK_URL = os.getenv("WEBHOOK_URL")
+
 
 def post_webhook_alert(
     *,

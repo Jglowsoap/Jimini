@@ -1,6 +1,8 @@
 # app/crypto.py
-import os, hashlib
+import os
+import hashlib
 from typing import Callable, Tuple, Optional
+
 
 # --- Hash selection (default: SHA3-256) ---
 def _hash_fn(name: str) -> Callable[[bytes], bytes]:
@@ -14,6 +16,7 @@ def _hash_fn(name: str) -> Callable[[bytes], bytes]:
     # safe fallback
     return lambda b: hashlib.sha3_256(b).digest()
 
+
 HASH_ALGO = os.getenv("JIMINI_HASH_ALGO", "sha3_256")
 hash_bytes = _hash_fn(HASH_ALGO)
 
@@ -21,9 +24,11 @@ hash_bytes = _hash_fn(HASH_ALGO)
 # If 'cryptography' is present, we’ll offer Ed25519; otherwise we no-op.
 try:
     from cryptography.hazmat.primitives.asymmetric.ed25519 import (
-        Ed25519PrivateKey, Ed25519PublicKey
+        Ed25519PrivateKey,
+        Ed25519PublicKey,
     )
     from cryptography.hazmat.primitives import serialization
+
     _has_ed25519 = True
 except Exception:
     Ed25519PrivateKey = None  # type: ignore
@@ -33,7 +38,8 @@ except Exception:
 
 SIG_ALGO = os.getenv("JIMINI_SIG_ALGO", "none").lower()
 KEY_PATH_PRIV = os.getenv("JIMINI_SIGNING_KEY", "keys/jimini_ed25519.pem")
-KEY_PATH_PUB  = os.getenv("JIMINI_SIGNING_PUB", "keys/jimini_ed25519.pub")
+KEY_PATH_PUB = os.getenv("JIMINI_SIGNING_PUB", "keys/jimini_ed25519.pub")
+
 
 def sign_detached(msg: bytes) -> Tuple[str, Optional[bytes]]:
     """
@@ -55,6 +61,7 @@ def sign_detached(msg: bytes) -> Tuple[str, Optional[bytes]]:
     except Exception:
         return ("none", None)
 
+
 def verify_detached(msg: bytes, sig: bytes) -> bool:
     if SIG_ALGO != "ed25519" or not _has_ed25519:
         return False
@@ -70,6 +77,7 @@ def verify_detached(msg: bytes, sig: bytes) -> bool:
             return False
     except Exception:
         return False
+
 
 def algo_labels() -> Tuple[str, str]:
     return (HASH_ALGO, SIG_ALGO)

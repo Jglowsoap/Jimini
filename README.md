@@ -4,34 +4,40 @@ Jimini — AI Policy Enforcement & Oversight
 
 Jimini is a lightweight AI governance gateway that sits between your agents and the outside world. It acts as a compliance firewall with:
 
-Rules-as-code (regex, thresholds, direction/endpoint scoping, LLM checks)
-
-Strict decisions (block > flag > allow) with shadow mode for safe rollout
-
-Audit logging (tamper-evident hash chained)
-
-CLI tools for local testing, linting, and running a local gateway
-
-Rule packs for regulated domains (Illinois, CJIS, HIPAA, PCI, Secrets)
+* Rules-as-code (regex, thresholds, direction / endpoint scoping, optional LLM checks)
+* Deterministic decisions (block > flag > allow) with a global shadow mode for safe rollout
+* Tamper‑evident audit logging (hash‑chained JSONL)
+* Built‑in metrics, SARIF export, optional webhook + OpenTelemetry
+* CLI tools for linting, testing, and running a local gateway
+* Curated rule packs (Illinois, CJIS, HIPAA, PCI, Secrets)
 
 Quick Start
 1) Environment
-# Required
-export API_KEY=changeme
-export RULES_PATH=policy_rules.yaml        # or a pack file (see below)
+```bash
+# Required (auth for /v1/evaluate)
+export JIMINI_API_KEY=changeme
+export JIMINI_RULES_PATH=policy_rules.yaml    # or packs/cjis/v1.yaml etc.
 
-# Optional (enables LLM checks if your rules use llm_prompt)
-export OPENAI_API_KEY=sk-...
+# Optional: enable LLM-based rules (those with llm_prompt)
+export OPENAI_API_KEY=sk-...                  # also: pip install openai
 
-# Optional (safe rollout: never block/flag; still returns rule_ids)
+# Optional: shadow mode (always returns allow but includes rule_ids)
 export JIMINI_SHADOW=1
+
+# Optional: webhook + telemetry + custom audit path
+export WEBHOOK_URL=https://hooks.slack.com/services/XXX/YYY/ZZZ
+export OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318/v1/traces
+export AUDIT_LOG_PATH=logs/audit.jsonl
+```
 
 2) Run the API locally
 uvicorn app.main:app --host 0.0.0.0 --port 9000 --reload
 
 3) Health check
-curl -s http://localhost:9000/health
-# → {"ok": true, "shadow": true}    # true if JIMINI_SHADOW=1
+```bash
+curl -s http://localhost:9000/health | jq
+# → {"ok": true, "shadow": true, "loaded_rules": 22}
+```
 
 API
 POST /v1/evaluate
@@ -58,17 +64,19 @@ Response
 
 
 
-Shadow mode: If JIMINI_SHADOW=1 and the decision is block/flag, the HTTP response returns allow but still includes the rule_ids. Use this to pilot Jimini without breaking flows.
+Shadow mode: If JIMINI_SHADOW=1 and the decision is block/flag, the HTTP response returns allow but still includes the rule_ids. Use this to pilot Jimini without breaking flows. Per‑rule override: set `shadow_override: enforce` to still enforce.
 
-GET /v1/audit/verify
+GET /v1/audit/sarif
 
-Verifies integrity of the local audit log hash chain:
+Query param: `date_prefix=YYYY-MM-DD` (defaults to today if omitted).
 
-{"valid": true, "break_index": null, "count": 123}
+Example:
 
-GET /health
+```bash
+curl -s "http://localhost:9000/v1/audit/sarif?date_prefix=$(date +%F)" | jq
+```
 
-Basic health + shadow-mode flag:
+Response (truncated):
 
 ## Phase 2 Features
 
@@ -216,25 +224,20 @@ You can measure, export, alert, and trace.
 All features are opt-in via .env.
 
 Defaults are zero-config, safe, and developer-friendly.
-{"ok": true, "shadow": false}
+{"ok": true, "shadow": false, "loaded_rules": 22}
 
 Rules
 
 Rules are defined in YAML. Jimini supports:
 
-Regex (pattern) with optional min_count
-
-Length threshold (max_chars)
-
-LLM checks (llm_prompt) — uses OpenAI if configured, fail-safe otherwise
-
-Direction scoping (applies_to: ["inbound"], ["outbound"], or omit)
-
-Endpoint scoping (endpoints: exact, prefix/*, or glob patterns)
-
-Actions (allow, flag, block)
-
-Per-rule shadow override (shadow_override: "enforce") to still enforce during global shadow mode
+* Regex (`pattern`) with optional `min_count`
+* Length threshold (`max_chars`)
+* LLM checks (`llm_prompt`) — uses OpenAI if configured (fail‑safe returns False if unavailable)
+* Direction scoping (`applies_to`: ["inbound"], ["outbound"])
+* Endpoint scoping (`endpoints`: exact, prefix/*, or glob)
+* Actions (`allow`, `flag`, `block`)
+* Per‑rule shadow override (`shadow_override: enforce`) to enforce even in global shadow mode
+* Suppression: generic `API-1.0` secret is automatically removed if a specific secret rule (e.g. `GITHUB-TOKEN-1.0`) also matched (see `app/enforcement.py`).
 
 Example
 
@@ -270,12 +273,18 @@ Jimini suppresses API-1.0 in results if a specific secret rule (e.g., GITHUB-TOK
 
 CLI
 
-Install editable (already set up in this repo):
+Install (development):
+```bash
+pip install -r requirements.txt   # server deps
+pip install -e .                  # installs jimini CLI (package ships only jimini_cli/)
+```
 
-pip install -e .
+LLM support (rules with `llm_prompt`) requires also:
+```bash
+pip install openai
+```
 
-
-You now have a jimini command with three core subcommands:
+You now have a `jimini` command with core subcommands:
 
 1) jimini lint
 
@@ -325,7 +334,7 @@ pci — PAN basics
 
 secrets — Common provider secrets (GitHub, AWS, OpenAI, Slack, JWT…)
 
-Use them via CLI or set RULES_PATH directly to a pack file.
+Use them via CLI or set JIMINI_RULES_PATH directly to a pack file.
 
 Auditing
 
@@ -378,13 +387,22 @@ If JIMINI_SHADOW=1 → you’ll always get "allow" back, but with rule_ids for a
 Troubleshooting
 
 decision: allow but rules listed
-You’re likely in shadow mode (JIMINI_SHADOW=1). Check /health.
+Likely in shadow mode (JIMINI_SHADOW=1). Check `/health`.
 
 LLM rules never trigger
-Ensure OPENAI_API_KEY is set and your rule has llm_prompt. Jimini fails safe (returns False) if the LLM cannot be called.
+Ensure OPENAI_API_KEY is set, you installed `openai`, and your rule has `llm_prompt`.
 
 Generic secret + specific secret both listed
-By design Jimini suppresses API-1.0 if a specific secret also matched. If you want the generic to remain, remove that suppression block in app/enforcement.py.
+Jimini suppresses `API-1.0` automatically when a specific secret (e.g. `GITHUB-TOKEN-1.0`) matches. Remove that suppression in `app/enforcement.py` if you want both.
+
+PEP 668 (externally managed env)
+If pip refuses to install packages system-wide (Debian/Ubuntu), create a virtualenv:
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+pip install -e .
+```
 
 Roadmap
 
@@ -408,5 +426,53 @@ curl -s http://localhost:9000/health | jq
 # metrics
 curl -s http://localhost:9000/v1/metrics | jq
 # sarif (today)
-curl -s "http://localhost:9000/v1/audit/sarif?only_today=true" | jq
-````
+curl -s "http://localhost:9000/v1/audit/sarif?date_prefix=$(date +%F)" | jq
+```
+
+
+<!-- Add after the existing Phase 2 Features section -->
+
+## Troubleshooting
+
+### Audit Chain Issues
+
+If `jimini verify-audit` reports chain integrity issues:
+
+1. **Check file permissions**: Ensure the process running Jimini has write access to the audit log directory.
+
+2. **Review concurrent writers**: Only one Jimini instance should write to a specific audit log file. Use different `AUDIT_LOG_PATH` values for multiple instances.
+
+3. **Recover from corruption**: If the chain is broken, you can:
+   - Archive the current log: `mv logs/audit.jsonl logs/audit.jsonl.broken`
+   - Start fresh: Jimini will create a new chain on next evaluate call
+   - If needed, manually verify the broken file: `cat logs/audit.jsonl.broken | jq -c 'select(.chain_hash != null)' | jimini verify-raw-audit`
+
+### Shadow Mode Behavior
+
+- When `JIMINI_SHADOW=1`, decisions of `block` and `flag` are returned as `allow` in the API response.
+- The `rule_ids` still show which rules would have triggered in enforce mode.
+- Individual rules can override shadow with `shadow_override: enforce` in YAML to always enforce.
+
+### Telemetry Opt-In
+
+Jimini follows a strict opt-in approach to telemetry and external services:
+
+- **OpenTelemetry**: Only enabled when `OTEL_EXPORTER_OTLP_ENDPOINT` is set
+- **Webhooks**: Only triggered when `WEBHOOK_URL` is configured
+- **LLM Rules**: Only activated when `OPENAI_API_KEY` is provided
+- **Default Mode**: No outbound calls unless explicitly configured
+
+## Security Best Practices
+
+1. **API Key Management**: Rotate `JIMINI_API_KEY` regularly. Use secrets management rather than environment files in production.
+
+2. **Rule Development Workflow**:
+   - Test rules locally: `jimini test --rule-pack cjis --text "sample text"`
+   - Lint before deployment: `jimini lint --rules policy_rules.yaml`
+   - Audit your audit: `jimini verify-audit` should be part of your monitoring
+
+3. **Shadow-First Deployment**:
+   - Start with `JIMINI_SHADOW=1` in production
+   - Monitor rule hit rates for 1-2 weeks
+   - Apply `shadow_override: enforce` to high-confidence rules first
+   - Graduate to full enforcement (`JIMINI_SHADOW=0`) after tuning

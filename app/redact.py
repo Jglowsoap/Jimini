@@ -13,14 +13,18 @@ REDACT_RULES = {
     "AWS-KEY-1.0",
 }
 
+
 def build_redactors(
-    rules_store: Dict[str, Tuple[Any, Pattern[str] | None]]  # Typically Dict[str, Tuple[Rule, Pattern[str] | None]]
+    rules_store: Dict[
+        str, Tuple[Any, Pattern[str] | None]
+    ],  # Typically Dict[str, Tuple[Rule, Pattern[str] | None]]
 ) -> List[Tuple[str, Pattern[str]]]:
     redactors: List[Tuple[str, Pattern[str]]] = []
     for rid, (rule, compiled) in rules_store.items():
         if rid in REDACT_RULES and compiled is not None:
             redactors.append((rid, compiled))
     return redactors
+
 
 def redact(text: str, redactors: List[Tuple[str, "re.Pattern[str]"]]) -> str:
     redacted = text

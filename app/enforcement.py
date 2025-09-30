@@ -2,6 +2,7 @@
 from datetime import datetime, timezone
 from typing import Dict, Tuple, List, Optional, Any
 import fnmatch
+import re
 
 from app.models import AuditRecord, Rule
 from app.audit import append_audit
@@ -9,15 +10,18 @@ from app.audit import append_audit
 # --- LLM policy check using OpenAI v1 SDK (lazy init to avoid noise) ---
 _openai_client: Optional[Any] = None
 
+
 def _ensure_openai():
     """Lazy-initialize the OpenAI client; mark as unavailable on failure."""
     global _openai_client
     if _openai_client is None:
         try:
             from openai import OpenAI  # pip install openai
+
             _openai_client = OpenAI()  # reads OPENAI_API_KEY
         except Exception:
             _openai_client = False  # mark unavailable (no warning spam)
+
 
 def llm_policy_check(text: str, prompt: str, model: str = "gpt-4o-mini") -> bool:
     """
@@ -55,8 +59,10 @@ def llm_policy_check(text: str, prompt: str, model: str = "gpt-4o-mini") -> bool
     except Exception:
         return False
 
-import re
-def _regex_hit(compiled_regex: Optional[re.Pattern[str]], text: str, min_count: Optional[int]) -> bool:
+
+def _regex_hit(
+    compiled_regex: Optional[re.Pattern[str]], text: str, min_count: Optional[int]
+) -> bool:
     """
     Prefer search() for a quick yes/no. Only count with findall() when a min_count
     threshold is explicitly requested.
@@ -73,7 +79,10 @@ def _regex_hit(compiled_regex: Optional[re.Pattern[str]], text: str, min_count: 
         print(f"[Jimini] Regex error: {re_err}")
         return False
 
-def _endpoint_matches(rule_endpoints: Optional[List[str]], endpoint: Optional[str]) -> bool:
+
+def _endpoint_matches(
+    rule_endpoints: Optional[List[str]], endpoint: Optional[str]
+) -> bool:
     """
     True if rule_endpoints is None (no restriction), or endpoint matches:
     - exact string
@@ -95,6 +104,7 @@ def _endpoint_matches(rule_endpoints: Optional[List[str]], endpoint: Optional[st
         if endpoint == pat:
             return True
     return False
+
 
 def evaluate(
     text: str,
@@ -141,7 +151,10 @@ def evaluate(
 
         # Regex (with optional min_count)
         import re
-        regex_arg: Optional[re.Pattern[str]] = compiled_regex if isinstance(compiled_regex, re.Pattern) else None
+
+        regex_arg: Optional[re.Pattern[str]] = (
+            compiled_regex if isinstance(compiled_regex, re.Pattern) else None
+        )
         if _regex_hit(regex_arg, text, rule.min_count):
             hit = True
 
@@ -195,7 +208,8 @@ def evaluate(
 
     # 5) Audit
     record = AuditRecord(
-        timestamp=datetime.now(timezone.utc).isoformat(),        agent_id=agent_id,
+        timestamp=datetime.now(timezone.utc).isoformat(),
+        agent_id=agent_id,
         decision=decision,
         rule_ids=rule_ids,
         excerpt=text[:200],

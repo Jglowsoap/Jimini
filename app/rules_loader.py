@@ -1,28 +1,38 @@
-import yaml, re
-from watchdog.observers import Observer
-from watchdog.events import FileSystemEventHandler
+import os
+import yaml
+import re
+from typing import List
 from app.models import Rule
 
-class RulesHandler(FileSystemEventHandler):
-    def __init__(self, path, store):
-        self.path = path
-        self.store = store
-        self._observer = Observer()
-        self.load_rules()
-        self._observer.schedule(self, self.path, recursive=False)
-        self._observer.daemon = True
-        self._observer.start()
+rules_store: List[Rule] = []
 
-    def load_rules(self):
-        with open(self.path) as f:
-            data = yaml.safe_load(f) or {}
-        self.store.clear()
-        for item in data.get('rules', []):
-            rule = Rule(**item)
-            compiled = re.compile(rule.pattern) if rule.pattern else None
-            self.store[rule.id] = (rule, compiled)
-        print(f"Loaded {len(self.store)} rules.")
 
-    def on_modified(self, event):
-        if event.src_path.endswith(self.path):
-            self.load_rules()
+def load_rules(rules_path: str):
+    """Load rules from a YAML file and compile regex patterns"""
+    global rules_store
+
+    if not os.path.exists(rules_path):
+        print(f"Warning: Rules file {rules_path} not found")
+        return
+
+    try:
+        with open(rules_path, "r") as f:
+            yaml_content = yaml.safe_load(f)
+
+        rules = []
+        for rule_dict in yaml_content:
+            rule = Rule(**rule_dict)
+
+            # Compile regex pattern if present
+            if rule.pattern:
+                try:
+                    rule.compiled_pattern = re.compile(rule.pattern)
+                except re.error as e:
+                    print(f"Error compiling regex for rule {rule.id}: {e}")
+
+            rules.append(rule)
+
+        rules_store = rules
+        print(f"Loaded {len(rules)} rules from {rules_path}")
+    except Exception as e:
+        print(f"Error loading rules: {e}")
