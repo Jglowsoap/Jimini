@@ -99,7 +99,9 @@ def test_evaluation():
             json={
                 "api_key": "changeme",
                 "agent_id": "health_check",
-                "text": "This is a safe test message"
+                "text": "This is a safe test message",
+                "direction": "outbound",
+                "endpoint": "/test/health"
             },
             timeout=5
         )
