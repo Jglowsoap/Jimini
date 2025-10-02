@@ -162,6 +162,10 @@ def evaluate(
         regex_arg: Optional[re.Pattern[str]] = (
             compiled_regex if isinstance(compiled_regex, re.Pattern) else None
         )
+        # If no compiled_regex from tuple, try rule.compiled_pattern
+        if regex_arg is None and hasattr(rule, 'compiled_pattern') and rule.compiled_pattern:
+            regex_arg = rule.compiled_pattern
+        
         if _regex_hit(regex_arg, text, rule.min_count):
             hit = True
 

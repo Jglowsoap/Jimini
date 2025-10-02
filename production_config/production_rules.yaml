@@ -1,0 +1,87 @@
+rules:
+- action: block
+  applies_to:
+  - '*'
+  description: Blocks all SSN patterns in production
+  endpoints:
+  - /*
+  id: SSN-PRODUCTION-BLOCK
+  pattern: \b\d{3}-?\d{2}-?\d{4}\b
+  severity: critical
+  shadow_override: enforce
+  tags:
+  - pii
+  - government
+  - ssn
+  - production
+  title: Social Security Number - Production Block
+- action: flag
+  applies_to:
+  - government
+  - dmv
+  endpoints:
+  - /government/*
+  - /dmv/*
+  id: DRIVERS-LICENSE-PRODUCTION
+  pattern: '[A-Z]\d{7,9}'
+  severity: high
+  tags:
+  - pii
+  - government
+  - license
+  - production
+  title: Driver's License - Production Flag
+- action: block
+  applies_to:
+  - '*'
+  endpoints:
+  - /*
+  id: CREDIT-CARD-PRODUCTION
+  pattern: \b(?:\d{4}[-\s]?){3}\d{4}\b
+  severity: critical
+  shadow_override: enforce
+  tags:
+  - pii
+  - financial
+  - production
+  title: Credit Card - Production Block
+- action: block
+  applies_to:
+  - '*'
+  endpoints:
+  - /*
+  id: API-SECRETS-PRODUCTION
+  pattern: (?i)\b(?:api[_-]?key|token|secret|password)[\"\\s]*[:=][\"\\s]*[a-zA-Z0-9_-]{15,}
+  severity: critical
+  shadow_override: enforce
+  tags:
+  - secret
+  - api
+  - production
+  title: API Secrets - Production Block
+- action: flag
+  applies_to:
+  - '*'
+  endpoints:
+  - /*
+  id: PHONE-PRODUCTION
+  pattern: \(?\\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}
+  severity: medium
+  tags:
+  - pii
+  - contact
+  - production
+  title: Phone Numbers - Production Flag
+- action: flag
+  applies_to:
+  - '*'
+  endpoints:
+  - /*
+  id: EMAIL-PRODUCTION
+  pattern: '[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}'
+  severity: low
+  tags:
+  - pii
+  - contact
+  - production
+  title: Email Addresses - Production Flag

@@ -1,0 +1,52 @@
+# Government PII Protection Rules Configuration
+# This file can be updated without redeploying your Flask app
+
+rules:
+  - id: SSN-PROTECTION
+    title: Social Security Number Protection
+    pattern: '\b\d{3}-?\d{2}-?\d{4}\b'
+    action: block
+    severity: critical
+    enabled: true
+
+  - id: DL-PROTECTION  
+    title: Driver's License Number Protection
+    pattern: '\b[A-Z]{1,2}\d{7,8}\b|D\d{8}\b'
+    action: flag
+    severity: high
+    enabled: true
+
+  - id: ADDRESS-PROTECTION
+    title: Street Address Protection  
+    pattern: '\b\d+\s+[A-Z][a-z]+\s+(Street|St|Avenue|Ave|Road|Rd|Drive|Dr|Lane|Ln|Boulevard|Blvd)\b'
+    action: flag
+    severity: medium
+    enabled: true
+
+  - id: PHONE-PROTECTION
+    title: Phone Number Protection
+    pattern: '\b\(?([0-9]{3})\)?[-. ]?([0-9]{3})[-. ]?([0-9]{4})\b'
+    action: flag
+    severity: medium
+    enabled: true
+
+  - id: EMAIL-PROTECTION
+    title: Email Address Protection
+    pattern: '\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b'
+    action: flag
+    severity: low
+    enabled: true
+
+  - id: CREDIT-CARD-PROTECTION
+    title: Credit Card Number Protection
+    pattern: '\b(?:\d{4}[-\s]?){3}\d{4}\b'
+    action: block
+    severity: critical
+    enabled: false  # Disabled by default
+
+  - id: GOVERNMENT-ID-PROTECTION
+    title: Government ID Protection
+    pattern: '\b[A-Z]{2}\d{6,10}\b'
+    action: flag
+    severity: high
+    enabled: false  # Disabled by default

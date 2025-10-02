@@ -63,6 +63,13 @@ class AppConfig(BaseModel):
     env: str = "dev"
     shadow_mode: bool = False
     shadow_overrides: List[str] = Field(default_factory=list)
+    audit_log_path: str = "logs/audit.jsonl"
+
+
+class PrivacySettings(BaseModel):
+    retention_days: int = 365
+    auto_purge: bool = True
+    anonymize_pii: bool = True
 
 
 class JiminiConfig(BaseModel):
@@ -70,6 +77,12 @@ class JiminiConfig(BaseModel):
     notifiers: NotifiersConfig = Field(default_factory=NotifiersConfig)
     siem: SiemConfig = Field(default_factory=SiemConfig)
     otel: OtelConfig = Field(default_factory=OtelConfig)
+    privacy_settings: PrivacySettings = Field(default_factory=PrivacySettings)
+    
+    @property
+    def audit_log_path(self) -> str:
+        """Get audit log path from app config"""
+        return self.app.audit_log_path
 
 
 _config_instance = None
