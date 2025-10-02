@@ -1,0 +1,15 @@
+nohup: ignoring input
+2025-10-02 21:19:49 [warning  ] OTEL setup failed: type object 'trace' has no attribute 'set_tracer_provider'
+2025-10-02 21:19:49 [warning  ] Failed to load retention policy, using defaults: app.data_privacy.RetentionPolicy() argument after ** must be a mapping, not PrivacySettings
+INFO:     Started server process [50731]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:9000 (Press CTRL+C to quit)
+Intelligence features not available: cannot import name 'validate_intelligence_setup' from 'app.intelligence' (/workspaces/Jimini/app/intelligence/__init__.py)
+ℹ️ Intelligence expansion features not available (install: pip install spacy transformers)
+Loaded 11 rules from packs/secrets/v1.yaml
+INFO:     127.0.0.1:56344 - "GET /health HTTP/1.1" 200 OK
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [50731]

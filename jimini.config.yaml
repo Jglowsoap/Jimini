@@ -3,7 +3,7 @@
 
 app:
   env: dev  # dev, staging, prod
-  shadow_mode: true  # still evaluate, but do not enforce except for overrides
+  shadow_mode: false  # still evaluate, but do not enforce except for overrides
   shadow_overrides:   # rules that ALWAYS enforce even in shadow
     - "IL-AI-1.1"
     - "SECRETS-EXFIL"

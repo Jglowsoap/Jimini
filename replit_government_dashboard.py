@@ -145,10 +145,11 @@ def main():
     protection_enabled = st.sidebar.checkbox("🛡️ PII Protection", value=True)
     
     # Main Dashboard Tabs
-    tab1, tab2, tab3, tab4, tab5 = st.tabs([
+    tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
         "👥 Citizen Lookup", 
         "🚗 DMV Records", 
         "🔍 Background Check", 
+        "🤖 AI Assistant",
         "📊 Protection Metrics", 
         "📋 Audit Log"
     ])
@@ -367,7 +368,234 @@ def main():
         else:
             st.info("📊 No metrics available yet. Start using the dashboard to see protection statistics.")
     
-    # Tab 5: Audit Log
+    # Tab 4: AI Assistant with PII Protection
+    with tab4:
+        st.header("🤖 AI Assistant with PII Protection")
+        st.info("🛡️ All questions are automatically screened for PII before AI processing")
+        
+        # AI Question Interface
+        col1, col2 = st.columns([2, 1])
+        
+        with col1:
+            # Question input
+            user_question = st.text_area(
+                "Ask the AI Assistant:",
+                placeholder="Ask about government services, procedures, regulations, etc...",
+                height=100,
+                help="AI will screen your question for PII before processing"
+            )
+            
+            # Processing options
+            processing_mode = st.selectbox(
+                "AI Processing Mode:",
+                [
+                    "🛡️ Full PII Protection (Recommended)",
+                    "⚠️ Basic Protection Only", 
+                    "🚨 No Protection (Admin Only)"
+                ]
+            )
+            
+            if st.button("🤖 Ask AI Assistant", type="primary"):
+                if user_question:
+                    with st.spinner("🔍 Screening question for PII and processing..."):
+                        
+                        # Step 1: PII Protection Check
+                        protection_result = protector.protect_data(
+                            user_question, 
+                            "/ai/assistant", 
+                            current_user
+                        )
+                        
+                        # Step 2: Handle protection result
+                        if protection_result['decision'] == 'BLOCK':
+                            st.error("🚫 QUESTION BLOCKED - Contains Sensitive PII")
+                            st.warning("AI cannot process questions containing SSN or other critical PII")
+                            
+                            # Show what was detected
+                            st.write("**PII Detected:**")
+                            for violation in protection_result['violations']:
+                                st.write(f"• **{violation['rule_name']}**: `{violation['matched_text']}`")
+                                
+                            st.info("💡 **Tip:** Rephrase your question without including specific personal information")
+                        
+                        elif protection_result['decision'] == 'FLAG':
+                            st.warning("⚠️ PII DETECTED - Question processed with extra security")
+                            
+                            # Show sanitized version
+                            sanitized_question = user_question
+                            for violation in protection_result['violations']:
+                                sanitized_question = sanitized_question.replace(
+                                    violation['matched_text'], 
+                                    f"[MASKED_{violation['rule_name']}]"
+                                )
+                            
+                            # Simulate AI response with protection details
+                            ai_response = f"""
+**🤖 AI Response (PII-Protected):**
+
+Based on your question about government services, I can help with general guidance while protecting sensitive information.
+
+**Original Question Processing:**
+- PII detected and masked for security
+- Question logged for compliance audit
+- Response generated from sanitized input
+
+**General Guidance:**
+For specific cases involving personal information, please use the secure lookup systems available in other dashboard sections with proper authorization.
+
+I can provide general information about:
+- Government service procedures
+- Policy guidelines  
+- General eligibility requirements
+- Process workflows
+
+Would you like me to explain any specific government process in general terms?
+"""
+                            
+                            st.success("✅ Question Processed Successfully")
+                            
+                            # Show protection details
+                            with st.expander("🛡️ View PII Protection Details"):
+                                st.write(f"**Original Question:** `{user_question}`")
+                                st.write(f"**Sanitized Version:** `{sanitized_question}`")
+                                st.write("**PII Found:**")
+                                for violation in protection_result['violations']:
+                                    st.write(f"• {violation['rule_name']}: `{violation['matched_text']}`")
+                            
+                            # Show AI response
+                            st.markdown(ai_response)
+                        
+                        else:
+                            # Safe question - full AI processing
+                            st.success("✅ Question Safe - No PII detected")
+                            
+                            # Simulate AI response based on question content
+                            question_lower = user_question.lower()
+                            
+                            if any(term in question_lower for term in ['license', 'dmv', 'driving']):
+                                ai_response = """
+**🤖 AI Response - DMV Services:**
+
+I can help with general information about DMV services:
+
+**Driver's License Services:**
+- License renewal procedures
+- Required documentation
+- Fees and processing times
+- Online vs. in-person options
+
+**Common Requirements:**
+- Valid identification documents
+- Proof of residency  
+- Vision test (if required)
+- Payment of applicable fees
+
+For specific license lookups or personal record access, please use the secure DMV lookup system in the DMV Records tab with proper authorization.
+
+Would you like more details about any specific DMV procedure?
+"""
+                            elif any(term in question_lower for term in ['citizen', 'resident', 'benefits']):
+                                ai_response = """
+**🤖 AI Response - Citizen Services:**
+
+I can provide information about general citizen services:
+
+**Available Services:**
+- Benefit applications and renewals
+- Document requests and certifications
+- Service eligibility guidelines
+- Contact information for departments
+
+**General Process:**
+1. Determine service needed
+2. Gather required documentation
+3. Submit application through appropriate channel
+4. Follow up on processing status
+
+For specific citizen record lookups, please use the secure Citizen Lookup system with proper authorization and justification.
+
+What specific government service would you like to know more about?
+"""
+                            elif 'background' in question_lower:
+                                ai_response = """
+**🤖 AI Response - Background Checks:**
+
+Background check information and procedures:
+
+**General Process:**
+- Legal justification required
+- Proper authorization needed
+- Compliance with privacy regulations
+- Secure handling of sensitive information
+
+**Types of Checks:**
+- Employment verification
+- Criminal history (authorized personnel only)
+- Reference verification
+- Educational background
+
+All background checks must go through the secure Background Check system with proper legal justification and supervisor approval.
+
+Do you need information about a specific type of background verification process?
+"""
+                            else:
+                                ai_response = f"""
+**🤖 AI Response - Government Services:**
+
+Thank you for your question: "{user_question}"
+
+I can provide general information about government services while maintaining strict data protection standards.
+
+**Available Assistance:**
+- General policy information
+- Service procedures and requirements
+- Contact information for departments
+- Eligibility guidelines
+
+**For Secure Operations:**
+- Use dedicated lookup systems for personal data
+- Follow proper authorization procedures
+- Maintain audit trails for compliance
+
+How else can I assist you with government service information?
+"""
+                            
+                            st.markdown(ai_response)
+        
+        with col2:
+            st.subheader("🛡️ AI Protection Status")
+            
+            if protection_enabled:
+                st.success("**PII Protection: ACTIVE** ✅")
+                
+                # Show protection features
+                st.write("**Active Protections:**")
+                protections = [
+                    "🔒 SSN Detection & Blocking",
+                    "🚗 License Number Flagging", 
+                    "📞 Phone Number Masking",
+                    "📍 Address Protection",
+                    "📧 Email Masking",
+                    "📋 Full Audit Logging"
+                ]
+                
+                for protection in protections:
+                    st.write(f"• {protection}")
+                
+                # Recent AI interactions
+                st.write("**Recent AI Interactions:**")
+                ai_logs = [log for log in protector.get_audit_logs() if '/ai' in log.get('endpoint', '')]
+                if ai_logs:
+                    for log in ai_logs[-3:]:
+                        decision_emoji = {"ALLOW": "✅", "FLAG": "⚠️", "BLOCK": "🚫"}.get(log['decision'], "❓")
+                        st.write(f"{decision_emoji} {log['timestamp'][:19]} - {log['decision']}")
+                else:
+                    st.write("No recent AI interactions")
+            else:
+                st.error("**PII Protection: DISABLED** ❌")
+                st.warning("AI responses may expose sensitive data!")
+
+    # Tab 5: Protection Metrics
     with tab5:
         st.header("📋 PII Protection Audit Log")
         
