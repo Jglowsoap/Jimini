@@ -56,5 +56,15 @@ class AuditRecord(BaseModel):
     text_excerpt: str = ""
     text_hash: str
     previous_hash: str
-    metadata: Optional[Dict[str, Any]] = None  # Added for additional context
-    metadata: Optional[Dict[str, Any]] = None  # Added for additional context
+    metadata: Optional[Dict[str, Any]] = None
+    
+    # Phase 4C: Extended audit fields for compliance
+    agent: Optional[str] = None           # User/agent who made the request
+    reviewer: Optional[str] = None        # Who reviewed this decision (if applicable)
+    rule_version: Optional[str] = None    # Version of rules used
+    config_version: Optional[str] = None  # Configuration version
+    pii_redacted: bool = False           # Whether PII was redacted from this record
+    compliance_flags: List[str] = []      # HIPAA, CJIS, PCI, etc.
+    retention_class: Optional[str] = None # Data retention classification
+    source_ip: Optional[str] = None       # Source IP (redacted if USE_PII=false)
+    user_context: Optional[Dict[str, Any]] = None  # Additional user context

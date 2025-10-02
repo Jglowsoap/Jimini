@@ -1,0 +1,20 @@
+apiVersion: v2
+name: jimini
+description: Jimini AI Policy Gateway Helm Chart
+type: application
+version: 0.2.0
+appVersion: "0.2.0"
+keywords:
+  - ai-policy
+  - governance  
+  - compliance
+  - security
+  - audit
+maintainers:
+  - name: Jimini Team
+    email: team@jimini.ai
+    url: https://jimini.ai
+sources:
+  - https://github.com/jimini-ai/jimini
+home: https://jimini.ai
+icon: https://jimini.ai/logo.png

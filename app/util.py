@@ -1,6 +1,7 @@
 import datetime
 import uuid
 import re
+import logging
 from typing import Dict, Any
 
 
@@ -53,3 +54,17 @@ def dict_to_flat_keys(d: Dict[str, Any], prefix: str = "") -> Dict[str, Any]:
         else:
             result[key] = v
     return result
+
+
+def get_logger(name: str) -> logging.Logger:
+    """Get a configured logger instance"""
+    logger = logging.getLogger(name)
+    if not logger.handlers:
+        handler = logging.StreamHandler()
+        formatter = logging.Formatter(
+            '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+        )
+        handler.setFormatter(formatter)
+        logger.addHandler(handler)
+        logger.setLevel(logging.INFO)
+    return logger

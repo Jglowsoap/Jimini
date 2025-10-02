@@ -1,0 +1,143 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "jimini.fullname" . }}
+  labels:
+    {{- include "jimini.labels" . | nindent 4 }}
+  {{- with .Values.deploymentAnnotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "jimini.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        checksum/secret: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
+        {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      labels:
+        {{- include "jimini.selectorLabels" . | nindent 8 }}
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "jimini.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      {{- with .Values.initContainers }}
+      initContainers:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.config.api.port }}
+              protocol: TCP
+          env:
+            - name: JIMINI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "jimini.fullname" . }}-secret
+                  key: api-key
+            - name: OPENAI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "jimini.fullname" . }}-secret
+                  key: openai-api-key
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "jimini.fullname" . }}-secret
+                  key: jwt-secret
+            - name: JIMINI_RULES_PATH
+              value: "/app/config/policy_rules.yaml"
+            - name: AUDIT_LOG_PATH
+              value: "{{ .Values.config.audit.logPath }}"
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: "{{ .Values.config.monitoring.otel.endpoint }}"
+            - name: JIMINI_HOST
+              value: "{{ .Values.config.api.host }}"
+            - name: JIMINI_PORT
+              value: "{{ .Values.config.api.port }}"
+            - name: JIMINI_WORKERS
+              value: "{{ .Values.config.api.workers }}"
+            {{- with .Values.extraEnvs }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          {{- if .Values.healthChecks.readiness.enabled }}
+          readinessProbe:
+            httpGet:
+              path: {{ .Values.healthChecks.readiness.path }}
+              port: http
+            initialDelaySeconds: {{ .Values.healthChecks.readiness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.healthChecks.readiness.periodSeconds }}
+            timeoutSeconds: {{ .Values.healthChecks.readiness.timeoutSeconds }}
+            failureThreshold: {{ .Values.healthChecks.readiness.failureThreshold }}
+          {{- end }}
+          {{- if .Values.healthChecks.liveness.enabled }}
+          livenessProbe:
+            httpGet:
+              path: {{ .Values.healthChecks.liveness.path }}
+              port: http
+            initialDelaySeconds: {{ .Values.healthChecks.liveness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.healthChecks.liveness.periodSeconds }}
+            timeoutSeconds: {{ .Values.healthChecks.liveness.timeoutSeconds }}
+            failureThreshold: {{ .Values.healthChecks.liveness.failureThreshold }}
+          {{- end }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+            - name: config
+              mountPath: /app/config
+              readOnly: true
+            - name: logs
+              mountPath: /app/logs
+            {{- with .Values.extraVolumeMounts }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+        {{- with .Values.sidecars }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      volumes:
+        - name: config
+          configMap:
+            name: {{ include "jimini.fullname" . }}-config
+        - name: logs
+          {{- if .Values.persistence.enabled }}
+          persistentVolumeClaim:
+            claimName: {{ include "jimini.fullname" . }}-pvc
+          {{- else }}
+          emptyDir: {}
+          {{- end }}
+        {{- with .Values.extraVolumes }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

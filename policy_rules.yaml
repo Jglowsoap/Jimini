@@ -209,32 +209,28 @@ rules:
     action: "flag"
     tags: ["AI","hallucination"]
 
-- id: API-1.0
-  title: "API Key Detection"
-  severity: "HIGH"
-  pattern: '(api_key|api[-_]?token|access[-_]?token)[=:][ "'']*[A-Za-z0-9+/=_\-]{16,}'
-  min_count: 1
-  action: flag
+  - id: "API-1.0"
+    title: "API Key Detection"
+    severity: "HIGH"
+    pattern: '(api_key|api[-_]?token|access[-_]?token)[=:][ "'']*[A-Za-z0-9+/=_\-]{16,}'
+    min_count: 1
+    action: "flag"
 
-- id: GITHUB-TOKEN-1.0
-  title: "GitHub Token Detection"
-  severity: "HIGH"
-  pattern: 'gh[pousr]_[A-Za-z0-9_]{16,}'
-  min_count: 1
-  action: block
+  - id: "GITHUB-TOKEN-1.0"
+    title: "GitHub Token Detection"
+    severity: "HIGH"
+    pattern: 'gh[pousr]_[A-Za-z0-9_]{16,}'
+    min_count: 1
+    action: "block"
 
-- id: MAX-LENGTH-1.0
-  title: "Maximum Text Length"
-  severity: "MEDIUM"
-  max_chars: 10000
-  action: block
-  
-- id: HALLUC-1.0
-  title: "Hallucination Detection"
-  severity: "MEDIUM"
-  llm_prompt: "Does this text contain information that seems made up, incorrect, or hallucinated? Respond with only 'yes' or 'no'."
-  action: flag
-  severity: "MEDIUM"
-  name: "Hallucination Detection"
-  llm_prompt: "Does this text contain information that seems made up, incorrect, or hallucinated? Respond with only 'yes' or 'no'."
-  action: flag
+  - id: "MAX-LENGTH-1.0"
+    title: "Maximum Text Length"
+    severity: "MEDIUM"
+    max_chars: 10000
+    action: "block"
+    
+  - id: "HALLUC-1.0"
+    title: "Hallucination Detection"
+    severity: "MEDIUM"
+    llm_prompt: "Does this text contain information that seems made up, incorrect, or hallucinated? Respond with only 'yes' or 'no'."
+    action: "flag"

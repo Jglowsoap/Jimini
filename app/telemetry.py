@@ -8,8 +8,10 @@ from collections import Counter
 from dataclasses import dataclass, asdict
 from typing import Dict, Any, Optional, Iterable, Tuple, List
 
-from app.config import get_config
-from app.forwarders import JsonlForwarder, SplunkHECForwarder, ElasticForwarder
+from config.loader import get_current_config
+from app.forwarders.jsonl_forwarder import JsonlForwarder
+from app.forwarders.splunk_forwarder import SplunkHECForwarder
+from app.forwarders.elastic_forwarder import ElasticForwarder
 from app.notifier import Notifier
 
 
@@ -31,34 +33,34 @@ class Telemetry:
     _lock = threading.Lock()
 
     def __init__(self, flush_sec: int = 5):
-        self.cfg = get_config()
+        self.cfg = get_current_config()
         self.flush_sec = flush_sec
         self.events: list[TelemetryEvent] = []
         self.counters = Counter()
         self.lock = threading.RLock()
         self.stop_event = threading.Event()
 
-        # forwarders
+        # forwarders with new configuration structure
         self.forwarders = []
         if self.cfg.siem.jsonl.enabled:
-            self.forwarders.append(JsonlForwarder(self.cfg.siem.jsonl.path))
-        if self.cfg.siem.splunk_hec.enabled:
+            self.forwarders.append(JsonlForwarder(self.cfg.siem.jsonl.file_path))
+        if self.cfg.siem.splunk.enabled:
             self.forwarders.append(
                 SplunkHECForwarder(
-                    url=self.cfg.siem.splunk_hec.url,
-                    token=self.cfg.siem.splunk_hec.token,
-                    sourcetype=self.cfg.siem.splunk_hec.sourcetype,
-                    verify=self.cfg.siem.splunk_hec.verify_tls,
+                    url=str(self.cfg.siem.splunk.hec_url),
+                    token=self.cfg.siem.splunk.hec_token,
+                    sourcetype="jimini:event",
+                    verify=self.cfg.siem.splunk.verify_tls,
                 )
             )
         if self.cfg.siem.elastic.enabled:
             self.forwarders.append(
                 ElasticForwarder(
-                    url=self.cfg.siem.elastic.url,
+                    url=str(self.cfg.siem.elastic.url),
                     auth=(
-                        self.cfg.siem.elastic.basic_auth_user,
-                        self.cfg.siem.elastic.basic_auth_pass,
-                    ),
+                        self.cfg.siem.elastic.username,
+                        self.cfg.siem.elastic.password,
+                    ) if self.cfg.siem.elastic.username else None,
                     verify=self.cfg.siem.elastic.verify_tls,
                 )
             )

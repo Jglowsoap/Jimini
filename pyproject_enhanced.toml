@@ -1,0 +1,393 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "jimini"
+version = "0.2.0"
+description = "Enterprise AI Policy Gateway with tamper-evident audit trails and real-time enforcement"
+readme = "README.md"
+license = {text = "MIT"}
+authors = [
+    {name = "Jimini Team", email = "team@jimini.ai"}
+]
+maintainers = [
+    {name = "Jimini DevOps", email = "devops@jimini.ai"}
+]
+keywords = [
+    "ai-policy", "governance", "compliance", "security", "audit", 
+    "llm-safety", "data-protection", "enterprise", "tamper-evident"
+]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "Intended Audience :: System Administrators",
+    "Intended Audience :: Information Technology",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Security",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: System :: Monitoring",
+    "Topic :: System :: Systems Administration",
+    "Topic :: Internet :: WWW/HTTP :: HTTP Servers",
+    "Environment :: Web Environment",
+    "Framework :: FastAPI",
+]
+requires-python = ">=3.8"
+dependencies = [
+    # Core API Framework
+    "fastapi>=0.104.0,<0.110.0",
+    "uvicorn[standard]>=0.24.0,<0.26.0",
+    
+    # Data Validation & Configuration
+    "pydantic>=2.5.0,<3.0.0",
+    "pydantic-settings>=2.1.0,<3.0.0",
+    "pyyaml>=6.0.1,<7.0.0",
+    
+    # HTTP Client & Authentication
+    "httpx>=0.25.2,<0.27.0",
+    "python-multipart>=0.0.6,<0.1.0",
+    "python-jose[cryptography]>=3.3.0,<4.0.0",
+    "passlib[bcrypt]>=1.7.4,<2.0.0",
+    
+    # AI/LLM Integration
+    "openai>=1.3.0,<2.0.0",
+    
+    # Enhanced Security & Cryptography
+    "cryptography>=41.0.0,<43.0.0",
+    "pyjwt>=2.8.0,<3.0.0",
+    "bcrypt>=4.1.0,<5.0.0",
+    
+    # Utilities
+    "click>=8.1.0,<9.0.0",
+    "rich>=13.0.0,<14.0.0",
+    "tabulate>=0.9.0,<1.0.0",
+]
+
+[project.optional-dependencies]
+# Production Server Dependencies
+server = [
+    "uvicorn[standard]>=0.24.0,<0.26.0",
+    "gunicorn>=21.2.0,<22.0.0",
+]
+
+# Development & Testing Dependencies
+dev = [
+    "pytest>=7.4.0,<8.0.0",
+    "pytest-asyncio>=0.21.0,<1.0.0",
+    "pytest-cov>=4.1.0,<5.0.0",
+    "pytest-mock>=3.12.0,<4.0.0",
+    "pytest-xdist>=3.3.0,<4.0.0",
+    "black>=23.10.0,<25.0.0",
+    "isort>=5.12.0,<6.0.0",
+    "ruff>=0.1.0,<1.0.0",
+    "mypy>=1.7.0,<2.0.0",
+    "pre-commit>=3.5.0,<4.0.0",
+    "bandit>=1.7.5,<2.0.0",
+    "safety>=2.3.0,<3.0.0",
+]
+
+# Enhanced Security Features
+security = [
+    "cryptography>=41.0.0,<43.0.0",
+    "pyjwt>=2.8.0,<3.0.0",
+    "bcrypt>=4.1.0,<5.0.0",
+    "python-jose[cryptography]>=3.3.0,<4.0.0",
+]
+
+# Monitoring & Observability
+monitoring = [
+    "prometheus-client>=0.19.0,<1.0.0",
+    "opentelemetry-api>=1.21.0,<2.0.0",
+    "opentelemetry-sdk>=1.21.0,<2.0.0",
+    "opentelemetry-exporter-otlp>=1.21.0,<2.0.0",
+    "opentelemetry-instrumentation-fastapi>=0.42b0,<1.0.0",
+    "opentelemetry-instrumentation-httpx>=0.42b0,<1.0.0",
+    "structlog>=23.2.0,<24.0.0",
+]
+
+# SIEM & Log Forwarders
+siem = [
+    "elasticsearch>=8.0.0,<9.0.0",
+    "splunk-sdk>=1.7.0,<2.0.0",
+    "azure-monitor-opentelemetry>=1.0.0,<2.0.0",
+]
+
+# Compliance & Audit Features
+compliance = [
+    "jsonschema>=4.20.0,<5.0.0",
+    "certifi>=2023.11.17",
+    "requests>=2.31.0,<3.0.0",
+]
+
+# Performance & Scalability
+performance = [
+    "redis>=5.0.0,<6.0.0",
+    "aioredis>=2.0.0,<3.0.0",
+    "asyncpg>=0.29.0,<1.0.0",
+]
+
+# Complete Production Bundle
+all = [
+    "jimini[server,security,monitoring,siem,compliance,performance]"
+]
+
+# Core CLI Commands
+[project.scripts]
+jimini = "jimini_cli.main:main"
+jimini-server = "app.main:start_server"
+jimini-validate = "jimini_cli.main:validate_rules"
+jimini-test = "jimini_cli.main:test_rules"
+jimini-audit = "jimini_cli.main:verify_audit"
+
+# Admin & Operations Commands  
+jimini-admin = "jimini_cli.main:admin_mode"
+jimini-health = "jimini_cli.main:health_check"
+jimini-backup = "jimini_cli.main:backup_audit"
+jimini-restore = "jimini_cli.main:restore_audit"
+
+# Development & Testing Commands
+jimini-dev = "jimini_cli.main:dev_mode"
+jimini-lint = "jimini_cli.main:lint_rules"
+jimini-bench = "scripts.audit_load_test:main"
+
+[project.entry-points."jimini.forwarders"]
+jsonl = "app.forwarders.jsonl_forwarder:JSONLForwarder"
+splunk = "app.forwarders.splunk_forwarder:SplunkForwarder"
+elastic = "app.forwarders.elastic_forwarder:ElasticForwarder"
+
+[project.urls]
+Homepage = "https://github.com/jimini-ai/jimini"
+Repository = "https://github.com/jimini-ai/jimini"
+Documentation = "https://jimini.ai/docs"
+"Bug Reports" = "https://github.com/jimini-ai/jimini/issues"
+Changelog = "https://github.com/jimini-ai/jimini/blob/main/CHANGELOG.md"
+Security = "https://github.com/jimini-ai/jimini/security"
+Funding = "https://github.com/sponsors/jimini-ai"
+
+[tool.setuptools]
+packages = ["app", "jimini_cli", "config"]
+include-package-data = true
+
+[tool.setuptools.package-data]
+"*" = ["*.yaml", "*.yml", "*.json", "*.md", "*.txt"]
+"packs" = ["**/*.yaml", "**/*.yml"]
+
+[tool.setuptools.dynamic]
+version = {attr = "app.__version__"}
+
+# Development Scripts & Utilities
+[tool.setuptools_scm]
+write_to = "app/_version.py"
+version_scheme = "post-release"
+local_scheme = "dirty-tag"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = "test_*.py"
+python_classes = "Test*"
+python_functions = "test_*"
+addopts = [
+    "--strict-markers",
+    "--strict-config",
+    "--disable-warnings", 
+    "--tb=short",
+    "-ra",
+    "--cov=app",
+    "--cov=jimini_cli",
+    "--cov-report=term-missing",
+    "--cov-report=html:htmlcov",
+    "--cov-report=xml:coverage.xml",
+    "--cov-fail-under=85",
+]
+markers = [
+    "integration: marks tests as integration tests (deselect with '-m \"not integration\"')",
+    "unit: marks tests as unit tests", 
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "security: marks tests as security-focused tests",
+    "audit: marks tests for audit functionality",
+    "compliance: marks compliance-related tests",
+    "performance: marks performance tests",
+]
+asyncio_mode = "auto"
+filterwarnings = [
+    "ignore::DeprecationWarning",
+    "ignore::PendingDeprecationWarning",
+]
+
+[tool.coverage.run]
+source = ["app", "jimini_cli", "config"]
+omit = [
+    "tests/*",
+    "*/test_*",
+    "*/__pycache__/*",
+    "*/migrations/*",
+    "app/_version.py",
+    "setup.py",
+]
+parallel = true
+branch = true
+
+[tool.coverage.report]
+precision = 2
+show_missing = true
+skip_covered = false
+sort = "Cover"
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError", 
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+    "@abstractmethod",
+    "pass",
+]
+
+[tool.coverage.html]
+directory = "htmlcov"
+
+[tool.coverage.xml]
+output = "coverage.xml"
+
+# Code Formatting & Linting
+[tool.black]
+line-length = 100
+target-version = ['py38', 'py39', 'py310', 'py311', 'py312']
+include = '\.pyi?$'
+extend-exclude = '''
+/(
+  # directories
+  \.eggs
+  | \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | venv
+  | build
+  | dist
+  | htmlcov
+)/
+'''
+
+[tool.isort]
+profile = "black"
+multi_line_output = 3
+line_length = 100
+known_first_party = ["app", "jimini_cli", "config"]
+known_third_party = ["fastapi", "pydantic", "uvicorn", "pytest"]
+skip_glob = ["*/migrations/*", "*/htmlcov/*"]
+combine_as_imports = true
+force_grid_wrap = 0
+include_trailing_comma = true
+use_parentheses = true
+
+# Type Checking
+[tool.mypy]
+python_version = "3.8"
+strict = true
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+disallow_untyped_decorators = true
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+warn_unreachable = true
+strict_equality = true
+show_error_codes = true
+show_column_numbers = true
+
+[[tool.mypy.overrides]]
+module = [
+    "uvicorn.*",
+    "pytest.*",
+    "yaml.*",
+    "splunk.*",
+    "elasticsearch.*",
+    "redis.*",
+    "asyncpg.*",
+]
+ignore_missing_imports = true
+
+# Modern Linting with Ruff
+[tool.ruff]
+line-length = 100
+target-version = "py38"
+select = [
+    "E",  # pycodestyle errors
+    "W",  # pycodestyle warnings
+    "F",  # pyflakes
+    "I",  # isort
+    "B",  # flake8-bugbear
+    "C4", # flake8-comprehensions
+    "UP", # pyupgrade
+    "S",  # bandit security
+    "N",  # pep8-naming
+]
+ignore = [
+    "E501",  # line too long, handled by black
+    "B008",  # do not perform function calls in argument defaults
+    "S101",  # assert used
+]
+exclude = [
+    ".git",
+    "__pycache__",
+    "dist",
+    "build",
+    ".venv",
+    "venv",
+    "htmlcov",
+]
+
+[tool.ruff.per-file-ignores]
+"tests/**/*" = ["S101", "S311", "S106"]  # Allow asserts and hardcoded passwords in tests
+
+# Security Scanning
+[tool.bandit]
+exclude_dirs = ["tests", "venv", ".venv", "build", "dist"]
+skips = ["B101", "B601"]  # Skip assert_used and shell=True (we use it safely)
+
+[tool.bandit.assert_used]
+skips = ["*/test_*.py", "*/tests/*"]
+
+# Pre-commit Configuration References
+[tool.pre-commit]
+repos = [
+    {
+        repo = "https://github.com/pre-commit/pre-commit-hooks",
+        rev = "v4.5.0",
+        hooks = [
+            {id = "trailing-whitespace"},
+            {id = "end-of-file-fixer"},
+            {id = "check-yaml"},
+            {id = "check-added-large-files"},
+            {id = "check-merge-conflict"},
+        ]
+    },
+    {
+        repo = "https://github.com/psf/black",
+        rev = "23.11.0",
+        hooks = [{id = "black"}]
+    },
+    {
+        repo = "https://github.com/charliermarsh/ruff-pre-commit",
+        rev = "v0.1.6",
+        hooks = [{id = "ruff", args = ["--fix"]}]
+    },
+    {
+        repo = "https://github.com/pre-commit/mirrors-mypy", 
+        rev = "v1.7.1",
+        hooks = [{id = "mypy", additional_dependencies = ["types-PyYAML", "types-requests"]}]
+    }
+]

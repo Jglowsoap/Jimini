@@ -7,6 +7,13 @@ import re
 from app.models import AuditRecord, Rule
 from app.audit import append_audit
 
+# Phase 6B - Risk Scoring Integration
+try:
+    from app.intelligence.risk_scoring import assess_request_risk
+    RISK_SCORING_AVAILABLE = True
+except ImportError:
+    RISK_SCORING_AVAILABLE = False
+
 # --- LLM policy check using OpenAI v1 SDK (lazy init to avoid noise) ---
 _openai_client: Optional[Any] = None
 
@@ -206,14 +213,127 @@ def evaluate(
         getattr(r, "shadow_override", None) == "enforce" for r, _ in matched
     )
 
-    # 5) Audit
+    # 5) Audit - provide default values for CLI usage
+    from app.util import gen_request_id
+
     record = AuditRecord(
         timestamp=datetime.now(timezone.utc).isoformat(),
-        agent_id=agent_id,
-        decision=decision,
+        request_id=gen_request_id(),
+        action=decision,
+        direction=direction or "unknown",
+        endpoint=endpoint or "cli",
         rule_ids=rule_ids,
-        excerpt=text[:200],
+        text_excerpt=text[:200],
+        text_hash="",  # Will be filled by append_audit
+        previous_hash="",  # Will be filled by append_audit
     )
     append_audit(record)
 
     return decision, rule_ids, enforce_even_in_shadow
+
+
+def apply_shadow_logic(decision: str, rule_ids: List[str]) -> Tuple[str, str]:
+    """
+    Apply shadow mode logic to a decision.
+    Returns (raw_decision, effective_decision).
+    """
+    import os
+    from config.loader import get_current_config
+    
+    cfg = get_current_config()
+    shadow_mode = cfg.app.shadow_mode if cfg and cfg.app else os.environ.get("JIMINI_SHADOW", "false").lower() == "true"
+    
+    # If not in shadow mode, return decision as-is
+    if not shadow_mode:
+        return decision, decision
+    
+    # In shadow mode, check for shadow overrides
+    # For now, simple logic: shadow mode downgrades block/flag to allow
+    # unless specific rules have shadow_override: enforce
+    if decision.upper() in ["BLOCK", "FLAG"]:
+        # Check if any matched rule has shadow_override: enforce
+        # This would require rule lookup, for now simplified
+        return decision, "ALLOW"
+    
+    return decision, decision
+
+
+def evaluate_with_risk_assessment(
+    text: str,
+    agent_id: str,
+    rules_store: Dict[str, Any],
+    direction: Optional[str] = None,
+    endpoint: Optional[str] = None,
+    user_id: Optional[str] = None,
+    request_id: Optional[str] = None
+) -> Tuple[str, List[str], bool, Optional[Dict[str, Any]]]:
+    """
+    Enhanced evaluation with Phase 6B risk assessment integration.
+    
+    Returns: (decision, rule_ids, enforce_even_in_shadow, risk_assessment)
+    """
+    start_time = datetime.now()
+    
+    # Perform standard policy evaluation
+    decision, rule_ids, enforce_even_in_shadow = evaluate(
+        text, agent_id, rules_store, direction, endpoint
+    )
+    
+    risk_assessment = None
+    
+    # Phase 6B: Add risk assessment if available
+    if RISK_SCORING_AVAILABLE:
+        try:
+            # Create request object for risk assessment
+            from app.models import EvaluateRequest, EvaluateResponse
+            
+            request = EvaluateRequest(
+                text=text,
+                agent_id=agent_id,
+                endpoint=endpoint or "unknown",
+                direction=direction or "unknown"
+            )
+            
+            # Add optional fields if available
+            if hasattr(request, 'user_id') and user_id:
+                request.user_id = user_id
+            if hasattr(request, 'request_id') and request_id:
+                request.request_id = request_id
+            
+            response = EvaluateResponse(
+                success=True,
+                decision=decision,
+                rule_ids=rule_ids,
+                message="Policy evaluation completed"
+            )
+            
+            # Calculate processing time
+            processing_time = (datetime.now() - start_time).total_seconds()
+            
+            # Perform risk assessment
+            assessment = assess_request_risk(request, response, processing_time)
+            
+            # Convert to dict for API response
+            risk_assessment = {
+                "risk_score": assessment.risk_score,
+                "risk_level": assessment.risk_level.value,
+                "behavior_pattern": assessment.behavior_pattern.value,
+                "confidence": assessment.confidence,
+                "contributing_factors": assessment.contributing_factors,
+                "anomaly_indicators": assessment.anomaly_indicators,
+                "recommended_action": assessment.recommended_action,
+                "adaptive_threshold": assessment.adaptive_threshold,
+                "timestamp": assessment.timestamp.isoformat()
+            }
+            
+            # Apply adaptive threshold adjustment
+            if assessment.adaptive_threshold != 0.5:  # If threshold was adjusted
+                # Could modify decision based on adaptive threshold
+                # For now, just log the information
+                pass
+                
+        except Exception as e:
+            # Risk assessment failed, continue with standard evaluation
+            print(f"[Jimini] Risk assessment failed: {e}")
+    
+    return decision, rule_ids, enforce_even_in_shadow, risk_assessment

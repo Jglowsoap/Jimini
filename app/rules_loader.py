@@ -20,7 +20,12 @@ def load_rules(rules_path: str):
             yaml_content = yaml.safe_load(f)
 
         rules = []
-        for rule_dict in yaml_content:
+        rule_list = (
+            yaml_content.get("rules", [])
+            if isinstance(yaml_content, dict)
+            else yaml_content
+        )
+        for rule_dict in rule_list:
             rule = Rule(**rule_dict)
 
             # Compile regex pattern if present
@@ -32,6 +37,7 @@ def load_rules(rules_path: str):
 
             rules.append(rule)
 
+        global rules_store
         rules_store = rules
         print(f"Loaded {len(rules)} rules from {rules_path}")
     except Exception as e:

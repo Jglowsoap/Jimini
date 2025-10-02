@@ -1,0 +1,22 @@
+# Phase 6A - Intelligence Expansion Dependencies
+# Add these to requirements.txt for AI-powered regulatory analysis
+
+# Core NLP and AI Libraries
+spacy>=3.6.0,<4.0.0
+transformers>=4.30.0,<5.0.0
+torch>=2.0.0,<3.0.0
+
+# Document Processing
+PyPDF2>=3.0.1,<4.0.0
+beautifulsoup4>=4.12.0,<5.0.0
+python-docx>=0.8.11,<1.0.0
+
+# Optional: Legal/Regulatory Specific Models
+# Note: These may require additional model downloads
+# sentence-transformers>=2.2.0,<3.0.0
+
+# Installation Commands:
+# 1. Install packages: pip install -r requirements-intelligence.txt
+# 2. Download spaCy model: python -m spacy download en_core_web_sm
+# 3. Download large model (optional): python -m spacy download en_core_web_lg
+# 4. Legal BERT (optional): huggingface-hub download nlpaueb/legal-bert-base-uncased

@@ -2,11 +2,10 @@
 import json
 import os
 import urllib.request
-from typing import Dict, List, Optional
+from typing import List, Optional
 
 import requests
 
-from app.util import redact
 
 WEBHOOK_URL = os.getenv("WEBHOOK_URL")  # put in .env
 
@@ -17,7 +16,26 @@ class Notifier:
         self.teams = cfg_notifiers.teams
 
     def notify(self, evt):
-        text = self._fmt_text(evt)
+        # Import here to avoid circular imports
+        from app.redaction import get_redactor
+        redactor = get_redactor()
+        
+        # Create notification payload with PII redaction
+        notification_data = {
+            "endpoint": evt.endpoint,
+            "decision": evt.decision,
+            "shadow_mode": evt.shadow_mode,
+            "rule_ids": evt.rule_ids or [],
+            "request_id": evt.request_id or 'n/a',
+            "latency_ms": evt.latency_ms or 'n/a'
+        }
+        
+        # Redact PII from notification if needed
+        if redactor.should_redact():
+            notification_data = redactor.redact_dict(notification_data)
+        
+        text = self._fmt_text_from_data(notification_data)
+        
         if getattr(self.slack, "enabled", False) and self.slack.webhook_url:
             self._post_json(self.slack.webhook_url, {"text": text})
         if getattr(self.teams, "enabled", False) and self.teams.webhook_url:
@@ -31,6 +49,16 @@ class Notifier:
             f"Endpoint: `{evt.endpoint}` | Shadow: `{evt.shadow_mode}`\n"
             f"Rules: {rules}\n"
             f"Request: `{evt.request_id or 'n/a'}` | Latency: {evt.latency_ms or 'n/a'} ms"
+        )
+    
+    def _fmt_text_from_data(self, data):
+        """Format notification text from redacted data dictionary"""
+        rules = ", ".join(data.get("rule_ids", []))
+        return (
+            f"*Jimini Alert* — {data.get('decision', 'UNKNOWN')}\n"
+            f"Endpoint: `{data.get('endpoint', 'unknown')}` | Shadow: `{data.get('shadow_mode', False)}`\n"
+            f"Rules: {rules}\n"
+            f"Request: `{data.get('request_id', 'n/a')}` | Latency: {data.get('latency_ms', 'n/a')} ms"
         )
 
     @staticmethod

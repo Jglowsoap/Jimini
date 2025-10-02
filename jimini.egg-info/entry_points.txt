@@ -1,0 +1,6 @@
+[console_scripts]
+jimini = jimini_cli.main:main
+jimini-admin = jimini_cli.main:admin_main
+jimini-cli = jimini_cli.main:main
+jimini-server = app.main:run_server
+jimini-uvicorn = app.main:run_uvicorn

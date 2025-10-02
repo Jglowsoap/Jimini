@@ -1,44 +1,57 @@
+# Jimini Configuration - Phase 4 Hardening
+# Supports dev/staging/prod profiles with environment variable overrides
+
 app:
-  env: dev
+  env: dev  # dev, staging, prod
   shadow_mode: true  # still evaluate, but do not enforce except for overrides
   shadow_overrides:   # rules that ALWAYS enforce even in shadow
     - "IL-AI-1.1"
     - "SECRETS-EXFIL"
+  api_key: changeme  # Override with JIMINI_API_KEY env var
+  host: "0.0.0.0"
+  port: 9000
+  use_pii: false  # Set to true only if PII in outbound payloads is allowed
 
 notifiers:
   slack:
-    enabled: false
-    webhook_url: "${SLACK_WEBHOOK_URL}"
-    channel: "#jimini-alerts"   # optional; Slack incoming webhooks often ignore
-    username: "Jimini"
-    icon_emoji: ":shield:"
+    enabled: false  # Auto-enabled if SLACK_WEBHOOK_URL is set
+    webhook_url: null  # Set via SLACK_WEBHOOK_URL env var
+    rate_limit_per_minute: 10
 
   teams:
-    enabled: false
-    webhook_url: "${TEAMS_WEBHOOK_URL}"
+    enabled: false  # Auto-enabled if TEAMS_WEBHOOK_URL is set
+    webhook_url: null  # Set via TEAMS_WEBHOOK_URL env var
+    rate_limit_per_minute: 10
 
 siem:
   jsonl:
     enabled: true
-    path: "logs/jimini_events.jsonl"
+    file_path: "logs/jimini_events.jsonl"
+    rotate_daily: true
+    retention_days: 30
 
-  splunk_hec:
-    enabled: false
-    url: "https://splunk.example.com:8088/services/collector"
-    token: "${SPLUNK_HEC_TOKEN}"
-    sourcetype: "jimini:event"
+  splunk:
+    enabled: false  # Auto-enabled if SPLUNK_HEC_URL is set
+    hec_url: null  # Set via SPLUNK_HEC_URL env var
+    hec_token: null  # Set via SPLUNK_HEC_TOKEN env var
+    index: "main"
     verify_tls: true
 
   elastic:
-    enabled: false
-    url: "https://elastic.example.com:9200/jimini-events/_doc"
-    basic_auth_user: "${ELASTIC_USER}"
-    basic_auth_pass: "${ELASTIC_PASS}"
+    enabled: false  # Auto-enabled if ELASTIC_URL is set
+    url: null  # Set via ELASTIC_URL env var
+    username: null  # Set via ELASTIC_USERNAME env var
+    password: null  # Set via ELASTIC_PASSWORD env var
+    index: "jimini-events"
     verify_tls: true
 
 otel:
-  enabled: false
-  endpoint: "${OTEL_EXPORTER_OTLP_ENDPOINT}" # e.g. http://localhost:4317
+  enabled: false  # Auto-enabled if OTEL_EXPORTER_OTLP_ENDPOINT is set
+  endpoint: null  # Set via OTEL_EXPORTER_OTLP_ENDPOINT env var
   service_name: "jimini"
-  resource:
-    environment: "dev"
+
+security:
+  rbac_enabled: false
+  admin_roles: ["ADMIN"]
+  reviewer_roles: ["ADMIN", "REVIEWER"] 
+  support_roles: ["ADMIN", "REVIEWER", "SUPPORT"]

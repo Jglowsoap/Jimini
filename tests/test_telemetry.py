@@ -122,7 +122,7 @@ class TestNotifier(unittest.TestCase):
 
         # Check request data
         request = args[0]
-        self.assertEqual(request.get_header("Content-Type"), "application/json")
+        self.assertEqual(request.get_header("Content-type"), "application/json")
 
         # Check payload
         payload = json.loads(request.data.decode("utf-8"))
@@ -136,16 +136,11 @@ class TestShadowOverride(unittest.TestCase):
         # Reset the singleton
         Telemetry._instance = None
 
-    @patch("app.telemetry.get_config")
-    def test_shadow_override(self, mock_get_config):
+    @patch("app.main.cfg")
+    def test_shadow_override(self, mock_cfg):
         # Mock config with shadow mode enabled and overrides
-        mock_config = MagicMock()
-        mock_config.app.shadow_mode = True
-        mock_config.app.shadow_overrides = ["RULE-1"]
-        mock_config.siem.jsonl.enabled = False
-        mock_config.notifiers.slack.enabled = False
-        mock_config.notifiers.teams.enabled = False
-        mock_get_config.return_value = mock_config
+        mock_cfg.app.shadow_mode = True
+        mock_cfg.app.shadow_overrides = ["RULE-1"]
 
         from app.main import apply_shadow_logic
 

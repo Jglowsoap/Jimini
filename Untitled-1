@@ -1,0 +1,9 @@
+// .vscode/settings.json (add these settings, preserve existing ones)
+{
+    "python.testing.pytestEnabled": true,
+    "python.testing.unittestEnabled": false,
+    "python.testing.nosetestsEnabled": false,
+    "python.testing.pytestArgs": [
+        "tests"
+    ]
+}

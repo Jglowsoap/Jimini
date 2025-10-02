@@ -31,7 +31,7 @@ def test_splunk_hec_forwarder_headers_and_payload():
         request = args[0]
 
         # Check headers
-        assert request.get_header("Content-Type") == "application/json"
+        assert request.get_header("Content-type") == "application/json"
         assert request.get_header("Authorization") == "Splunk test-token"
 
         # Check payload format
@@ -68,7 +68,7 @@ def test_elastic_forwarder_headers_and_auth():
         request = args[0]
 
         # Check headers
-        assert request.get_header("Content-Type") == "application/json"
+        assert request.get_header("Content-type") == "application/json"
 
         # Check Basic Auth
         auth_header = request.get_header("Authorization")

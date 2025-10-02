@@ -99,6 +99,9 @@ def main():
     if args.command == "verify-audit":
         result = verify_audit(args)
         sys.exit(0 if result else 1)
+    elif args.command == "telemetry":
+        # Telemetry commands are already handled above
+        sys.exit(0)
     elif not args.command:
         parser.print_help()
         sys.exit(1)

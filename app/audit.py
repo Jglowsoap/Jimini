@@ -13,7 +13,7 @@ import json
 import hashlib
 import os
 from pathlib import Path
-from typing import Iterator, Optional, Dict, Any
+from typing import Iterator, Optional, Dict, Any, List
 
 from pydantic import ValidationError
 from app.models import AuditRecord
@@ -75,17 +75,19 @@ def append_audit(rec: AuditRecord) -> None:
     # Build payload excluding hashes for canonicalization
     payload: Dict[str, Any] = {
         "timestamp": rec.timestamp,
-        "agent_id": rec.agent_id,
-        "decision": rec.decision,
+        "request_id": rec.request_id,
+        "action": rec.action,
+        "direction": rec.direction,
+        "endpoint": rec.endpoint,
         "rule_ids": rec.rule_ids,
-        "excerpt": rec.excerpt,
+        "text_excerpt": rec.text_excerpt,
     }
     payload_json: str = _canonical_json(payload)
     chain: str = _sha3_256_hex(prev + payload_json)
 
     # Only assign fields that exist on AuditRecord
-    rec.prev_hash = prev
-    rec.chain_hash = chain
+    rec.previous_hash = prev
+    rec.text_hash = chain
 
     with AUDIT_FILE.open("a", encoding="utf-8") as f:
         f.write(rec.model_dump_json() + "\n")
@@ -101,25 +103,40 @@ def verify_chain() -> Dict[str, Any]:
     count: int = 0
 
     for idx, rec in enumerate(iter_audits()):
-        # Missing hashes => integrity failure (helps with legacy/unhashed lines)
-        if rec.prev_hash is None or rec.chain_hash is None:
+        # Skip validation for records without proper hashes (legacy records)
+        if not rec.previous_hash or not rec.text_hash:
             return {"valid": False, "break_index": idx, "count": idx}
 
         # Reconstruct payload as when written
         payload: Dict[str, Any] = {
             "timestamp": rec.timestamp,
-            "agent_id": rec.agent_id,
-            "decision": rec.decision,
+            "request_id": rec.request_id,
+            "action": rec.action,
+            "direction": rec.direction,
+            "endpoint": rec.endpoint,
             "rule_ids": rec.rule_ids,
-            "excerpt": rec.excerpt,
+            "text_excerpt": rec.text_excerpt,
         }
         expected: str = _sha3_256_hex(prev + _canonical_json(payload))
 
-        if rec.prev_hash != prev or rec.chain_hash != expected:
+        if rec.previous_hash != prev or rec.text_hash != expected:
             return {"valid": False, "break_index": idx, "count": idx}
 
         # Type is now narrowed to str (not Optional) thanks to the None check above
-        prev = rec.chain_hash
+        prev = rec.text_hash
         count += 1
 
     return {"valid": True, "break_index": None, "count": count}
+
+
+def get_records_by_date_prefix(date_prefix: Optional[str] = None) -> List[AuditRecord]:
+    """
+    Get audit records filtered by date prefix.
+    If date_prefix is None, returns all records.
+    Date prefix should be in format like "2023-09-30" to match timestamps.
+    """
+    records = []
+    for record in iter_audits():
+        if date_prefix is None or record.timestamp.startswith(date_prefix):
+            records.append(record)
+    return records
