@@ -1,0 +1,10 @@
+rules:
+  - id: CJIS-BIOMETRIC-1.0
+    title: "CJIS Biometric data exposure"
+    text: "Block biometric terms on CJIS endpoints"
+    pattern: "(?i)\\b(fingerprint|mugshot|iris scan|retina scan|palm print|dna profile|voiceprint|biometric record)\\b"
+    severity: "error"
+    action: "block"
+    tags: ["cjis","biometric"]
+    applies_to: ["inbound","outbound"]
+    endpoints: ["/api/cjis/*"]

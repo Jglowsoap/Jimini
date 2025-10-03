@@ -1,0 +1,26 @@
+run = "python replit_main.py"
+modules = ["python-3.11", "nodejs-20"]
+
+[nix]
+channel = "stable-23.05"
+
+[deployment]
+run = ["python", "replit_main.py"]
+deploymentTarget = "cloudrun"
+
+[[ports]]
+localPort = 8000
+externalPort = 80
+
+[[ports]]
+localPort = 3000
+externalPort = 3000
+
+[env]
+PYTHONPATH = "$REPL_HOME"
+JIMINI_API_KEY = "replit-jimini-gateway-2025"
+JIMINI_RULES_PATH = "packs/government/v1_fixed.yaml"
+JIMINI_SHADOW = "0"
+
+[gitHubImport]
+requiredFiles = [".replit", "replit.nix", "replit_main.py"]

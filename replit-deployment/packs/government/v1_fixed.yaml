@@ -1,0 +1,140 @@
+# Government PII Protection Rule Pack
+# Designed specifically for state government citizen data protection
+
+rules:
+  # Driver's License Number Protection
+  - id: DL-NUMBER-PROTECTION
+    title: "Driver's License Protection"
+    pattern: '[A-Z]{1,2}\d{7,8}|D\d{8}'
+    action: flag
+    severity: high
+    applies_to:
+      - request_body
+      - response_body
+      - logs
+    metadata:
+      pii_type: drivers_license
+      description: "Driver's license number detected - citizen PII"
+      retention_policy: "mask_after_processing"
+
+  # Social Security Number Protection  
+  - id: SSN-PROTECTION
+    title: "Social Security Number Protection"
+    pattern: '\b\d{3}-?\d{2}-?\d{4}\b'
+    action: block
+    severity: critical
+    applies_to:
+      - request_body
+      - response_body
+      - logs
+      - headers
+    metadata:
+      pii_type: ssn
+      description: "Social Security Number detected - BLOCK immediately"
+      violation_type: "federal_pii_violation"
+
+  # Full Name + Address Patterns
+  - id: NAME-ADDRESS-PROTECTION
+    title: "Street Address Protection"
+    pattern: '\b\d+\s+[A-Z][a-z]+\s+(Street|St|Avenue|Ave|Road|Rd|Drive|Dr|Lane|Ln|Boulevard|Blvd)\b'
+    action: flag
+    severity: medium
+    applies_to:
+      - request_body
+      - response_body
+    metadata:
+      pii_type: address
+      description: "Street address detected - citizen PII"
+
+  # Medical Information (HIPAA)
+  - id: HIPAA-PROTECTION
+    title: "HIPAA Medical Information Protection"
+    llm_prompt: |
+      Detect any medical information that would be protected under HIPAA including:
+      - Medical conditions, diagnoses, treatments
+      - Prescription medications
+      - Medical procedures or appointments
+      - Health insurance information
+      - Any reference to patient medical records
+    action: flag
+    severity: critical
+    applies_to:
+      - request_body
+      - response_body
+    metadata:
+      regulation: hipaa
+      description: "Medical information detected - HIPAA protection required"
+      audit_required: true
+
+  # Background Check System Access
+  - id: BACKGROUND-CHECK-AUDIT
+    title: "Background Check System Access Monitor"
+    pattern: '.*'
+    endpoints:
+      - '/background/*'
+      - '/criminal/*'
+      - '/employment/*'
+      - '/verification/*'
+    action: flag
+    severity: medium
+    metadata:
+      system_type: background_check
+      audit_required: true
+      justification_required: true
+      description: "Background check system access - full audit trail required"
+
+  # Cross-System Data Access
+  - id: CROSS-SYSTEM-ACCESS
+    title: "Cross-System Citizen Data Access"
+    pattern: '.*'
+    endpoints:
+      - '/api/citizen/*'
+      - '/dmv/*'
+      - '/medical/*'
+      - '/billing/*'
+    action: flag
+    severity: high
+    metadata:
+      access_type: cross_system
+      supervisor_notification: true
+      description: "Cross-system citizen data access"
+      retention_period: "7_years"
+
+  # Phone Number Protection
+  - id: PHONE-PROTECTION
+    title: "Phone Number Protection"
+    pattern: '\b\(?([0-9]{3})\)?[-. ]?([0-9]{3})[-. ]?([0-9]{4})\b'
+    action: flag
+    severity: medium
+    applies_to:
+      - request_body
+      - response_body
+    metadata:
+      pii_type: phone_number
+      description: "Phone number detected - citizen PII"
+
+  # Email Address Protection
+  - id: EMAIL-PROTECTION
+    title: "Email Address Protection"
+    pattern: '\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b'
+    action: flag
+    severity: low
+    applies_to:
+      - request_body
+      - response_body
+    metadata:
+      pii_type: email_address
+      description: "Email address detected - citizen PII"
+
+  # Emergency Override (for legitimate government business)
+  - id: GOVERNMENT-OVERRIDE
+    title: "Government Emergency Override"
+    pattern: 'EMERGENCY_OVERRIDE_([A-Z0-9]+)'
+    action: allow
+    severity: low
+    shadow_override: enforce
+    metadata:
+      usage_type: emergency_override
+      supervisor_approval: required
+      description: "Emergency government business override"
+      audit_trail: mandatory
