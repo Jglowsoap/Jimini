@@ -1,0 +1,48 @@
+# MANIFEST.in - Include additional files in the distribution package
+
+# Documentation
+include README.md
+include LICENSE
+include CHANGELOG.md
+
+# Configuration and rules
+include *.yaml
+include *.yml
+include *.toml
+recursive-include packs *.yaml
+recursive-include packs *.yml
+recursive-include config *.yaml
+recursive-include config *.yml
+recursive-include config *.py
+
+# Policy rule packs
+recursive-include packs/cjis *.yaml
+recursive-include packs/hipaa *.yaml  
+recursive-include packs/illinois *.yaml
+recursive-include packs/pci *.yaml
+recursive-include packs/secrets *.yaml
+
+# Documentation files
+recursive-include docs *.md
+recursive-include docs *.rst
+
+# Type stubs and py.typed marker
+recursive-include app py.typed
+recursive-include jimini_cli py.typed
+
+# Exclude development files
+exclude .gitignore
+exclude .env*
+exclude docker-compose.*
+exclude Dockerfile*
+recursive-exclude tests *
+recursive-exclude scripts *
+recursive-exclude logs *
+recursive-exclude .git *
+recursive-exclude __pycache__ *
+recursive-exclude *.egg-info *
+exclude .coverage
+exclude htmlcov
+exclude .pytest_cache
+exclude .mypy_cache
+exclude .ruff_cache

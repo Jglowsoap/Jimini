@@ -1,0 +1,81 @@
+version: "3.9"
+
+services:
+  jimini:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    image: jimini:0.2.0
+    container_name: jimini-ai-policy
+    ports:
+      - "8000:8000"
+    env_file: 
+      - .env
+    environment:
+      - APP_ENV=staging
+      - JIMINI_SHADOW=true
+      - PYTHONPATH=/app
+    restart: unless-stopped
+    volumes:
+      - ./logs:/app/logs
+      - ./data:/app/data
+      - ./policy_rules.yaml:/app/policy_rules.yaml:ro
+      - ./packs:/app/packs:ro
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    networks:
+      - jimini-net
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+
+  # Optional: Redis for caching and ML model storage
+  redis:
+    image: redis:7-alpine
+    container_name: jimini-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_data:/data
+    networks:
+      - jimini-net
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Optional: Prometheus for metrics collection (temporarily disabled)
+  # prometheus:
+  #   image: prom/prometheus:latest
+  #   container_name: jimini-prometheus
+  #   restart: unless-stopped
+  #   ports:
+  #     - "9090:9090"
+  #   networks:
+  #     - jimini-net
+
+networks:
+  jimini-net:
+    driver: bridge
+    name: jimini-network
+
+volumes:
+  redis_data:
+    driver: local
+  prometheus_data:
+    driver: local

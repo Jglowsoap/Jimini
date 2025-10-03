@@ -1,0 +1,106 @@
+# Government PII Protection Rule Pack
+# Designed specifically for state government citizen data protection
+
+rules:
+  # Driver's License Number Protection
+  - id: DL-NUMBER-PROTECTION
+    title: "Driver's License Protection"
+    pattern: '[A-Z]{1,2}\d{7,8}|D\d{8}'
+    action: flag
+    severity: high
+    applies_to:
+      - request_body
+      - response_body
+      - logs
+    metadata:
+      pii_type: drivers_license
+      description: "Driver's license number detected - citizen PII"
+      retention_policy: "mask_after_processing"
+
+  # Social Security Number Protection  
+  - id: SSN-PROTECTION
+    title: "Social Security Number Protection"
+    pattern: '\b\d{3}-?\d{2}-?\d{4}\b'
+    action: block
+    severity: critical
+    applies_to:
+      - request_body
+      - response_body
+      - logs
+      - headers
+    metadata:
+      pii_type: ssn
+      description: "Social Security Number detected - BLOCK immediately"
+      violation_type: "federal_pii_violation"
+
+  # Full Name + Address Patterns
+  - id: NAME-ADDRESS-PROTECTION
+    title: "Street Address Protection"
+    pattern: '\b\d+\s+[A-Z][a-z]+\s+(Street|St|Avenue|Ave|Road|Rd|Drive|Dr|Lane|Ln|Boulevard|Blvd)\b'
+    action: flag
+    severity: medium
+    applies_to:
+      - request_body
+      - response_body
+    metadata:
+      pii_type: address
+      description: "Street address detected - citizen PII"
+
+  # Medical Information (HIPAA)
+  - id: HIPAA-PROTECTION
+    llm_prompt: |
+      Detect any medical information that would be protected under HIPAA including:
+      - Medical conditions, diagnoses, treatments
+      - Prescription medications
+      - Medical procedures or appointments
+      - Health insurance information
+      - Any reference to patient medical records
+    action: flag
+    applies_to:
+      - request_body
+      - response_body
+    metadata:
+      regulation: hipaa
+      severity: critical
+      description: "Medical information detected - HIPAA protection required"
+      audit_required: true
+
+  # Background Check System Access
+  - id: BACKGROUND-CHECK-AUDIT
+    pattern: '.*'
+    endpoints:
+      - '/background/*'
+      - '/criminal/*'
+      - '/employment/*'
+      - '/verification/*'
+    action: flag
+    metadata:
+      system_type: background_check
+      audit_required: true
+      justification_required: true
+      description: "Background check system access - full audit trail required"
+
+  # Cross-System Data Access
+  - id: CROSS-SYSTEM-ACCESS
+    pattern: '.*'
+    endpoints:
+      - '/api/citizen/*'
+      - '/dmv/*'
+      - '/medical/*'
+      - '/billing/*'
+    action: flag
+    metadata:
+      access_type: cross_system
+      supervisor_notification: true
+      description: "Cross-system citizen data access"
+      retention_period: "7_years"
+
+  # Emergency Override (for legitimate government business)
+  - id: GOVERNMENT-OVERRIDE
+    pattern: '.*'
+    action: allow
+    shadow_override: enforce
+    metadata:
+      override_type: government_business
+      requires_supervisor_approval: true
+      description: "Government business override - still logged for audit"

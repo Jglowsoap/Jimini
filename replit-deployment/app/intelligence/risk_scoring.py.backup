@@ -1,0 +1,948 @@
+"""
+Phase 6B - Adaptive Risk Scoring Engine
+ML-powered behavioral risk assessment with dynamic threshold adjustment
+
+This module implements intelligent risk scoring that learns from historical
+policy decisions and adapts to organizational behavior patterns:
+
+1. Historical Dec    def _serialize_profile(self, profile: BehaviorProfile) -> str:
+        """Serialize behavior profile to JSON, handling datetime objects."""
+        profile_dict = asdict(profile)
+        
+        # Convert datetime objects to ISO format strings
+        for key, value in profile_dict.items():
+            if isinstance(value, datetime):
+                profile_dict[key] = value.isoformat()
+            elif value is None:
+                profile_dict[key] = None
+        
+        return json.dumps(profile_dict)
+    
+    def store_behavior_profile(self, profile: BehaviorProfile):
+        """Store behavior profile in database."""
+        with sqlite3.connect(self.db_path) as conn:
+            conn.execute("""
+                INSERT OR REPLACE INTO behavior_profiles 
+                (identifier, identifier_type, profile_json, updated_at)
+                VALUES (?, ?, ?, ?)
+            """, (
+                profile.identifier,
+                profile.identifier_type,
+                self._serialize_profile(profile),
+                datetime.now().isoformat()
+            ))s - ML training on past evaluations
+2. Behavioral Risk Profiling - User/endpoint risk patterns
+3. Dynamic Threshold Adjustment - Self-tuning confidence scores
+4. Anomaly Detection - Real-time behavioral deviation alerts
+5. Risk Score Integration - Enhanced policy evaluation context
+"""
+
+import json
+import numpy as np
+from datetime import datetime, timedelta
+from typing import Dict, List, Optional, Tuple, Any
+from dataclasses import dataclass, asdict
+from enum import Enum
+import sqlite3
+import hashlib
+from pathlib import Path
+from collections import defaultdict, deque
+import logging
+
+try:
+    from sklearn.ensemble import IsolationForest, RandomForestClassifier
+    from sklearn.preprocessing import StandardScaler
+    from sklearn.model_selection import train_test_split
+    from sklearn.metrics import classification_report, roc_auc_score
+    ML_AVAILABLE = True
+except ImportError:
+    ML_AVAILABLE = False
+
+from app.models import EvaluateRequest, EvaluateResponse
+from app.util import get_logger
+
+logger = get_logger(__name__)
+
+
+class RiskLevel(str, Enum):
+    """Risk assessment levels."""
+    VERY_LOW = "very_low"
+    LOW = "low"
+    MEDIUM = "medium"
+    HIGH = "high"
+    VERY_HIGH = "very_high"
+    CRITICAL = "critical"
+
+
+class BehaviorPattern(str, Enum):
+    """Behavioral pattern types."""
+    NORMAL = "normal"
+    SUSPICIOUS = "suspicious"
+    ANOMALOUS = "anomalous"
+    MALICIOUS = "malicious"
+
+
+@dataclass
+class RiskFeatures:
+    """Feature set for risk scoring ML model."""
+    
+    # Request characteristics
+    text_length: int
+    endpoint_frequency: float  # How often this endpoint is used
+    time_of_day: int  # Hour 0-23
+    day_of_week: int  # 0-6
+    
+    # Historical patterns
+    user_violation_rate: float  # Historical violation rate for this user/agent
+    endpoint_violation_rate: float  # Historical violation rate for this endpoint
+    recent_violations: int  # Violations in last 24h
+    
+    # Content analysis
+    sensitive_keywords: int  # Number of sensitive terms detected
+    data_entropy: float  # Information entropy of the text
+    pattern_matches: int  # Number of regex pattern matches
+    
+    # Context factors
+    request_volume_spike: bool  # Unusual volume from this source
+    off_hours_access: bool  # Access during unusual hours
+    geographic_anomaly: bool  # Access from unusual location
+    
+    # System state
+    current_load: float  # System load 0.0-1.0
+    error_rate: float  # Recent error rate
+    
+    def to_array(self) -> np.ndarray:
+        """Convert to numpy array for ML processing."""
+        return np.array([
+            self.text_length,
+            self.endpoint_frequency,
+            self.time_of_day,
+            self.day_of_week,
+            self.user_violation_rate,
+            self.endpoint_violation_rate,
+            self.recent_violations,
+            self.sensitive_keywords,
+            self.data_entropy,
+            self.pattern_matches,
+            int(self.request_volume_spike),
+            int(self.off_hours_access),
+            int(self.geographic_anomaly),
+            self.current_load,
+            self.error_rate
+        ])
+
+
+@dataclass
+class RiskAssessment:
+    """Complete risk assessment result."""
+    risk_score: float  # 0.0 to 1.0
+    risk_level: RiskLevel
+    behavior_pattern: BehaviorPattern
+    confidence: float  # Confidence in the assessment
+    contributing_factors: List[str]
+    anomaly_indicators: List[str]
+    recommended_action: str
+    adaptive_threshold: float
+    timestamp: datetime
+
+
+@dataclass
+class BehaviorProfile:
+    """Behavioral profile for a user/agent/endpoint."""
+    identifier: str
+    identifier_type: str  # "user", "agent", "endpoint"
+    
+    # Statistical measures
+    total_requests: int
+    violation_count: int
+    violation_rate: float
+    
+    # Temporal patterns
+    active_hours: List[int]  # Typical active hours
+    active_days: List[int]  # Typical active days
+    request_frequency: float  # Requests per hour average
+    
+    # Content patterns
+    typical_text_length: float
+    common_endpoints: List[str]
+    sensitive_content_frequency: float
+    
+    # Risk indicators
+    recent_anomalies: int
+    escalation_count: int
+    last_violation: Optional[datetime]
+    
+    # Adaptive parameters
+    trust_score: float  # 0.0 to 1.0, higher = more trusted
+    learning_rate: float  # How quickly to adapt to new behavior
+    
+    created_at: datetime
+    updated_at: datetime
+
+
+class HistoricalDataManager:
+    """Manages historical decision data for ML training."""
+    
+    def __init__(self, db_path: str = "logs/risk_history.db"):
+        self.db_path = Path(db_path)
+        self.db_path.parent.mkdir(exist_ok=True)
+        self._init_database()
+    
+    def _init_database(self):
+        """Initialize SQLite database for historical data."""
+        with sqlite3.connect(self.db_path) as conn:
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS policy_decisions (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    timestamp TEXT NOT NULL,
+                    request_id TEXT UNIQUE,
+                    user_id TEXT,
+                    agent_id TEXT,
+                    endpoint TEXT,
+                    direction TEXT,
+                    text_hash TEXT,
+                    text_length INTEGER,
+                    decision TEXT,
+                    rule_ids TEXT,
+                    confidence REAL,
+                    processing_time REAL,
+                    risk_score REAL,
+                    features_json TEXT,
+                    created_at TEXT DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+            
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS behavior_profiles (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    identifier TEXT UNIQUE,
+                    identifier_type TEXT,
+                    profile_json TEXT,
+                    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+            
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS risk_assessments (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    request_id TEXT,
+                    risk_score REAL,
+                    risk_level TEXT,
+                    behavior_pattern TEXT,
+                    confidence REAL,
+                    assessment_json TEXT,
+                    created_at TEXT DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+            
+            # Create indexes for performance
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_timestamp ON policy_decisions(timestamp)")
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_user_id ON policy_decisions(user_id)")
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_endpoint ON policy_decisions(endpoint)")
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_decision ON policy_decisions(decision)")
+    
+    def store_decision(self, request: EvaluateRequest, response: EvaluateResponse,
+                      features: RiskFeatures, risk_score: float, processing_time: float):
+        """Store policy decision for ML training."""
+        text_hash = hashlib.sha256(request.text.encode()).hexdigest()[:16]
+        
+        with sqlite3.connect(self.db_path) as conn:
+            conn.execute("""
+                INSERT OR REPLACE INTO policy_decisions 
+                (timestamp, request_id, user_id, agent_id, endpoint, direction,
+                 text_hash, text_length, decision, rule_ids, confidence,
+                 processing_time, risk_score, features_json)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """, (
+                datetime.now().isoformat(),
+                getattr(request, 'request_id', None),
+                getattr(request, 'user_id', None),
+                getattr(request, 'agent_id', None),
+                request.endpoint,
+                request.direction,
+                text_hash,
+                len(request.text),
+                response.action,
+                json.dumps(response.rule_ids),
+                getattr(response, 'confidence', 0.0),
+                processing_time,
+                risk_score,
+                json.dumps(asdict(features))
+            ))
+    
+    def get_historical_data(self, days: int = 30) -> List[Dict[str, Any]]:
+        """Get historical decision data for ML training."""
+        since = datetime.now() - timedelta(days=days)
+        
+        with sqlite3.connect(self.db_path) as conn:
+            conn.row_factory = sqlite3.Row
+            cursor = conn.execute("""
+                SELECT * FROM policy_decisions 
+                WHERE timestamp >= ?
+                ORDER BY timestamp DESC
+            """, (since.isoformat(),))
+            
+            return [dict(row) for row in cursor.fetchall()]
+    
+    def get_behavior_profile(self, identifier: str, identifier_type: str) -> Optional[BehaviorProfile]:
+        """Get behavior profile for user/agent/endpoint."""
+        with sqlite3.connect(self.db_path) as conn:
+            cursor = conn.execute("""
+                SELECT profile_json FROM behavior_profiles 
+                WHERE identifier = ? AND identifier_type = ?
+            """, (identifier, identifier_type))
+            
+            row = cursor.fetchone()
+            if row:
+                profile_data = json.loads(row[0])
+                return BehaviorProfile(**profile_data)
+            return None
+    
+    def store_behavior_profile(self, profile: BehaviorProfile):
+        """Store or update behavior profile."""
+        with sqlite3.connect(self.db_path) as conn:
+            conn.execute("""
+                INSERT OR REPLACE INTO behavior_profiles 
+                (identifier, identifier_type, profile_json, updated_at)
+                VALUES (?, ?, ?, ?)
+            """, (
+                profile.identifier,
+                profile.identifier_type,
+                json.dumps(asdict(profile)),
+                datetime.now().isoformat()
+            ))
+    
+    def store_risk_assessment(self, request_id: str, assessment: RiskAssessment):
+        """Store risk assessment result."""
+        with sqlite3.connect(self.db_path) as conn:
+            conn.execute("""
+                INSERT INTO risk_assessments 
+                (request_id, risk_score, risk_level, behavior_pattern, confidence, assessment_json)
+                VALUES (?, ?, ?, ?, ?, ?)
+            """, (
+                request_id,
+                assessment.risk_score,
+                assessment.risk_level.value,
+                assessment.behavior_pattern.value,
+                assessment.confidence,
+                json.dumps(asdict(assessment), default=str)
+            ))
+
+
+class BehaviorAnalyzer:
+    """Analyzes behavioral patterns and maintains profiles."""
+    
+    def __init__(self, data_manager: HistoricalDataManager):
+        self.data_manager = data_manager
+        self.profiles_cache: Dict[str, BehaviorProfile] = {}
+        self.cache_ttl = timedelta(minutes=15)
+        self.last_cache_update = datetime.now()
+    
+    def get_or_create_profile(self, identifier: str, identifier_type: str) -> BehaviorProfile:
+        """Get existing profile or create new one."""
+        cache_key = f"{identifier_type}:{identifier}"
+        
+        # Check cache first
+        if cache_key in self.profiles_cache:
+            if datetime.now() - self.last_cache_update < self.cache_ttl:
+                return self.profiles_cache[cache_key]
+        
+        # Try to load from database
+        profile = self.data_manager.get_behavior_profile(identifier, identifier_type)
+        
+        if profile is None:
+            # Create new profile
+            profile = BehaviorProfile(
+                identifier=identifier,
+                identifier_type=identifier_type,
+                total_requests=0,
+                violation_count=0,
+                violation_rate=0.0,
+                active_hours=[],
+                active_days=[],
+                request_frequency=0.0,
+                typical_text_length=0.0,
+                common_endpoints=[],
+                sensitive_content_frequency=0.0,
+                recent_anomalies=0,
+                escalation_count=0,
+                last_violation=None,
+                trust_score=0.5,  # Start with neutral trust
+                learning_rate=0.1,
+                created_at=datetime.now(),
+                updated_at=datetime.now()
+            )
+        
+        # Update cache
+        self.profiles_cache[cache_key] = profile
+        self.last_cache_update = datetime.now()
+        
+        return profile
+    
+    def update_profile(self, identifier: str, identifier_type: str, 
+                      request: EvaluateRequest, response: EvaluateResponse):
+        """Update behavior profile based on new request/response."""
+        profile = self.get_or_create_profile(identifier, identifier_type)
+        
+        # Update basic statistics
+        profile.total_requests += 1
+        if response.action in ["block", "flag"]:
+            profile.violation_count += 1
+            profile.last_violation = datetime.now()
+        
+        profile.violation_rate = profile.violation_count / profile.total_requests
+        
+        # Update temporal patterns
+        now = datetime.now()
+        hour = now.hour
+        day = now.weekday()
+        
+        if hour not in profile.active_hours:
+            profile.active_hours.append(hour)
+        if day not in profile.active_days:
+            profile.active_days.append(day)
+        
+        # Update content patterns
+        text_len = len(request.text)
+        if profile.typical_text_length == 0:
+            profile.typical_text_length = text_len
+        else:
+            # Exponential moving average
+            profile.typical_text_length = (
+                profile.learning_rate * text_len + 
+                (1 - profile.learning_rate) * profile.typical_text_length
+            )
+        
+        # Update endpoint usage
+        if request.endpoint not in profile.common_endpoints:
+            profile.common_endpoints.append(request.endpoint)
+            # Keep only top 10 endpoints
+            if len(profile.common_endpoints) > 10:
+                profile.common_endpoints = profile.common_endpoints[-10:]
+        
+        # Update trust score based on recent behavior
+        if response.action == "allow":
+            profile.trust_score = min(1.0, profile.trust_score + 0.01)
+        elif response.action == "block":
+            profile.trust_score = max(0.0, profile.trust_score - 0.05)
+        elif response.action == "flag":
+            profile.trust_score = max(0.0, profile.trust_score - 0.02)
+        
+        profile.updated_at = datetime.now()
+        
+        # Store updated profile
+        self.data_manager.store_behavior_profile(profile)
+        
+        # Update cache
+        cache_key = f"{identifier_type}:{identifier}"
+        self.profiles_cache[cache_key] = profile
+    
+    def detect_anomalies(self, identifier: str, identifier_type: str, 
+                        request: EvaluateRequest) -> List[str]:
+        """Detect behavioral anomalies in the current request."""
+        profile = self.get_or_create_profile(identifier, identifier_type)
+        anomalies = []
+        
+        if profile.total_requests < 10:
+            return anomalies  # Not enough data for anomaly detection
+        
+        # Time-based anomalies
+        now = datetime.now()
+        if now.hour not in profile.active_hours:
+            anomalies.append("unusual_time_access")
+        
+        if now.weekday() not in profile.active_days:
+            anomalies.append("unusual_day_access")
+        
+        # Content anomalies
+        text_len = len(request.text)
+        if abs(text_len - profile.typical_text_length) > profile.typical_text_length * 2:
+            anomalies.append("unusual_content_length")
+        
+        # Endpoint anomalies
+        if request.endpoint not in profile.common_endpoints:
+            anomalies.append("unusual_endpoint")
+        
+        # Frequency anomalies
+        recent_requests = self._get_recent_request_count(identifier, identifier_type)
+        if recent_requests > profile.request_frequency * 3:
+            anomalies.append("request_frequency_spike")
+        
+        return anomalies
+    
+    def _get_recent_request_count(self, identifier: str, identifier_type: str) -> int:
+        """Count recent requests from this identifier."""
+        # This would query the historical data for recent activity
+        # Simplified implementation for now
+        return 1
+
+
+class RiskScoringEngine:
+    """Main risk scoring engine with ML-powered assessment."""
+    
+    def __init__(self, data_manager: Optional[HistoricalDataManager] = None):
+        self.data_manager = data_manager or HistoricalDataManager()
+        self.behavior_analyzer = BehaviorAnalyzer(self.data_manager)
+        self.ml_model = None
+        self.scaler = None
+        self.anomaly_detector = None
+        self.last_model_update = None
+        self.model_update_interval = timedelta(hours=6)
+        
+        # Initialize ML components if available
+        if ML_AVAILABLE:
+            self._initialize_ml_models()
+    
+    def _initialize_ml_models(self):
+        """Initialize ML models for risk scoring."""
+        try:
+            # Classification model for risk level prediction
+            self.ml_model = RandomForestClassifier(
+                n_estimators=100,
+                max_depth=10,
+                random_state=42
+            )
+            
+            # Scaler for feature normalization
+            self.scaler = StandardScaler()
+            
+            # Anomaly detection model
+            self.anomaly_detector = IsolationForest(
+                contamination=0.1,
+                random_state=42
+            )
+            
+            # Try to train models with existing data
+            self._update_ml_models()
+            
+        except Exception as e:
+            logger.warning(f"ML model initialization failed: {e}")
+            self.ml_model = None
+    
+    def _update_ml_models(self):
+        """Update ML models with recent historical data."""
+        if not ML_AVAILABLE or self.ml_model is None:
+            return
+        
+        try:
+            # Get training data
+            historical_data = self.data_manager.get_historical_data(days=30)
+            
+            if len(historical_data) < 100:
+                logger.info("Insufficient data for ML model training")
+                return
+            
+            # Prepare features and labels
+            features = []
+            labels = []
+            
+            for record in historical_data:
+                if record['features_json']:
+                    feature_dict = json.loads(record['features_json'])
+                    risk_features = RiskFeatures(**feature_dict)
+                    features.append(risk_features.to_array())
+                    
+                    # Create risk level label from decision
+                    if record['decision'] == 'block':
+                        labels.append(4)  # Very high risk
+                    elif record['decision'] == 'flag':
+                        labels.append(2)  # Medium risk
+                    else:
+                        labels.append(1)  # Low risk
+            
+            if len(features) < 50:
+                return
+            
+            X = np.array(features)
+            y = np.array(labels)
+            
+            # Scale features
+            X_scaled = self.scaler.fit_transform(X)
+            
+            # Train classification model
+            X_train, X_test, y_train, y_test = train_test_split(
+                X_scaled, y, test_size=0.2, random_state=42
+            )
+            
+            self.ml_model.fit(X_train, y_train)
+            
+            # Train anomaly detector
+            self.anomaly_detector.fit(X_scaled)
+            
+            # Evaluate model
+            y_pred = self.ml_model.predict(X_test)
+            accuracy = np.mean(y_pred == y_test)
+            
+            logger.info(f"ML model updated - Accuracy: {accuracy:.3f}")
+            self.last_model_update = datetime.now()
+            
+        except Exception as e:
+            logger.error(f"ML model update failed: {e}")
+    
+    def extract_features(self, request: EvaluateRequest) -> RiskFeatures:
+        """Extract risk features from evaluation request."""
+        now = datetime.now()
+        
+        # Get behavior profiles
+        user_profile = None
+        endpoint_profile = None
+        
+        if hasattr(request, 'user_id') and request.user_id:
+            user_profile = self.behavior_analyzer.get_or_create_profile(
+                request.user_id, "user"
+            )
+        
+        if request.endpoint:
+            endpoint_profile = self.behavior_analyzer.get_or_create_profile(
+                request.endpoint, "endpoint"
+            )
+        
+        # Calculate features
+        text_length = len(request.text)
+        endpoint_frequency = endpoint_profile.request_frequency if endpoint_profile else 0.0
+        user_violation_rate = user_profile.violation_rate if user_profile else 0.0
+        endpoint_violation_rate = endpoint_profile.violation_rate if endpoint_profile else 0.0
+        
+        # Content analysis
+        sensitive_keywords = self._count_sensitive_keywords(request.text)
+        data_entropy = self._calculate_entropy(request.text)
+        
+        # Time-based features
+        off_hours = now.hour < 6 or now.hour > 22
+        
+        # System context (simplified)
+        current_load = 0.5  # Would be actual system load
+        error_rate = 0.0    # Would be actual error rate
+        
+        return RiskFeatures(
+            text_length=text_length,
+            endpoint_frequency=endpoint_frequency,
+            time_of_day=now.hour,
+            day_of_week=now.weekday(),
+            user_violation_rate=user_violation_rate,
+            endpoint_violation_rate=endpoint_violation_rate,
+            recent_violations=0,  # Would query recent violations
+            sensitive_keywords=sensitive_keywords,
+            data_entropy=data_entropy,
+            pattern_matches=0,  # Would run pattern matching
+            request_volume_spike=False,  # Would detect volume spikes
+            off_hours_access=off_hours,
+            geographic_anomaly=False,  # Would check geographic patterns
+            current_load=current_load,
+            error_rate=error_rate
+        )
+    
+    def assess_risk(self, request: EvaluateRequest, 
+                   base_response: EvaluateResponse) -> RiskAssessment:
+        """Perform comprehensive risk assessment."""
+        
+        # Extract features
+        features = self.extract_features(request)
+        
+        # Calculate base risk score
+        base_risk = self._calculate_base_risk(features, base_response)
+        
+        # Apply ML enhancement if available
+        ml_risk = base_risk
+        confidence = 0.7
+        
+        if self.ml_model is not None and self.scaler is not None:
+            try:
+                # Get ML prediction
+                X = features.to_array().reshape(1, -1)
+                X_scaled = self.scaler.transform(X)
+                
+                risk_level_pred = self.ml_model.predict(X_scaled)[0]
+                risk_proba = self.ml_model.predict_proba(X_scaled)[0]
+                
+                # Convert to risk score
+                ml_risk = risk_level_pred / 4.0  # Normalize to 0-1
+                confidence = max(risk_proba)
+                
+                # Blend base and ML risk scores
+                ml_risk = 0.6 * ml_risk + 0.4 * base_risk
+                
+            except Exception as e:
+                logger.warning(f"ML risk assessment failed: {e}")
+        
+        # Detect anomalies
+        anomaly_indicators = []
+        if hasattr(request, 'user_id') and request.user_id:
+            anomaly_indicators.extend(
+                self.behavior_analyzer.detect_anomalies(
+                    request.user_id, "user", request
+                )
+            )
+        
+        # Apply anomaly adjustments
+        if anomaly_indicators:
+            ml_risk = min(1.0, ml_risk + 0.1 * len(anomaly_indicators))
+        
+        # Determine risk level and pattern
+        risk_level = self._determine_risk_level(ml_risk)
+        behavior_pattern = self._determine_behavior_pattern(
+            ml_risk, anomaly_indicators
+        )
+        
+        # Calculate adaptive threshold
+        adaptive_threshold = self._calculate_adaptive_threshold(
+            request, features, ml_risk
+        )
+        
+        # Generate contributing factors
+        contributing_factors = self._identify_contributing_factors(
+            features, base_response, anomaly_indicators
+        )
+        
+        # Recommend action
+        recommended_action = self._recommend_action(
+            risk_level, behavior_pattern, base_response.action
+        )
+        
+        return RiskAssessment(
+            risk_score=ml_risk,
+            risk_level=risk_level,
+            behavior_pattern=behavior_pattern,
+            confidence=confidence,
+            contributing_factors=contributing_factors,
+            anomaly_indicators=anomaly_indicators,
+            recommended_action=recommended_action,
+            adaptive_threshold=adaptive_threshold,
+            timestamp=datetime.now()
+        )
+    
+    def _calculate_base_risk(self, features: RiskFeatures, 
+                           response: EvaluateResponse) -> float:
+        """Calculate base risk score using heuristics."""
+        risk = 0.0
+        
+        # Decision-based risk
+        if response.action == "block":
+            risk += 0.8
+        elif response.action == "flag":
+            risk += 0.4
+        
+        # Historical pattern risk
+        risk += features.user_violation_rate * 0.3
+        risk += features.endpoint_violation_rate * 0.2
+        
+        # Content risk indicators
+        if features.sensitive_keywords > 0:
+            risk += min(0.3, features.sensitive_keywords * 0.1)
+        
+        if features.data_entropy > 0.8:  # High entropy suggests random/encoded data
+            risk += 0.2
+        
+        # Temporal risk
+        if features.off_hours_access:
+            risk += 0.1
+        
+        # System state risk
+        if features.current_load > 0.8:
+            risk += 0.1
+        
+        return min(1.0, risk)
+    
+    def _determine_risk_level(self, risk_score: float) -> RiskLevel:
+        """Convert numeric risk score to risk level."""
+        if risk_score >= 0.9:
+            return RiskLevel.CRITICAL
+        elif risk_score >= 0.7:
+            return RiskLevel.VERY_HIGH
+        elif risk_score >= 0.5:
+            return RiskLevel.HIGH
+        elif risk_score >= 0.3:
+            return RiskLevel.MEDIUM
+        elif risk_score >= 0.1:
+            return RiskLevel.LOW
+        else:
+            return RiskLevel.VERY_LOW
+    
+    def _determine_behavior_pattern(self, risk_score: float, 
+                                  anomalies: List[str]) -> BehaviorPattern:
+        """Determine behavioral pattern classification."""
+        if len(anomalies) >= 3:
+            return BehaviorPattern.MALICIOUS
+        elif len(anomalies) >= 2:
+            return BehaviorPattern.ANOMALOUS
+        elif risk_score > 0.6 or anomalies:
+            return BehaviorPattern.SUSPICIOUS
+        else:
+            return BehaviorPattern.NORMAL
+    
+    def _calculate_adaptive_threshold(self, request: EvaluateRequest,
+                                    features: RiskFeatures, 
+                                    risk_score: float) -> float:
+        """Calculate adaptive threshold based on context."""
+        base_threshold = 0.5
+        
+        # Adjust based on user trust
+        if hasattr(request, 'user_id') and request.user_id:
+            user_profile = self.behavior_analyzer.get_or_create_profile(
+                request.user_id, "user"
+            )
+            # Higher trust = lower threshold (more permissive)
+            base_threshold -= (user_profile.trust_score - 0.5) * 0.2
+        
+        # Adjust based on endpoint risk
+        if request.endpoint:
+            endpoint_profile = self.behavior_analyzer.get_or_create_profile(
+                request.endpoint, "endpoint"
+            )
+            # Higher violation rate = higher threshold (more restrictive)
+            base_threshold += endpoint_profile.violation_rate * 0.3
+        
+        # Time-based adjustments
+        if features.off_hours_access:
+            base_threshold -= 0.1  # More restrictive during off hours
+        
+        return max(0.1, min(0.9, base_threshold))
+    
+    def _identify_contributing_factors(self, features: RiskFeatures,
+                                     response: EvaluateResponse,
+                                     anomalies: List[str]) -> List[str]:
+        """Identify factors contributing to risk score."""
+        factors = []
+        
+        if response.action in ["block", "flag"]:
+            factors.append(f"Policy violation: {response.action}")
+        
+        if features.user_violation_rate > 0.1:
+            factors.append("High user violation history")
+        
+        if features.endpoint_violation_rate > 0.1:
+            factors.append("High endpoint violation history")
+        
+        if features.sensitive_keywords > 0:
+            factors.append("Sensitive keywords detected")
+        
+        if features.off_hours_access:
+            factors.append("Off-hours access")
+        
+        if anomalies:
+            factors.extend([f"Anomaly: {a}" for a in anomalies])
+        
+        return factors
+    
+    def _recommend_action(self, risk_level: RiskLevel, 
+                         behavior_pattern: BehaviorPattern,
+                         current_decision: str) -> str:
+        """Recommend action based on risk assessment."""
+        if risk_level in [RiskLevel.CRITICAL, RiskLevel.VERY_HIGH]:
+            return "escalate_security_review"
+        elif risk_level == RiskLevel.HIGH:
+            return "enhanced_monitoring"
+        elif behavior_pattern == BehaviorPattern.ANOMALOUS:
+            return "behavioral_analysis"
+        elif risk_level == RiskLevel.MEDIUM:
+            return "standard_monitoring"
+        else:
+            return "normal_processing"
+    
+    def _count_sensitive_keywords(self, text: str) -> int:
+        """Count sensitive keywords in text."""
+        sensitive_terms = [
+            'password', 'secret', 'token', 'key', 'confidential',
+            'ssn', 'social security', 'credit card', 'bank account',
+            'medical', 'health', 'personal', 'private'
+        ]
+        
+        text_lower = text.lower()
+        return sum(1 for term in sensitive_terms if term in text_lower)
+    
+    def _calculate_entropy(self, text: str) -> float:
+        """Calculate information entropy of text."""
+        if not text:
+            return 0.0
+        
+        # Calculate character frequency
+        char_counts = defaultdict(int)
+        for char in text:
+            char_counts[char] += 1
+        
+        # Calculate entropy
+        entropy = 0.0
+        text_len = len(text)
+        
+        for count in char_counts.values():
+            probability = count / text_len
+            if probability > 0:
+                entropy -= probability * np.log2(probability)
+        
+        # Normalize to 0-1 range
+        max_entropy = np.log2(len(char_counts)) if char_counts else 1
+        return entropy / max_entropy if max_entropy > 0 else 0.0
+    
+    def update_models_if_needed(self):
+        """Update ML models if enough time has passed."""
+        if (self.last_model_update is None or 
+            datetime.now() - self.last_model_update > self.model_update_interval):
+            self._update_ml_models()
+    
+    def post_process_decision(self, request: EvaluateRequest, 
+                            response: EvaluateResponse,
+                            processing_time: float) -> RiskAssessment:
+        """Post-process decision with risk assessment and learning."""
+        
+        # Extract features and assess risk
+        features = self.extract_features(request)
+        assessment = self.assess_risk(request, response)
+        
+        # Store decision for learning
+        self.data_manager.store_decision(
+            request, response, features, assessment.risk_score, processing_time
+        )
+        
+        # Update behavior profiles
+        if hasattr(request, 'user_id') and request.user_id:
+            self.behavior_analyzer.update_profile(
+                request.user_id, "user", request, response
+            )
+        
+        if hasattr(request, 'agent_id') and request.agent_id:
+            self.behavior_analyzer.update_profile(
+                request.agent_id, "agent", request, response
+            )
+        
+        if request.endpoint:
+            self.behavior_analyzer.update_profile(
+                request.endpoint, "endpoint", request, response
+            )
+        
+        # Store risk assessment
+        request_id = getattr(request, 'request_id', f"req_{int(datetime.now().timestamp())}")
+        self.data_manager.store_risk_assessment(request_id, assessment)
+        
+        # Update ML models periodically
+        self.update_models_if_needed()
+        
+        return assessment
+
+
+# Global instance
+_risk_engine: Optional[RiskScoringEngine] = None
+
+
+def get_risk_scoring_engine() -> RiskScoringEngine:
+    """Get global risk scoring engine instance."""
+    global _risk_engine
+    if _risk_engine is None:
+        _risk_engine = RiskScoringEngine()
+    return _risk_engine
+
+
+def initialize_risk_scoring(db_path: Optional[str] = None) -> RiskScoringEngine:
+    """Initialize risk scoring engine with custom configuration."""
+    global _risk_engine
+    data_manager = HistoricalDataManager(db_path) if db_path else None
+    _risk_engine = RiskScoringEngine(data_manager)
+    return _risk_engine
+
+
+def assess_request_risk(request: EvaluateRequest, 
+                       response: EvaluateResponse,
+                       processing_time: float = 0.0) -> RiskAssessment:
+    """Convenience function for risk assessment."""
+    engine = get_risk_scoring_engine()
+    return engine.post_process_decision(request, response, processing_time)

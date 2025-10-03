@@ -1,0 +1,260 @@
+# Default values for Jimini Policy Gateway
+# This is a YAML-formatted file.
+
+# Global settings
+global:
+  imageRegistry: ""
+  imagePullSecrets: []
+
+# Application configuration
+replicaCount: 3
+
+image:
+  repository: ghcr.io/jimini-ai/jimini
+  pullPolicy: IfNotPresent
+  tag: "0.2.0"
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+# Service account
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+# Pod security context
+podSecurityContext:
+  fsGroup: 1000
+  runAsNonRoot: true
+  runAsUser: 1000
+
+# Container security context  
+securityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+    - ALL
+  readOnlyRootFilesystem: true
+  runAsNonRoot: true
+  runAsUser: 1000
+
+# Service configuration
+service:
+  type: ClusterIP
+  port: 9000
+  targetPort: 9000
+  annotations: {}
+
+# Ingress configuration
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+    # kubernetes.io/ingress.class: nginx
+    # kubernetes.io/tls-acme: "true"
+    # cert-manager.io/cluster-issuer: letsencrypt-prod
+  hosts:
+    - host: jimini.local
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+  #  - secretName: jimini-tls
+  #    hosts:
+  #      - jimini.local
+
+# Resource limits and requests
+resources:
+  limits:
+    cpu: 2000m
+    memory: 4Gi
+  requests:
+    cpu: 500m
+    memory: 1Gi
+
+# Horizontal Pod Autoscaler
+autoscaling:
+  enabled: true
+  minReplicas: 3
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 70
+  targetMemoryUtilizationPercentage: 80
+
+# Node selection
+nodeSelector: {}
+
+# Pod tolerations
+tolerations: []
+
+# Pod affinity
+affinity:
+  podAntiAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+    - weight: 100
+      podAffinityTerm:
+        labelSelector:
+          matchExpressions:
+          - key: app.kubernetes.io/name
+            operator: In
+            values:
+            - jimini
+        topologyKey: kubernetes.io/hostname
+
+# Jimini application configuration
+config:
+  # API configuration
+  api:
+    host: "0.0.0.0"
+    port: 9000
+    workers: 4
+    
+  # Authentication
+  auth:
+    apiKey: "changeme"  # Override with secret
+    jwtSecret: ""       # Override with secret
+    
+  # LLM configuration  
+  llm:
+    provider: "openai"
+    model: "gpt-4o-mini"
+    timeout: 30
+    
+  # Audit configuration
+  audit:
+    enabled: true
+    logPath: "/app/logs/audit.jsonl"
+    chainValidation: true
+    
+  # Privacy settings
+  privacy:
+    redactionLevel: "partial"
+    retentionDays: 90
+    
+  # Monitoring
+  monitoring:
+    prometheus:
+      enabled: true
+      path: "/v1/metrics"
+    otel:
+      enabled: true
+      endpoint: "http://jaeger:14268/api/traces"
+      
+  # SIEM forwarding
+  siem:
+    splunk:
+      enabled: false
+      endpoint: ""
+      token: ""
+    elastic:
+      enabled: false
+      endpoint: ""
+      apiKey: ""
+
+# Persistent storage
+persistence:
+  enabled: true
+  storageClass: ""
+  accessMode: ReadWriteOnce
+  size: 10Gi
+  annotations: {}
+
+# ConfigMap and Secret management
+configMap:
+  create: true
+  data: {}
+
+secrets:
+  create: true
+  data: {}
+
+# Health checks
+healthChecks:
+  readiness:
+    enabled: true
+    path: /health
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 3
+    
+  liveness:
+    enabled: true  
+    path: /health
+    initialDelaySeconds: 60
+    periodSeconds: 30
+    timeoutSeconds: 10
+    failureThreshold: 3
+
+# Network policies
+networkPolicy:
+  enabled: false
+  ingress: []
+  egress: []
+
+# Pod Disruption Budget
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 2
+  # maxUnavailable: 1
+
+# ServiceMonitor for Prometheus Operator
+serviceMonitor:
+  enabled: false
+  namespace: ""
+  interval: 30s
+  scrapeTimeout: 10s
+  labels: {}
+  annotations: {}
+
+# Grafana dashboards
+grafanaDashboard:
+  enabled: false
+  namespace: ""
+  labels: {}
+
+# Extra environment variables
+extraEnvs: []
+  # - name: CUSTOM_ENV
+  #   value: "custom-value"
+
+# Extra volumes
+extraVolumes: []
+  # - name: custom-volume
+  #   configMap:
+  #     name: custom-config
+
+# Extra volume mounts
+extraVolumeMounts: []
+  # - name: custom-volume
+  #   mountPath: /custom/path
+
+# Init containers
+initContainers: []
+
+# Sidecar containers
+sidecars: []
+
+# Pod annotations
+podAnnotations: {}
+
+# Pod labels
+podLabels: {}
+
+# Deployment annotations
+deploymentAnnotations: {}
+
+# Migration job (for database migrations, etc.)
+migration:
+  enabled: false
+  image:
+    repository: ghcr.io/jimini-ai/jimini
+    tag: "0.2.0"
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi

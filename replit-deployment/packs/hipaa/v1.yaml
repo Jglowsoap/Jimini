@@ -1,0 +1,7 @@
+rules:
+  - id: HIPAA-PHI-EMAIL
+    title: "HIPAA Email addresses with PHI risk"
+    pattern: "(?i)\\b[A-Za-z0-9._%+\\-]+@[A-Za-z0-9.\\-]+\\.[A-Za-z]{2,}\\b"
+    severity: "warning"
+    action: "flag"
+    tags: ["hipaa","phi","pii"]

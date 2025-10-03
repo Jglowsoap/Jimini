@@ -1,0 +1,35 @@
+[tool]
+name = "Jimini"
+version = "0.1.0"
+description = "A Python project"
+authors = ["Your Name <you@example.com>"]
+license = "MIT"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+pytest = "^7.0"
+
+[tool.poetry.dev-dependencies]
+pytest-cov = "^3.0"
+
+[tool.pytest]
+addopts = "-q --tb=short"
+
+[tool.poetry.scripts]
+start = "app.main:main"
+
+{
+    "python.analysis.typeCheckingMode": "basic",
+    "python.autoComplete.extraPaths": ["./app"],
+    "python.testing.pytestEnabled": true,
+    "python.testing.pytestArgs": ["tests"],
+    "python.testing.unittestEnabled": false
+}
+
+def test_basic():
+    assert True
+

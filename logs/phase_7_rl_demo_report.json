@@ -1,0 +1,273 @@
+{
+  "demo_timestamp": "2025-10-01T23:07:26.043540",
+  "framework_version": "Phase 7 - RL Framework",
+  "demo_results": {
+    "contextual_optimization": {
+      "High-Risk Admin Access": {
+        "original_decision": "block",
+        "rl_recommendation": "allow",
+        "context": {
+          "user_risk_score": 0.9,
+          "endpoint_sensitivity": 1.0,
+          "time_of_day": 0.9583333333333334,
+          "request_volume": 0.005,
+          "historical_violations": 2,
+          "content_entropy": 0.46023510035042525,
+          "semantic_similarity": 0.0,
+          "threat_intelligence_score": 0.0
+        },
+        "confidence": 0.5,
+        "shadow_mode": true
+      },
+      "Normal API Usage": {
+        "original_decision": "allow",
+        "rl_recommendation": "block",
+        "context": {
+          "user_risk_score": 0.2,
+          "endpoint_sensitivity": 0.3,
+          "time_of_day": 0.9583333333333334,
+          "request_volume": 0.15,
+          "historical_violations": 0,
+          "content_entropy": 0.4850224903344672,
+          "semantic_similarity": 0.0,
+          "threat_intelligence_score": 0.0
+        },
+        "confidence": 0.5,
+        "shadow_mode": true
+      },
+      "Suspicious Data Access": {
+        "original_decision": "block",
+        "rl_recommendation": "allow",
+        "context": {
+          "user_risk_score": 0.7,
+          "endpoint_sensitivity": 0.3,
+          "time_of_day": 0.9583333333333334,
+          "request_volume": 0.001,
+          "historical_violations": 2,
+          "content_entropy": 0.49035359215489593,
+          "semantic_similarity": 0.0,
+          "threat_intelligence_score": 0.0
+        },
+        "confidence": 0.5,
+        "shadow_mode": true
+      }
+    },
+    "thompson_sampling": {
+      "total_trials": 5,
+      "action_distribution": [
+        0.0,
+        2.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "reward_history": [
+        -0.5,
+        0.5,
+        0.5,
+        0.0,
+        -1.5
+      ],
+      "action_history": [
+        "escalate",
+        "flag",
+        "block",
+        "shadow_test",
+        "flag"
+      ]
+    },
+    "adaptive_learning": {
+      "time_periods": [
+        {
+          "period": "Early Morning (2-6 AM)",
+          "requests": 20,
+          "accuracy": 0.35,
+          "average_confidence": 0.5474999999999999,
+          "correct_decisions": 7
+        },
+        {
+          "period": "Business Hours (9 AM-5 PM)",
+          "requests": 100,
+          "accuracy": 0.55,
+          "average_confidence": 0.7886592718912759,
+          "correct_decisions": 55
+        },
+        {
+          "period": "Evening (6-10 PM)",
+          "requests": 60,
+          "accuracy": 0.48333333333333334,
+          "average_confidence": 0.7588940349485083,
+          "correct_decisions": 29
+        },
+        {
+          "period": "Late Night (11 PM-1 AM)",
+          "requests": 10,
+          "accuracy": 0.5,
+          "average_confidence": 0.7906541362297956,
+          "correct_decisions": 5
+        }
+      ],
+      "final_metrics": {
+        "total_trials": 190,
+        "action_distribution": [
+          102.0,
+          17.0,
+          23.0,
+          23.0,
+          25.0
+        ],
+        "average_rewards": [
+          0.4019607843137255,
+          -0.5,
+          -0.6260869565217393,
+          -0.5,
+          -0.5
+        ],
+        "exploration_strategy": "thompson_sampling",
+        "shadow_mode": true,
+        "active_experiments": 0,
+        "confidence_level": 0.6
+      }
+    },
+    "shadow_mode_safety": {
+      "scenarios": [
+        {
+          "scenario": "Potential SQL Injection",
+          "shadow_mode": {
+            "original_decision": "block",
+            "rl_recommendation": "block",
+            "context": {
+              "user_risk_score": 0.9,
+              "endpoint_sensitivity": 0.3,
+              "time_of_day": 0.9583333333333334,
+              "request_volume": 0.001,
+              "historical_violations": 1,
+              "content_entropy": 0.4893582879853876,
+              "semantic_similarity": 0.0,
+              "threat_intelligence_score": 0.0
+            },
+            "confidence": 0.7629962732304372,
+            "shadow_mode": true
+          },
+          "production_mode": {
+            "decision": "allow",
+            "rl_optimized": true,
+            "context": {
+              "user_risk_score": 0.9,
+              "endpoint_sensitivity": 0.3,
+              "time_of_day": 0.9583333333333334,
+              "request_volume": 0.001,
+              "historical_violations": 1,
+              "content_entropy": 0.4893582879853876,
+              "semantic_similarity": 0.0,
+              "threat_intelligence_score": 0.0
+            },
+            "confidence": 0.7629962732304372,
+            "shadow_mode": false
+          },
+          "safety_preserved": true
+        },
+        {
+          "scenario": "Admin Panel Access Attempt",
+          "shadow_mode": {
+            "original_decision": "block",
+            "rl_recommendation": "allow",
+            "context": {
+              "user_risk_score": 0.8,
+              "endpoint_sensitivity": 1.0,
+              "time_of_day": 0.9583333333333334,
+              "request_volume": 0.001,
+              "historical_violations": 1,
+              "content_entropy": 0.5066886068497098,
+              "semantic_similarity": 0.0,
+              "threat_intelligence_score": 0.0
+            },
+            "confidence": 0.822160111071977,
+            "shadow_mode": true
+          },
+          "production_mode": {
+            "decision": "allow",
+            "rl_optimized": true,
+            "context": {
+              "user_risk_score": 0.8,
+              "endpoint_sensitivity": 1.0,
+              "time_of_day": 0.9583333333333334,
+              "request_volume": 0.001,
+              "historical_violations": 1,
+              "content_entropy": 0.5066886068497098,
+              "semantic_similarity": 0.0,
+              "threat_intelligence_score": 0.0
+            },
+            "confidence": 0.822160111071977,
+            "shadow_mode": false
+          },
+          "safety_preserved": true
+        },
+        {
+          "scenario": "Bulk Data Export",
+          "shadow_mode": {
+            "original_decision": "flag",
+            "rl_recommendation": "allow",
+            "context": {
+              "user_risk_score": 0.6,
+              "endpoint_sensitivity": 0.3,
+              "time_of_day": 0.9583333333333334,
+              "request_volume": 0.001,
+              "historical_violations": 1,
+              "content_entropy": 0.4767964928974534,
+              "semantic_similarity": 0.0,
+              "threat_intelligence_score": 0.0
+            },
+            "confidence": 0.7412050576553034,
+            "shadow_mode": true
+          },
+          "production_mode": {
+            "decision": "block",
+            "rl_optimized": true,
+            "context": {
+              "user_risk_score": 0.6,
+              "endpoint_sensitivity": 0.3,
+              "time_of_day": 0.9583333333333334,
+              "request_volume": 0.001,
+              "historical_violations": 1,
+              "content_entropy": 0.4767964928974534,
+              "semantic_similarity": 0.0,
+              "threat_intelligence_score": 0.0
+            },
+            "confidence": 0.7412050576553034,
+            "shadow_mode": false
+          },
+          "safety_preserved": true
+        }
+      ],
+      "safety_preservation_rate": 1.0
+    },
+    "performance_metrics": {
+      "total_trials": 190,
+      "action_distribution": [
+        102.0,
+        17.0,
+        23.0,
+        23.0,
+        25.0
+      ],
+      "average_rewards": [
+        0.4019607843137255,
+        -0.5,
+        -0.6260869565217393,
+        -0.5,
+        -0.5
+      ],
+      "exploration_strategy": "thompson_sampling",
+      "shadow_mode": true,
+      "active_experiments": 0,
+      "confidence_level": 0.6
+    }
+  },
+  "summary": {
+    "total_demos_run": 5,
+    "safety_verified": true,
+    "learning_demonstrated": true,
+    "performance_measured": true
+  }
+}

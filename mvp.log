@@ -1,0 +1,33 @@
+nohup: ignoring input
+INFO:     Started server process [77521]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8001 (Press CTRL+C to quit)
+🚀 Jimini Phase 1 MVP Starting...
+   Rules: policy_rules.yaml
+   Shadow Mode: False
+Loaded 26 rules from policy_rules.yaml
+   ✅ Successfully loaded 26 rules
+      - IL-AI-4.2: PII: Social Security Numbers
+      - EMAIL-1.0: PII: Email Address
+      - PHONE-1.0: PII: Phone Number (US)
+      ... and 23 more
+INFO:     127.0.0.1:44786 - "GET /v2/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44794 - "GET / HTTP/1.1" 200 OK
+[AUDIT] 2025-10-02T15:57:34.459+00:00Z | req_61542ed8bcec | allow | [] | /test
+INFO:     127.0.0.1:44796 - "POST /v1/evaluate HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44806 - "GET /v2/status HTTP/1.1" 200 OK
+[AUDIT] 2025-10-02T16:04:57.604+00:00Z | req_f4fea6fb999e | allow | [] | /test
+INFO:     127.0.0.1:34350 - "POST /v1/evaluate HTTP/1.1" 200 OK
+INFO:     136.226.13.71:0 - "GET / HTTP/1.1" 200 OK
+INFO:     136.226.13.71:0 - "GET /favicon.ico HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:51046 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:41930 - "GET /v2/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49752 - "GET /health HTTP/1.1" 200 OK
+[AUDIT] 2025-10-02T16:14:07.785+00:00Z | req_f811ca6593f3 | allow | [] | /test
+INFO:     127.0.0.1:56226 - "POST /v1/evaluate HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46356 - "GET /health HTTP/1.1" 200 OK
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [77521]

@@ -1,0 +1,55 @@
+services:
+  flask-gateway:
+    build: ./flask
+    depends_on:
+    - jimini-platform
+    environment:
+    - JIMINI_URL=http://jimini-platform:9000
+    - JIMINI_API_KEY=${JIMINI_API_KEY}
+    - FLASK_SECRET_KEY=${FLASK_SECRET_KEY}
+    ports:
+    - 5001:5001
+    restart: unless-stopped
+  jimini-platform:
+    build: .
+    environment:
+    - JIMINI_API_KEY=${JIMINI_API_KEY}
+    - JIMINI_RULES_PATH=packs/government/production_v1.yaml
+    - JIMINI_SHADOW=0
+    - WEBHOOK_URL=${SECURITY_WEBHOOK_URL}
+    - OTEL_EXPORTER_OTLP_ENDPOINT=${OTEL_ENDPOINT}
+    - AUDIT_LOG_PATH=/secure/logs/jimini-audit.jsonl
+    healthcheck:
+      interval: 30s
+      retries: 3
+      test:
+      - CMD
+      - curl
+      - -f
+      - http://localhost:9000/health
+      timeout: 10s
+    ports:
+    - 9000:9000
+    restart: unless-stopped
+    volumes:
+    - ./packs:/app/packs:ro
+    - audit-logs:/secure/logs
+  nginx:
+    depends_on:
+    - flask-gateway
+    image: nginx:alpine
+    ports:
+    - 80:80
+    - 443:443
+    restart: unless-stopped
+    volumes:
+    - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    - ./ssl:/etc/ssl:ro
+version: '3.8'
+volumes:
+  audit-logs:
+    driver: local
+    driver_opts:
+      device: /secure/audit-logs
+      o: bind
+      type: none

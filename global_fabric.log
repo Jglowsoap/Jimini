@@ -1,0 +1,29 @@
+nohup: ignoring input
+INFO:__main__:🌍 Global Trust Fabric Engine initialized - planetary policy intelligence online
+/workspaces/Jimini/phase_5_global_trust_fabric.py:599: DeprecationWarning: 
+        on_event is deprecated, use lifespan event handlers instead.
+
+        Read more about it in the
+        [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
+        
+  @app.on_event("startup")
+INFO:     Started server process [124018]
+INFO:     Waiting for application startup.
+INFO:__main__:🌍 Initializing Global Trust Fabric - planetary policy intelligence starting
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8002 (Press CTRL+C to quit)
+🌍 Starting Jimini Phase 5: Global Trust Fabric
+Planet-scale AI policy intelligence coordination engine
+Compliance frameworks: HIPAA, PCI DSS, GDPR, CJIS, ISO 27001+
+Zero-day defense: <24h global propagation
+Quantum-safe: Future-proofed until 2035+
+
+Service running at http://localhost:8002
+Global fabric status: http://localhost:8002/v5/status
+INFO:     127.0.0.1:59118 - "GET /v5/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42176 - "GET /v5/trust-packs HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42186 - "GET /v5/analytics HTTP/1.1" 200 OK
+INFO:__main__:🛡️ Zero-day defense CVE-2025-CRITICAL-001 propagated to 4 nodes in 0.00s
+INFO:     127.0.0.1:52730 - "POST /v5/zero-day-defense HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57192 - "GET /v5/fabric-nodes HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34450 - "POST /v5/quantum-validate HTTP/1.1" 200 OK

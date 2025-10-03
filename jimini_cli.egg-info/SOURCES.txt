@@ -1,6 +1,8 @@
 README.md
 pyproject.toml
+setup.py
 jimini_cli/__init__.py
+jimini_cli/__main__.py
 jimini_cli/loader.py
 jimini_cli/main.py
 jimini_cli.egg-info/PKG-INFO
@@ -9,4 +11,16 @@ jimini_cli.egg-info/dependency_links.txt
 jimini_cli.egg-info/entry_points.txt
 jimini_cli.egg-info/requires.txt
 jimini_cli.egg-info/top_level.txt
+tests/test_basic.py
+tests/test_cli.py
+tests/test_concurrency.py
 tests/test_enforcement.py
+tests/test_event_schema.py
+tests/test_forwarder_jsonl.py
+tests/test_forwarders.py
+tests/test_hello_world.py
+tests/test_notifier.py
+tests/test_server_integration.py
+tests/test_shadow_overrides.py
+tests/test_telemetry.py
+tests/test_telemetry_counters.py

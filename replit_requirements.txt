@@ -1,0 +1,23 @@
+# Jimini Replit Dashboard Requirements
+# Copy this to your Replit project's requirements.txt
+
+# Core Jimini dependencies (already in your workspace)
+fastapi>=0.104.0
+uvicorn>=0.24.0
+pydantic>=2.4.0
+pyyaml>=6.0.1
+requests>=2.31.0
+
+# GUI Dashboard dependencies
+streamlit>=1.28.0
+plotly>=5.17.0
+pandas>=2.1.0
+
+# Optional: Enhanced monitoring
+watchdog>=3.0.0
+prometheus-client>=0.18.0
+
+# Development dependencies (optional)
+pytest>=7.4.0
+pytest-asyncio>=0.21.0
+ruff>=0.1.0

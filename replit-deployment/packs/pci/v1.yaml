@@ -1,0 +1,7 @@
+rules:
+  - id: PCI-PAN
+    title: "PCI Primary Account Number (simple)"
+    pattern: "\\b(?:\\d[ -]*?){13,16}\\b"
+    severity: "error"
+    action: "block"
+    tags: ["pci","pan"]

@@ -1,0 +1,87 @@
+rules:
+  - id: SSN-PROTECTION-ENTERPRISE
+    title: "Social Security Number Detection"
+    pattern: '\b\d{3}-?\d{2}-?\d{4}\b'
+    action: block
+    severity: critical
+    applies_to: ["*"]
+    endpoints: ["/*"]
+    tags: ["pii", "government", "ssn"]
+    shadow_override: enforce
+    
+  - id: DRIVERS-LICENSE-ENTERPRISE
+    title: "Driver's License Detection"
+    pattern: '[A-Z]\d{7,9}'
+    action: flag
+    severity: high
+    applies_to: ["dmv", "government"] 
+    endpoints: ["/government/*", "/dmv/*"]
+    tags: ["pii", "government", "license"]
+    shadow_override: enforce
+    
+  - id: PHONE-NUMBER-ENTERPRISE
+    title: "Phone Number Detection"
+    pattern: '\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}'
+    action: flag
+    severity: medium
+    applies_to: ["*"]
+    endpoints: ["/*"]
+    tags: ["pii", "contact"]
+    
+  - id: EMAIL-ADDRESS-ENTERPRISE  
+    title: "Email Address Detection"
+    pattern: '[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}'
+    action: flag
+    severity: low
+    applies_to: ["*"]
+    endpoints: ["/*"]
+    tags: ["pii", "contact"]
+    
+  - id: ADDRESS-ENTERPRISE
+    title: "Street Address Detection"
+    pattern: '\d+\s+[A-Za-z\s]+(?:Street|St|Avenue|Ave|Road|Rd|Drive|Dr|Lane|Ln|Boulevard|Blvd)'
+    action: flag
+    severity: medium
+    applies_to: ["*"] 
+    endpoints: ["/*"]
+    tags: ["pii", "address"]
+    
+  - id: CREDIT-CARD-ENTERPRISE
+    title: "Credit Card Number Detection"
+    pattern: '\b(?:\d{4}[-\s]?){3}\d{4}\b'
+    action: block
+    severity: critical
+    applies_to: ["*"]
+    endpoints: ["/*"] 
+    tags: ["pii", "financial"]
+    shadow_override: enforce
+    
+  - id: JWT-TOKEN-ENTERPRISE
+    title: "JWT Token Detection"
+    pattern: '\beyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\b'
+    action: block
+    severity: critical
+    applies_to: ["*"]
+    endpoints: ["/*"]
+    tags: ["secret", "token"]
+    shadow_override: enforce
+    
+  - id: API-KEY-ENTERPRISE
+    title: "API Key Detection"
+    pattern: '(?i)\b(?:api[_-]?key|token|secret)["\s]*[:=]["\s]*[a-zA-Z0-9_-]{20,}'
+    action: block
+    severity: critical
+    applies_to: ["*"]
+    endpoints: ["/*"]
+    tags: ["secret", "api"]
+    shadow_override: enforce
+    
+  - id: GOVERNMENT-ID-ENTERPRISE
+    title: "Government ID Detection"  
+    pattern: '(?i)\b(?:gov|federal|state)[_-]?id[:\s]*[a-zA-Z0-9]{6,}'
+    action: flag
+    severity: high
+    applies_to: ["government"]
+    endpoints: ["/government/*"]
+    tags: ["pii", "government", "id"]
+    shadow_override: enforce

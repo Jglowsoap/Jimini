@@ -1,0 +1,57 @@
+# Jimini Configuration - Phase 4 Hardening
+# Supports dev/staging/prod profiles with environment variable overrides
+
+app:
+  env: dev  # dev, staging, prod
+  shadow_mode: false  # still evaluate, but do not enforce except for overrides
+  shadow_overrides:   # rules that ALWAYS enforce even in shadow
+    - "IL-AI-1.1"
+    - "SECRETS-EXFIL"
+  api_key: changeme  # Override with JIMINI_API_KEY env var
+  host: "0.0.0.0"
+  port: 9000
+  use_pii: false  # Set to true only if PII in outbound payloads is allowed
+
+notifiers:
+  slack:
+    enabled: false  # Auto-enabled if SLACK_WEBHOOK_URL is set
+    webhook_url: null  # Set via SLACK_WEBHOOK_URL env var
+    rate_limit_per_minute: 10
+
+  teams:
+    enabled: false  # Auto-enabled if TEAMS_WEBHOOK_URL is set
+    webhook_url: null  # Set via TEAMS_WEBHOOK_URL env var
+    rate_limit_per_minute: 10
+
+siem:
+  jsonl:
+    enabled: true
+    file_path: "logs/jimini_events.jsonl"
+    rotate_daily: true
+    retention_days: 30
+
+  splunk:
+    enabled: false  # Auto-enabled if SPLUNK_HEC_URL is set
+    hec_url: null  # Set via SPLUNK_HEC_URL env var
+    hec_token: null  # Set via SPLUNK_HEC_TOKEN env var
+    index: "main"
+    verify_tls: true
+
+  elastic:
+    enabled: false  # Auto-enabled if ELASTIC_URL is set
+    url: null  # Set via ELASTIC_URL env var
+    username: null  # Set via ELASTIC_USERNAME env var
+    password: null  # Set via ELASTIC_PASSWORD env var
+    index: "jimini-events"
+    verify_tls: true
+
+otel:
+  enabled: false  # Auto-enabled if OTEL_EXPORTER_OTLP_ENDPOINT is set
+  endpoint: null  # Set via OTEL_EXPORTER_OTLP_ENDPOINT env var
+  service_name: "jimini"
+
+security:
+  rbac_enabled: false
+  admin_roles: ["ADMIN"]
+  reviewer_roles: ["ADMIN", "REVIEWER"] 
+  support_roles: ["ADMIN", "REVIEWER", "SUPPORT"]
