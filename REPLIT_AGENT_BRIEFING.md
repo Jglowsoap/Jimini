@@ -1,4 +1,5 @@
-# 🤖 Replit AI Agent Briefing: Jimini Security Gateway
+# 🤖 Replit AI Age### **Port**: 5000 (FastAPI serves everything)
+- **Entry Point**: Direct `uvicorn app.main:app` (no wrapper needed) Briefing: Jimini Security Gateway
 
 **CRITICAL INSTRUCTIONS FOR REPLIT AI AGENT**
 
@@ -46,18 +47,17 @@ jimini-security-gateway/
 
 ## 🔧 Critical Dependencies
 
-**DO NOT CHANGE THESE VERSIONS:**
+**USE EXISTING requirements.txt (WORKING VERSIONS):**
 ```txt
-fastapi==0.104.1
-uvicorn[standard]==0.24.0
-pydantic==2.5.0
-pyyaml==6.0.1
-python-multipart==0.0.6
-python-jose[cryptography]==3.3.0
-passlib[bcrypt]==1.7.4
-aiofiles==23.2.1
-structlog==23.2.0
-prometheus-client==0.19.0
+fastapi>=0.95.0
+uvicorn>=0.21.1
+pydantic>=2.0.0
+pyyaml>=6.0
+cryptography>=41.0.0
+opentelemetry-api>=1.19.0
+prometheus_client>=0.17.0
+structlog>=23.1.0
+# Plus additional dependencies in requirements.txt
 ```
 
 ## 🌐 Required API Endpoints
@@ -86,26 +86,26 @@ curl -X POST "https://your-repl.repl.co/v1/evaluate" \
 # Expected response
 {
   "decision": "block",
-  "rule_ids": ["SSN-1.0"],
-  "message": "Blocked: Social Security Number detected",
+  "rule_ids": ["IL-AI-4.2"],
+  "message": "Block any full SSN patterns",
   "audit_id": "audit_123456"
 }
 ```
 
 ## 🔒 Environment Variables (Secrets Tab)
 
-**REQUIRED in Replit Secrets:**
+**REQUIRED in Replit Secrets (EXACT NAMES):**
 ```bash
-JIMINI_API_KEY=changeme123
-JIMINI_RULES_PATH=packs/government/v1_fixed.yaml  
-JIMINI_SHADOW=0
+API_KEY=changeme123
+RULES_PATH=policy_rules.yaml
+JIMINI_SHADOW=1
 ```
 
 **Optional:**
 ```bash
 AUDIT_LOG_PATH=logs/audit.jsonl
 WEBHOOK_URL=https://your-alerts.com/jimini
-JWT_SECRET_KEY=your-jwt-secret
+OPENAI_API_KEY=your-key-here
 ```
 
 ## 🚨 CRITICAL MISTAKES TO AVOID
