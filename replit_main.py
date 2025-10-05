@@ -21,8 +21,8 @@ def setup_replit_environment():
     """Configure environment variables for Replit deployment"""
     
     # Core Jimini settings
-    os.environ.setdefault("JIMINI_API_KEY", "replit-jimini-gateway-2025")
-    os.environ.setdefault("JIMINI_RULES_PATH", "packs/government/v1_fixed.yaml")
+    os.environ.setdefault("JIMINI_API_KEY", "replit-secure-api-key-2025")
+    os.environ.setdefault("JIMINI_RULES_PATH", "policy_rules.yaml")
     os.environ.setdefault("JIMINI_SHADOW", "0")  # Enforce mode by default
     
     # Paths and logging
@@ -31,7 +31,7 @@ def setup_replit_environment():
     
     # Replit-specific settings
     os.environ.setdefault("HOST", "0.0.0.0")
-    os.environ.setdefault("PORT", "8000")
+    os.environ.setdefault("PORT", "5000")
     
     # Create required directories
     Path("logs").mkdir(exist_ok=True)
@@ -58,7 +58,7 @@ def start_jimini_gateway():
     
     # Get configuration
     host = os.getenv("HOST", "0.0.0.0")
-    port = int(os.getenv("PORT", 8000))
+    port = int(os.getenv("PORT", 5000))
     
     print(f"🌍 Server will start on: http://{host}:{port}")
     print(f"🔑 API Key: {os.getenv('JIMINI_API_KEY')[:10]}...")
