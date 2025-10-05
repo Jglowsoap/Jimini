@@ -72,8 +72,8 @@ rules:
     shadow_override: "enforce"
 
   - id: "OPENAI-KEY-1.0"
-    title: "Secret: OpenAI API Key"
-    pattern: '\bsk-[A-Za-z0-9]{20,}\b'
+    title: "Secret: OpenAI API Key (all formats)"
+    pattern: '\bsk-(?:proj-|[A-Za-z0-9]{20,}|[A-Za-z0-9]{32,})\b'
     severity: "error"
     action: "block"
     tags: ["secret","openai"]
@@ -116,11 +116,12 @@ rules:
   # ----------------------------
   - id: "API-1.0"
     title: "Security: Generic long alphanumeric sequence"
-    text: "Flag long alphanumeric blobs (specific secret rules will take precedence)"
+    text: "Block long alphanumeric blobs (potential API keys/secrets)"
     pattern: '\b[A-Za-z0-9_\-]{20,}\b'
-    severity: "warning"
-    action: "flag"
+    severity: "error"
+    action: "block"
     tags: ["security","credentials"]
+    shadow_override: "enforce"
 
   # -------------------------
   # Injection indicators
