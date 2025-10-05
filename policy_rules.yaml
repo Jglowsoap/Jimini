@@ -214,7 +214,7 @@ rules:
     severity: "HIGH"
     pattern: '(api_key|api[-_]?token|access[-_]?token)[=:][ "'']*[A-Za-z0-9+/=_\-]{16,}'
     min_count: 1
-    action: "flag"
+    action: "block"
 
   - id: "GITHUB-TOKEN-1.0"
     title: "GitHub Token Detection"
