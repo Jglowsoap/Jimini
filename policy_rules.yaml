@@ -1,5 +1,12 @@
 rules:
-  # -------------------------
+  # -----------------  - id: "DL-1.0"
+    title: "PII: Illinois Driver's License or State ID"
+    text: "Block IL DL (1 letter + 11 digits) or IL ID (11 digits + 1 letter), dashes optional"
+    pattern: '\b[A-Za-z]\d{3}-?\d{4}-?\d{4}\b'
+    severity: "error"
+    action: "block"
+    tags: ["PII","personal_data","drivers_license"]
+    shadow_override: "enforce"
   # PII (general & Illinois)
   # -------------------------
   - id: "IL-AI-4.2"
@@ -235,3 +242,131 @@ rules:
     severity: "MEDIUM"
     llm_prompt: "Does this text contain information that seems made up, incorrect, or hallucinated? Respond with only 'yes' or 'no'."
     action: "flag"
+
+  # ===============================================
+  # MICROSOFT COPILOT SECURITY PROTECTIONS (IL-GOV)
+  # ===============================================
+  
+  - id: "MS-COPILOT-1.0"
+    title: "Microsoft Copilot: Block data sharing prompts"
+    text: "Prevent users from requesting Copilot to store, remember, or share government data"
+    pattern: '(?i)\b(?:copilot|github copilot|microsoft copilot)[^.]{0,50}(?:save|store|remember|share|upload|send|transmit|export|backup|sync|cloud)\b'
+    severity: "error"
+    action: "block"
+    tags: ["copilot","data_exfiltration","microsoft"]
+    shadow_override: "enforce"
+
+  - id: "MS-COPILOT-2.0"
+    title: "Microsoft Copilot: Block telemetry requests"
+    text: "Prevent prompts asking Copilot to analyze usage patterns or generate analytics"
+    pattern: '(?i)\b(?:analyze|generate|create|produce)[^.]{0,30}(?:report|analytics|statistics|metrics|usage|patterns|trends)[^.]{0,30}(?:about|from|of|for)[^.]{0,30}(?:this|my|our|government|department|agency|office)\b'
+    severity: "error" 
+    action: "block"
+    tags: ["copilot","analytics","telemetry"]
+    shadow_override: "enforce"
+
+  - id: "MS-COPILOT-3.0"
+    title: "Microsoft Copilot: Block training data requests"
+    text: "Prevent attempts to use government data to improve AI models"
+    pattern: '(?i)\b(?:use|train|improve|enhance|update|feed|add)[^.]{0,30}(?:this|my|our)[^.]{0,30}(?:data|information|content|code|documents)[^.]{0,30}(?:to|for)[^.]{0,30}(?:training|learning|improvement|enhancement|model|ai)\b'
+    severity: "error"
+    action: "block" 
+    tags: ["copilot","training_data","model_improvement"]
+    shadow_override: "enforce"
+
+  - id: "MS-COPILOT-4.0"
+    title: "Microsoft Copilot: Block code repository scanning"
+    text: "Prevent Copilot from being asked to scan entire repositories or codebases"
+    pattern: '(?i)\b(?:scan|analyze|review|examine|audit|check)[^.]{0,30}(?:entire|whole|all|my|our)[^.]{0,30}(?:repository|repo|codebase|project|files|source code)\b'
+    severity: "error"
+    action: "block"
+    tags: ["copilot","repository_scan","code_analysis"]
+    shadow_override: "enforce"
+
+  - id: "MS-COPILOT-5.0"
+    title: "Microsoft Copilot: Block credential extraction attempts"
+    text: "Prevent attempts to extract or identify credentials from code or config files"
+    pattern: '(?i)\b(?:find|extract|identify|locate|get|show|list)[^.]{0,30}(?:credentials|passwords|keys|tokens|secrets|api keys|config|configuration|env|environment)\b'
+    severity: "error"
+    action: "block"
+    tags: ["copilot","credential_extraction","security"]
+    shadow_override: "enforce"
+
+  - id: "MS-COPILOT-6.0"
+    title: "Microsoft Copilot: Block infrastructure disclosure"
+    text: "Prevent requests for information about government IT infrastructure"
+    pattern: '(?i)\b(?:describe|explain|show|tell me about|what is)[^.]{0,30}(?:our|my|this|the)[^.]{0,30}(?:infrastructure|architecture|network|servers|databases|systems|environment|deployment|setup|configuration)\b'
+    severity: "error"
+    action: "block"
+    tags: ["copilot","infrastructure","disclosure"]
+    shadow_override: "enforce"
+
+  - id: "MS-COPILOT-7.0"
+    title: "Microsoft Copilot: Block PII combination requests"
+    text: "Prevent requests to combine or correlate PII from multiple sources"
+    pattern: '(?i)\b(?:combine|merge|correlate|join|match|link|connect)[^.]{0,50}(?:citizen|resident|employee|person|individual|user)[^.]{0,30}(?:data|information|records|profiles)\b'
+    severity: "error"
+    action: "block"
+    tags: ["copilot","pii_correlation","data_mining"]
+    shadow_override: "enforce"
+
+  - id: "MS-COPILOT-8.0"
+    title: "Microsoft Copilot: Block database query generation"
+    text: "Prevent generation of SQL queries against government databases"
+    pattern: '(?i)\b(?:generate|create|write|build)[^.]{0,30}(?:sql|query|database)[^.]{0,50}(?:select|from|where|join|update|insert|delete)\b'
+    severity: "error"
+    action: "block"
+    tags: ["copilot","sql_generation","database_access"]
+    shadow_override: "enforce"
+
+  - id: "MS-COPILOT-9.0" 
+    title: "Microsoft Copilot: Block citizen data profiling"
+    text: "Prevent attempts to profile or categorize citizens based on data patterns"
+    pattern: '(?i)\b(?:profile|categorize|classify|segment|group|analyze|identify)[^.]{0,30}(?:citizens|residents|people|individuals|users)[^.]{0,30}(?:based on|by|using|from)[^.]{0,30}(?:data|information|patterns|behavior|demographics)\b'
+    severity: "error"
+    action: "block"
+    tags: ["copilot","citizen_profiling","demographics"]
+    shadow_override: "enforce"
+
+  - id: "MS-COPILOT-10.0"
+    title: "Microsoft Copilot: Block compliance bypass attempts"
+    text: "Prevent requests to bypass security controls or compliance measures"
+    pattern: '(?i)\b(?:bypass|circumvent|avoid|skip|ignore|disable|override|turn off)[^.]{0,30}(?:security|compliance|audit|logging|monitoring|controls|restrictions|policies|rules)\b'
+    severity: "error"
+    action: "block"
+    tags: ["copilot","compliance_bypass","security_override"]
+    shadow_override: "enforce"
+
+  - id: "MS-COPILOT-11.0"
+    title: "Microsoft Copilot: Government entity identification"
+    text: "Flag references to specific government entities to ensure proper data handling"
+    pattern: '(?i)\b(?:illinois|state of illinois|il gov|department of|secretary of state|dmv|revenue|healthcare|human services|corrections|transportation|dnr|dcfs|dhs|idor|idot)\b'
+    severity: "warning"
+    action: "flag"
+    tags: ["copilot","government_entity","context"]
+
+  - id: "MS-COPILOT-12.0"
+    title: "Microsoft Copilot: Bulk data export attempts"
+    text: "Block attempts to export large datasets or generate bulk reports"
+    pattern: '(?i)\b(?:export|download|generate|create|extract)[^.]{0,30}(?:all|bulk|entire|complete|full)[^.]{0,30}(?:data|dataset|records|report|file|csv|excel|json|xml)\b'
+    severity: "error"
+    action: "block"
+    tags: ["copilot","bulk_export","data_exfiltration"]
+    shadow_override: "enforce"
+
+  - id: "MS-COPILOT-MICROSOFT-REFS"
+    title: "Microsoft Copilot: Microsoft service integration references"
+    text: "Flag mentions of Microsoft cloud services that could enable data transfer"
+    pattern: '(?i)\b(?:azure|office 365|o365|sharepoint|onedrive|teams|outlook|exchange|power bi|dynamics|microsoft cloud|m365|microsoft 365)\b'
+    severity: "warning"
+    action: "flag"
+    tags: ["copilot","microsoft_services","cloud_integration"]
+
+  - id: "MS-COPILOT-CODE-SUGGESTIONS"
+    title: "Microsoft Copilot: Code suggestions with embedded secrets"
+    text: "Block code suggestions that might contain hardcoded credentials or keys"
+    pattern: '(?i)(?:const|var|let|string|password|key|token|secret)\s*[=:]\s*["\'](?:[A-Za-z0-9+/=_\-]{16,}|[a-f0-9]{32,})["\']'
+    severity: "error"
+    action: "block"
+    tags: ["copilot","code_suggestions","embedded_secrets"]
+    shadow_override: "enforce"

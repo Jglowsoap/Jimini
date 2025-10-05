@@ -1,0 +1,245 @@
+rules:
+  # =================================================================
+  # ILLINOIS GOVERNMENT - MICROSOFT COPILOT SECURITY PACK
+  # =================================================================
+  # 
+  # Purpose: Comprehensive protection against Microsoft Copilot risks
+  #          for Illinois state government systems
+  # 
+  # Deployment: Add to Jimini as gateway between government systems
+  #             and any AI/Copilot integrations
+  # 
+  # Risk Level: CRITICAL - Protects citizen PII and state secrets
+  # =================================================================
+
+  # ---------------------------
+  # DATA EXFILTRATION PROTECTION
+  # ---------------------------
+
+  - id: "IL-COPILOT-EXFIL-1"
+    title: "IL-Copilot: Prevent citizen data upload to Microsoft"
+    text: "Block any attempts to upload or share citizen data with Copilot services"
+    pattern: '(?i)\b(?:upload|send|share|sync|backup|save to cloud|store in|transfer to)[^.]{0,50}(?:copilot|github|microsoft|azure|onedrive|teams)\b'
+    severity: "critical"
+    action: "block"
+    tags: ["illinois","copilot","citizen_data","exfiltration"]
+    applies_to: ["inbound", "outbound"]
+    shadow_override: "enforce"
+
+  - id: "IL-COPILOT-EXFIL-2"
+    title: "IL-Copilot: Block bulk citizen record exports"
+    text: "Prevent mass export of citizen records through AI assistance"
+    pattern: '(?i)\b(?:export|extract|download|generate|create)[^.]{0,30}(?:all|bulk|mass|entire|complete)[^.]{0,30}(?:citizen|resident|driver|taxpayer|beneficiary)[^.]{0,30}(?:records|data|information|profiles|list)\b'
+    severity: "critical"
+    action: "block"
+    tags: ["illinois","copilot","bulk_export","citizen_records"]
+    shadow_override: "enforce"
+
+  - id: "IL-COPILOT-EXFIL-3"
+    title: "IL-Copilot: Prevent database schema disclosure"
+    text: "Block requests for database structure or schema information"
+    pattern: '(?i)\b(?:show|describe|explain|list|get)[^.]{0,30}(?:database|table|schema|structure|columns|fields)[^.]{0,50}(?:for|from|in|of)[^.]{0,30}(?:illinois|state|government|dmv|revenue|benefits)\b'
+    severity: "critical"
+    action: "block"
+    tags: ["illinois","copilot","database_schema","infrastructure"]
+    shadow_override: "enforce"
+
+  # ---------------------------
+  # PII CORRELATION PREVENTION
+  # ---------------------------
+
+  - id: "IL-COPILOT-PII-1"
+    title: "IL-Copilot: Block cross-department PII correlation"
+    text: "Prevent AI from correlating citizen data across multiple state departments"
+    pattern: '(?i)\b(?:correlate|link|match|connect|combine|merge|join)[^.]{0,50}(?:dmv|revenue|healthcare|benefits|corrections|employment)[^.]{0,30}(?:with|to|and)[^.]{0,30}(?:dmv|revenue|healthcare|benefits|corrections|employment)\b'
+    severity: "critical"
+    action: "block"
+    tags: ["illinois","copilot","pii_correlation","cross_department"]
+    shadow_override: "enforce"
+
+  - id: "IL-COPILOT-PII-2"
+    title: "IL-Copilot: Block detailed citizen profiling requests"
+    text: "Prevent creation of detailed citizen profiles using AI analysis"
+    pattern: '(?i)\b(?:create|generate|build|develop)[^.]{0,30}(?:profile|analysis|summary|report)[^.]{0,30}(?:about|for|on)[^.]{0,30}(?:citizen|resident|individual|person)[^.]{0,50}(?:using|based on|from|with)[^.]{0,30}(?:all|multiple|various|different)[^.]{0,30}(?:sources|departments|systems|databases)\b'
+    severity: "critical"
+    action: "block"
+    tags: ["illinois","copilot","citizen_profiling","privacy"]
+    shadow_override: "enforce"
+
+  # ---------------------------
+  # ILLINOIS-SPECIFIC PROTECTIONS
+  # ---------------------------
+
+  - id: "IL-COPILOT-STATE-1"
+    title: "IL-Copilot: Illinois driver's license protection"
+    text: "Enhanced protection for Illinois DL numbers in AI interactions"
+    pattern: '\b(?:[A-Za-z](?:\d{3}-?\d{4}-?\d{4}|\d{11})|(?:\d{4}-?\d{4}-?\d{3}[A-Za-z]|\d{11}[A-Za-z]))\b'
+    severity: "critical"
+    action: "block"
+    tags: ["illinois","copilot","drivers_license","pii"]
+    shadow_override: "enforce"
+
+  - id: "IL-COPILOT-STATE-2"
+    title: "IL-Copilot: Illinois tax ID protection"
+    text: "Block Illinois state tax identification numbers"
+    pattern: '\b(?:IL|illinois)[^.]{0,10}(?:tax|id|identification)[^.]{0,10}(?:number|id)?[:\s]*[A-Z0-9\-]{8,15}\b'
+    severity: "critical"
+    action: "block"
+    tags: ["illinois","copilot","tax_id","pii"]
+    shadow_override: "enforce"
+
+  - id: "IL-COPILOT-STATE-3"
+    title: "IL-Copilot: FOID card number protection"
+    text: "Block Illinois Firearm Owner's Identification card numbers"
+    pattern: '\b(?:foid|firearm|gun)[^.]{0,20}(?:card|id|number)[:\s]*[0-9]{8,10}\b'
+    severity: "critical"
+    action: "block"
+    tags: ["illinois","copilot","foid","sensitive_id"]
+    shadow_override: "enforce"
+
+  - id: "IL-COPILOT-STATE-4"
+    title: "IL-Copilot: Illinois benefits case numbers"
+    text: "Protect SNAP, TANF, and other benefits case numbers"
+    pattern: '\b(?:snap|tanf|medicaid|benefits?)[^.]{0,20}(?:case|id|number)[:\s]*[0-9A-Z\-]{6,12}\b'
+    severity: "critical"
+    action: "block"
+    tags: ["illinois","copilot","benefits","case_numbers"]
+    shadow_override: "enforce"
+
+  # ---------------------------
+  # COPILOT BEHAVIOR CONTROLS
+  # ---------------------------
+
+  - id: "IL-COPILOT-BEHAVIOR-1"
+    title: "IL-Copilot: Block memory/learning requests"
+    text: "Prevent Copilot from being asked to remember or learn from government data"
+    pattern: '(?i)\b(?:remember|memorize|learn|train|improve|update|save|store)[^.]{0,30}(?:this|my|our)[^.]{0,30}(?:conversation|interaction|data|information|preferences|patterns)\b'
+    severity: "critical"
+    action: "block"
+    tags: ["illinois","copilot","memory","training"]
+    shadow_override: "enforce"
+
+  - id: "IL-COPILOT-BEHAVIOR-2"
+    title: "IL-Copilot: Block telemetry sharing requests"
+    text: "Prevent requests to share usage analytics with Microsoft"
+    pattern: '(?i)\b(?:share|send|upload|report)[^.]{0,30}(?:analytics|telemetry|usage|statistics|metrics)[^.]{0,30}(?:with|to)[^.]{0,30}(?:microsoft|copilot|github)\b'
+    severity: "critical"
+    action: "block"
+    tags: ["illinois","copilot","telemetry","analytics"]
+    shadow_override: "enforce"
+
+  - id: "IL-COPILOT-BEHAVIOR-3"
+    title: "IL-Copilot: Block code generation with secrets"
+    text: "Prevent Copilot from generating code that might contain hardcoded credentials"
+    pattern: '(?i)\b(?:generate|create|write|suggest)[^.]{0,30}(?:code|script|function)[^.]{0,50}(?:with|containing|including)[^.]{0,30}(?:password|key|token|secret|credential|api[_\s]?key)\b'
+    severity: "critical"
+    action: "block"
+    tags: ["illinois","copilot","code_generation","secrets"]
+    shadow_override: "enforce"
+
+  # ---------------------------
+  # COMPLIANCE AND AUDIT
+  # ---------------------------
+
+  - id: "IL-COPILOT-AUDIT-1"
+    title: "IL-Copilot: Flag all Copilot interactions"
+    text: "Log all interactions with Microsoft Copilot for audit purposes"
+    pattern: '(?i)\b(?:copilot|github copilot|microsoft copilot|@copilot|hey copilot)\b'
+    severity: "info"
+    action: "flag"
+    tags: ["illinois","copilot","audit","compliance"]
+
+  - id: "IL-COPILOT-AUDIT-2"
+    title: "IL-Copilot: Block compliance bypass attempts"
+    text: "Prevent attempts to circumvent security or compliance controls"
+    pattern: '(?i)\b(?:bypass|circumvent|avoid|ignore|disable|override|skip)[^.]{0,30}(?:security|compliance|audit|monitoring|logging|controls|policy|rules|restrictions)\b'
+    severity: "critical"
+    action: "block"
+    tags: ["illinois","copilot","compliance_bypass","security"]
+    shadow_override: "enforce"
+
+  # ---------------------------
+  # EMERGENCY RESPONSE
+  # ---------------------------
+
+  - id: "IL-COPILOT-EMERGENCY-1"
+    title: "IL-Copilot: Critical data breach indicators"
+    text: "Immediate block for potential data breach scenarios"
+    pattern: '(?i)\b(?:leaked|exposed|breached|compromised|stolen)[^.]{0,30}(?:citizen|government|state|confidential|classified)[^.]{0,30}(?:data|information|records|files)\b'
+    severity: "critical"
+    action: "block"
+    tags: ["illinois","copilot","data_breach","emergency"]
+    shadow_override: "enforce"
+
+  - id: "IL-COPILOT-EMERGENCY-2"
+    title: "IL-Copilot: Unauthorized access attempts"
+    text: "Block attempts to gain unauthorized access through AI assistance"
+    pattern: '(?i)\b(?:hack|crack|break into|gain access|penetrate|exploit)[^.]{0,30}(?:system|database|network|server|application|government|state)\b'
+    severity: "critical"
+    action: "block"
+    tags: ["illinois","copilot","unauthorized_access","security"]
+    shadow_override: "enforce"
+
+  # ---------------------------
+  # MICROSOFT CLOUD INTEGRATION BLOCKS
+  # ---------------------------
+
+  - id: "IL-COPILOT-CLOUD-1"
+    title: "IL-Copilot: Block Microsoft cloud integration"
+    text: "Prevent integration with Microsoft cloud services that could transfer data"
+    pattern: '(?i)\b(?:integrate|connect|sync|link)[^.]{0,30}(?:with|to)[^.]{0,30}(?:azure|office 365|o365|sharepoint|onedrive|teams|power bi|dynamics|microsoft cloud)\b'
+    severity: "critical"
+    action: "block"
+    tags: ["illinois","copilot","cloud_integration","microsoft"]
+    shadow_override: "enforce"
+
+  - id: "IL-COPILOT-CLOUD-2"
+    title: "IL-Copilot: Block automated data synchronization"
+    text: "Prevent automatic data sync with external Microsoft services"
+    pattern: '(?i)\b(?:auto|automatic|scheduled)[^.]{0,20}(?:sync|synchronization|backup|upload|transfer)[^.]{0,30}(?:to|with)[^.]{0,30}(?:cloud|microsoft|copilot|github)\b'
+    severity: "critical"
+    action: "block"
+    tags: ["illinois","copilot","auto_sync","data_transfer"]
+    shadow_override: "enforce"
+
+  # ---------------------------
+  # ADVANCED THREAT PROTECTION
+  # ---------------------------
+
+  - id: "IL-COPILOT-ATP-1"
+    title: "IL-Copilot: Social engineering detection"
+    text: "Block social engineering attempts using AI to extract information"
+    pattern: '(?i)\b(?:pretend|act as|simulate|role[_\s]?play)[^.]{0,30}(?:admin|administrator|manager|supervisor|director|authorized|official)[^.]{0,50}(?:and|to)[^.]{0,30}(?:access|view|show|reveal|disclose)\b'
+    severity: "critical"
+    action: "block"
+    tags: ["illinois","copilot","social_engineering","impersonation"]
+    shadow_override: "enforce"
+
+  - id: "IL-COPILOT-ATP-2"
+    title: "IL-Copilot: Prompt injection detection"
+    text: "Block sophisticated prompt injection attempts"
+    pattern: '(?i)\b(?:ignore|forget|disregard)[^.]{0,30}(?:previous|above|prior|earlier)[^.]{0,30}(?:instructions|prompts|rules|commands|directions)\b'
+    severity: "critical"
+    action: "block"
+    tags: ["illinois","copilot","prompt_injection","security"]
+    shadow_override: "enforce"
+
+  # ---------------------------
+  # MONITORING AND ALERTING
+  # ---------------------------
+
+  - id: "IL-COPILOT-MONITOR-1"
+    title: "IL-Copilot: High-risk keyword monitoring"
+    text: "Enhanced monitoring for high-risk activities"
+    pattern: '(?i)\b(?:classified|confidential|restricted|internal use only|for official use|sensitive|secret)\b'
+    severity: "warning"
+    action: "flag"
+    tags: ["illinois","copilot","classification","monitoring"]
+
+  - id: "IL-COPILOT-MONITOR-2"
+    title: "IL-Copilot: External sharing indicators"
+    text: "Monitor for potential external data sharing"
+    pattern: '(?i)\b(?:send|email|forward|share|publish|post|upload)[^.]{0,30}(?:to|on|with)[^.]{0,30}(?:external|outside|public|internet|web|social|media|third[_\s]?party)\b'
+    severity: "warning"
+    action: "flag"
+    tags: ["illinois","copilot","external_sharing","monitoring"]
