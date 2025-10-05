@@ -1,0 +1,36 @@
+run = "python replit_main.py"
+modules = ["python-3.11", "nodejs-20"]
+
+[nix]
+channel = "stable-23.05"
+
+[deployment]
+run = ["python", "replit_main.py"]
+deploymentTarget = "cloudrun"
+
+[[ports]]
+localPort = 5000
+externalPort = 80
+
+[[ports]]
+localPort = 8080
+externalPort = 8080
+
+[env]
+PYTHONPATH = "$REPL_HOME"
+JIMINI_API_KEY = "replit-secure-api-key-2025"
+JIMINI_RULES_PATH = "policy_rules.yaml"
+JIMINI_SHADOW = "0"
+OPENAI_API_KEY = ""
+AUDIT_LOG_PATH = "logs/audit.jsonl"
+
+[gitHubImport]
+requiredFiles = [".replit", "replit.nix", "replit_main.py"]
+
+[languages]
+
+[languages.python3]
+pattern = "**/*.py"
+
+[languages.python3.languageServer]
+start = "pylsp"
