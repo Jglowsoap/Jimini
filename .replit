@@ -1,28 +1,55 @@
-run = "python replit_main.py"
-modules = ["python-3.11", "nodejs-20"]
+run = "python replit_main.py"run = "python replit_main.py"
 
-[nix]
-channel = "stable-23.05"
+modules = ["python-3.11", "nodejs-20"]modules = ["python-3.11", "nodejs-20"]
 
-[deployment]
-run = ["python", "replit_main.py"]
-deploymentTarget = "cloudrun"
 
-[[ports]]
-localPort = 5000
-externalPort = 80
 
-[[ports]]
-localPort = 8080
-externalPort = 8080
+[nix][nix]
 
-[env]
-PYTHONPATH = "$REPL_HOME"
-JIMINI_API_KEY = "replit-secure-api-key-2025"
-JIMINI_RULES_PATH = "policy_rules.yaml"
-JIMINI_SHADOW = "0"
-OPENAI_API_KEY = ""
-AUDIT_LOG_PATH = "logs/audit.jsonl"
+channel = "stable-23.05"channel = "stable-23.05"
 
-[gitHubImport]
-requiredFiles = [".replit", "replit.nix", "replit_main.py"]
+
+
+[deployment][deployment]
+
+run = ["python", "replit_main.py"]run = ["python", "replit_main.py"]
+
+deploymentTarget = "cloudrun"deploymentTarget = "cloudrun"
+
+
+
+[[ports]][[ports]]
+
+localPort = 5000localPort = 5000
+
+externalPort = 80externalPort = 80
+
+
+
+[[ports]][[ports]]
+
+localPort = 8080localPort = 8080
+
+externalPort = 8080externalPort = 8080
+
+
+
+[env][env]
+
+PYTHONPATH = "$REPL_HOME"PYTHONPATH = "$REPL_HOME"
+
+JIMINI_API_KEY = "replit-secure-api-key-2025"JIMINI_API_KEY = "replit-secure-api-key-2025"
+
+JIMINI_RULES_PATH = "policy_rules.yaml"JIMINI_RULES_PATH = "policy_rules.yaml"
+
+JIMINI_SHADOW = "0"JIMINI_SHADOW = "0"
+
+OPENAI_API_KEY = ""OPENAI_API_KEY = ""
+
+AUDIT_LOG_PATH = "logs/audit.jsonl"AUDIT_LOG_PATH = "logs/audit.jsonl"
+
+
+
+[gitHubImport][gitHubImport]
+
+requiredFiles = [".replit", "replit.nix", "replit_main.py"]requiredFiles = [".replit", "replit.nix", "replit_main.py"]

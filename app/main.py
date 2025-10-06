@@ -2,15 +2,19 @@
 from collections import defaultdict, deque
 import time
 import os
-from typing import Any, Dict, Deque
+from typing import Any, Dict, Deque, Optional
 from contextlib import asynccontextmanager
+from datetime import datetime, timezone
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 import urllib.request
 import json
 
-from app.models import EvaluateRequest, EvaluateResponse
+from app.models import (
+    EvaluateRequest, EvaluateResponse, 
+    ApprovalRequest, ApprovalResponse
+)
 from app.rules_loader import load_rules, rules_store
 from app.enforcement import evaluate, apply_shadow_logic
 from app import audit
@@ -711,6 +715,297 @@ async def evaluate_text(request: EvaluateRequest):
     return response
 
 
+# =============================================================================
+# Rule Management API Endpoints
+# =============================================================================
+
+@app.get(
+    "/v1/rules",
+    summary="List Policy Rules", 
+    description="Get a paginated list of all policy rules with optional filtering",
+    responses={
+        200: {
+            "description": "Paginated list of rules",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "rules": [
+                            {
+                                "id": "GITHUB-TOKEN-1.0",
+                                "title": "GitHub Personal Access Token",
+                                "severity": "high",
+                                "action": "block",
+                                "pattern": "ghp_[A-Za-z0-9]{36}"
+                            }
+                        ],
+                        "total": 1,
+                        "page": 1,
+                        "page_size": 50,
+                        "has_next": False,
+                        "has_prev": False
+                    }
+                }
+            }
+        }
+    },
+    tags=["Rule Management"]
+)
+async def list_rules(
+    request: Request,
+    page: int = 1,
+    page_size: int = 50,
+    action: Optional[str] = None,
+    severity: Optional[str] = None,
+    search: Optional[str] = None
+):
+    """List all policy rules with pagination and filtering."""
+    from app.rbac import get_rbac, Role
+    from app.rule_management import get_rule_manager, RuleValidationError
+    
+    # Check VIEWER role access
+    rbac = get_rbac()
+    user = rbac.extract_user_from_request(request)
+    if not rbac.has_role(user, Role.VIEWER):
+        raise HTTPException(
+            status_code=403,
+            detail="Viewer access required to list rules"
+        )
+    
+    try:
+        rule_manager = get_rule_manager()
+        return rule_manager.list_rules(
+            page=page,
+            page_size=page_size,
+            action_filter=action,
+            severity_filter=severity,
+            search_query=search
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get(
+    "/v1/rules/{rule_id}",
+    summary="Get Rule by ID",
+    description="Retrieve a specific policy rule by its ID",
+    tags=["Rule Management"]
+)
+async def get_rule_by_id(rule_id: str, request: Request):
+    """Get a specific rule by ID."""
+    from app.rbac import get_rbac, Role
+    from app.rule_management import get_rule_manager, RuleNotFoundError
+    
+    # Check VIEWER role access
+    rbac = get_rbac()
+    user = rbac.extract_user_from_request(request)
+    if not rbac.has_role(user, Role.VIEWER):
+        raise HTTPException(
+            status_code=403,
+            detail="Viewer access required to view rules"
+        )
+    
+    try:
+        rule_manager = get_rule_manager()
+        return rule_manager.get_rule(rule_id)
+    except RuleNotFoundError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post(
+    "/v1/rules",
+    summary="Create New Rule",
+    description="Create a new policy rule",
+    responses={
+        201: {"description": "Rule created successfully"},
+        400: {"description": "Rule validation failed"},
+        409: {"description": "Rule ID already exists"}
+    },
+    tags=["Rule Management"]
+)
+async def create_rule(rule_request: "RuleCreateRequest", request: Request):
+    """Create a new policy rule."""
+    from app.rbac import get_rbac, Role
+    from app.rule_management import get_rule_manager, RuleValidationError
+    from app.models import RuleCreateRequest
+    
+    # Check ADMIN role access
+    rbac = get_rbac()
+    user = rbac.extract_user_from_request(request)
+    if not rbac.has_role(user, Role.ADMIN):
+        raise HTTPException(
+            status_code=403,
+            detail="Admin access required to create rules"
+        )
+    
+    try:
+        rule_manager = get_rule_manager()
+        new_rule = rule_manager.create_rule(rule_request)
+        return new_rule
+    except RuleValidationError as e:
+        if "already exists" in str(e):
+            raise HTTPException(status_code=409, detail=str(e))
+        else:
+            raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.put(
+    "/v1/rules/{rule_id}",
+    summary="Update Rule",
+    description="Update an existing policy rule",
+    tags=["Rule Management"]
+)
+async def update_rule(rule_id: str, rule_update: "RuleUpdateRequest", request: Request):
+    """Update an existing policy rule."""
+    from app.rbac import get_rbac, Role
+    from app.rule_management import get_rule_manager, RuleNotFoundError, RuleValidationError
+    from app.models import RuleUpdateRequest
+    
+    # Check ADMIN role access
+    rbac = get_rbac()
+    user = rbac.extract_user_from_request(request)
+    if not rbac.has_role(user, Role.ADMIN):
+        raise HTTPException(
+            status_code=403,
+            detail="Admin access required to update rules"
+        )
+    
+    try:
+        rule_manager = get_rule_manager()
+        updated_rule = rule_manager.update_rule(rule_id, rule_update)
+        return updated_rule
+    except RuleNotFoundError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except RuleValidationError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.delete(
+    "/v1/rules/{rule_id}",
+    summary="Delete Rule",
+    description="Delete a policy rule",
+    tags=["Rule Management"]
+)
+async def delete_rule(rule_id: str, request: Request):
+    """Delete a policy rule."""
+    from app.rbac import get_rbac, Role
+    from app.rule_management import get_rule_manager, RuleNotFoundError
+    
+    # Check ADMIN role access
+    rbac = get_rbac()
+    user = rbac.extract_user_from_request(request)
+    if not rbac.has_role(user, Role.ADMIN):
+        raise HTTPException(
+            status_code=403,
+            detail="Admin access required to delete rules"
+        )
+    
+    try:
+        rule_manager = get_rule_manager()
+        rule_manager.delete_rule(rule_id)
+        return {"message": f"Rule '{rule_id}' deleted successfully"}
+    except RuleNotFoundError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post(
+    "/v1/rules/validate",
+    summary="Validate Rule",
+    description="Validate rule syntax and configuration without creating it",
+    tags=["Rule Management"]
+)
+async def validate_rule(rule_request: "RuleValidationRequest", request: Request):
+    """Validate rule syntax and configuration."""
+    from app.rbac import get_rbac, Role
+    from app.rule_management import get_rule_manager
+    from app.models import RuleValidationRequest
+    
+    # Check VIEWER role access
+    rbac = get_rbac()
+    user = rbac.extract_user_from_request(request)
+    if not rbac.has_role(user, Role.VIEWER):
+        raise HTTPException(
+            status_code=403,
+            detail="Viewer access required to validate rules"
+        )
+    
+    try:
+        rule_manager = get_rule_manager()
+        return rule_manager.validate_rule(rule_request)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post(
+    "/v1/rules/test",
+    summary="Test Rule",
+    description="Test a rule against sample text to see if it matches",
+    tags=["Rule Management"]
+)
+async def test_rule(rule_test: "RuleTestRequest", request: Request):
+    """Test a rule against sample text."""
+    from app.rbac import get_rbac, Role
+    from app.rule_management import get_rule_manager, RuleNotFoundError
+    from app.models import RuleTestRequest
+    
+    # Check VIEWER role access
+    rbac = get_rbac()
+    user = rbac.extract_user_from_request(request)
+    if not rbac.has_role(user, Role.VIEWER):
+        raise HTTPException(
+            status_code=403,
+            detail="Viewer access required to test rules"
+        )
+    
+    try:
+        rule_manager = get_rule_manager()
+        return rule_manager.test_rule(rule_test)
+    except RuleNotFoundError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get(
+    "/v1/rules/{rule_id}/stats",
+    summary="Get Rule Statistics",
+    description="Get performance and usage statistics for a specific rule",
+    tags=["Rule Management"]
+)
+async def get_rule_stats(rule_id: str, request: Request):
+    """Get statistics for a specific rule."""
+    from app.rbac import get_rbac, Role
+    from app.rule_management import get_rule_manager, RuleNotFoundError
+    
+    # Check VIEWER role access
+    rbac = get_rbac()
+    user = rbac.extract_user_from_request(request)
+    if not rbac.has_role(user, Role.VIEWER):
+        raise HTTPException(
+            status_code=403,
+            detail="Viewer access required to view rule statistics"
+        )
+    
+    try:
+        rule_manager = get_rule_manager()
+        return rule_manager.get_rule_stats(rule_id)
+    except RuleNotFoundError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# =============================================================================
+
 @app.get("/v1/metrics")
 async def metrics() -> Dict[str, Any]:
     return {
@@ -765,12 +1060,311 @@ async def audit_sarif(date_prefix: str = None) -> Dict[str, Any]:
                 }
             )
 
-    return {
-        "$schema": "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json",
-        "version": "2.1.0",
-        "runs": [{"tool": {"driver": {"name": "Jimini"}}, "results": results}],
-    }
+        return {\n        \"$schema\": \"https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json\",\n        \"version\": \"2.1.0\",\n        \"runs\": [{\"tool\": {\"driver\": {\"name\": \"Jimini\"}}, \"results\": results}],\n    }\n\n\n# =============================================================================\n# Decision Log Query Endpoints\n# =============================================================================\n\n@app.get(\n    \"/v1/decisions\",\n    summary=\"Query Decision Logs\",\n    description=\"Get paginated list of policy evaluation decisions with filtering\",\n    responses={\n        200: {\n            \"description\": \"Paginated decision logs\",\n            \"content\": {\n                \"application/json\": {\n                    \"example\": {\n                        \"decisions\": [\n                            {\n                                \"request_id\": \"req_12345\",\n                                \"timestamp\": \"2025-10-06T10:30:00Z\",\n                                \"action\": \"block\", \n                                \"rule_ids\": [\"GITHUB-TOKEN-1.0\"],\n                                \"endpoint\": \"/v1/evaluate\",\n                                \"direction\": \"inbound\",\n                                \"latency_ms\": 15.2\n                            }\n                        ],\n                        \"total\": 1,\n                        \"page\": 1,\n                        \"page_size\": 50,\n                        \"has_next\": False,\n                        \"has_prev\": False\n                    }\n                }\n            }\n        }\n    },\n    tags=[\"Decision Logs\"]\n)\nasync def query_decisions(\n    request: Request,\n    page: int = 1,\n    page_size: int = 50,\n    action: Optional[str] = None,\n    rule_id: Optional[str] = None,\n    endpoint: Optional[str] = None,\n    start_time: Optional[str] = None,\n    end_time: Optional[str] = None,\n    search: Optional[str] = None\n):\n    \"\"\"Query decision logs with filtering and pagination.\"\"\"\n    from app.rbac import get_rbac, Role\n    from app.decision_logs import get_decision_log_manager\n    \n    # Check VIEWER role access\n    rbac = get_rbac()\n    user = rbac.extract_user_from_request(request)\n    if not rbac.has_role(user, Role.VIEWER):\n        raise HTTPException(\n            status_code=403,\n            detail=\"Viewer access required to query decisions\"\n        )\n    \n    try:\n        log_manager = get_decision_log_manager()\n        return log_manager.query_decisions(\n            page=page,\n            page_size=page_size,\n            action_filter=action,\n            rule_filter=rule_id,\n            endpoint_filter=endpoint,\n            start_time=start_time,\n            end_time=end_time,\n            search_text=search\n        )\n    except Exception as e:\n        raise HTTPException(status_code=500, detail=str(e))\n\n\n@app.get(\n    \"/v1/decisions/{request_id}\",\n    summary=\"Get Decision by Request ID\",\n    description=\"Retrieve a specific policy decision by request ID\",\n    tags=[\"Decision Logs\"]\n)\nasync def get_decision(request_id: str, request: Request):\n    \"\"\"Get a specific decision by request ID.\"\"\"\n    from app.rbac import get_rbac, Role\n    from app.decision_logs import get_decision_log_manager\n    \n    # Check VIEWER role access\n    rbac = get_rbac()\n    user = rbac.extract_user_from_request(request)\n    if not rbac.has_role(user, Role.VIEWER):\n        raise HTTPException(\n            status_code=403,\n            detail=\"Viewer access required to view decisions\"\n        )\n    \n    try:\n        log_manager = get_decision_log_manager()\n        decision = log_manager.get_decision_by_request_id(request_id)\n        \n        if not decision:\n            raise HTTPException(\n                status_code=404, \n                detail=f\"Decision with request ID '{request_id}' not found\"\n            )\n        \n        return decision\n    except HTTPException:\n        raise\n    except Exception as e:\n        raise HTTPException(status_code=500, detail=str(e))\n\n\n@app.get(\n    \"/v1/decisions/stats\",\n    summary=\"Get Decision Statistics\",\n    description=\"Get aggregated statistics for policy decisions in a time range\",\n    tags=[\"Decision Logs\"]\n)\nasync def get_decision_stats(\n    request: Request,\n    start_time: Optional[str] = None,\n    end_time: Optional[str] = None\n):\n    \"\"\"Get aggregated decision statistics for a time range.\"\"\"\n    from app.rbac import get_rbac, Role\n    from app.decision_logs import get_decision_log_manager\n    \n    # Check VIEWER role access\n    rbac = get_rbac()\n    user = rbac.extract_user_from_request(request)\n    if not rbac.has_role(user, Role.VIEWER):\n        raise HTTPException(\n            status_code=403,\n            detail=\"Viewer access required to view decision statistics\"\n        )\n    \n    try:\n        log_manager = get_decision_log_manager()\n        return log_manager.get_decision_stats(\n            start_time=start_time,\n            end_time=end_time\n        )\n    except Exception as e:\n        raise HTTPException(status_code=500, detail=str(e))\n\n\n# =============================================================================\n# Shadow Mode Visibility Endpoints  \n# =============================================================================\n\n@app.get(\n    \"/v1/shadow/status\",\n    summary=\"Shadow Mode Status\",\n    description=\"Get current shadow mode configuration and effectiveness metrics\",\n    responses={\n        200: {\n            \"description\": \"Shadow mode status\",\n            \"content\": {\n                \"application/json\": {\n                    \"example\": {\n                        \"enabled\": True,\n                        \"override_rules\": [\"CRITICAL-API-1.0\"],\n                        \"shadow_decisions_today\": 45,\n                        \"would_have_blocked\": 32,\n                        \"would_have_flagged\": 13,\n                        \"effectiveness_score\": 23.5\n                    }\n                }\n            }\n        }\n    },\n    tags=[\"Shadow Mode\"]\n)\nasync def get_shadow_status(request: Request):\n    \"\"\"Get current shadow mode status and statistics.\"\"\"\n    from app.rbac import get_rbac, Role\n    from app.decision_logs import get_decision_log_manager\n    \n    # Check VIEWER role access\n    rbac = get_rbac()\n    user = rbac.extract_user_from_request(request)\n    if not rbac.has_role(user, Role.VIEWER):\n        raise HTTPException(\n            status_code=403,\n            detail=\"Viewer access required to view shadow mode status\"\n        )\n    \n    try:\n        log_manager = get_decision_log_manager()\n        return log_manager.get_shadow_status()\n    except Exception as e:\n        raise HTTPException(status_code=500, detail=str(e))\n\n\n@app.get(\n    \"/v1/shadow/decisions\",\n    summary=\"Shadow Mode Decisions\", \n    description=\"Get decisions that would have been different without shadow mode\",\n    tags=[\"Shadow Mode\"]\n)\nasync def get_shadow_decisions(\n    request: Request,\n    page: int = 1,\n    page_size: int = 50,\n    start_time: Optional[str] = None,\n    end_time: Optional[str] = None\n):\n    \"\"\"Get decisions that would have been different without shadow mode.\"\"\"\n    from app.rbac import get_rbac, Role\n    from app.decision_logs import get_decision_log_manager\n    \n    # Check VIEWER role access\n    rbac = get_rbac()\n    user = rbac.extract_user_from_request(request)\n    if not rbac.has_role(user, Role.VIEWER):\n        raise HTTPException(\n            status_code=403,\n            detail=\"Viewer access required to view shadow decisions\"\n        )\n    \n    try:\n        log_manager = get_decision_log_manager()\n        return log_manager.get_shadow_decisions(\n            page=page,\n            page_size=page_size,\n            start_time=start_time,\n            end_time=end_time\n        )\n    except Exception as e:\n        raise HTTPException(status_code=500, detail=str(e))\n\n\n# =============================================================================\n\n# =============================================================================
+# Policy Approval Workflow Endpoints
+# =============================================================================
 
+@app.post(
+    "/v1/approvals",
+    summary="Request Policy Approval",
+    description="Submit a policy rule change for approval workflow",
+    responses={
+        201: {
+            "description": "Approval request created",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "request_id": "approval_abc12345",
+                        "message": "Approval request created successfully",
+                        "expires_at": "2025-10-09T10:30:00Z"
+                    }
+                }
+            }
+        }
+    },
+    tags=["Policy Approval"]
+)
+async def create_approval_request(
+    approval_request: ApprovalRequest, 
+    request: Request
+):
+    \"\"\"Submit a policy rule change for approval.\"\"\"
+    from app.rbac import get_rbac, Role
+    from app.policy_approval import get_approval_manager
+    from app.models import ApprovalRequest
+    
+    # Check ADMIN role access for creating approvals
+    rbac = get_rbac()
+    user = rbac.extract_user_from_request(request)
+    if not rbac.has_role(user, Role.ADMIN):
+        raise HTTPException(
+            status_code=403,
+            detail=\"Admin access required to request policy approvals\"
+        )
+    
+    try:
+        approval_manager = get_approval_manager()
+        
+        request_id = approval_manager.create_approval_request(
+            rule_id=approval_request.rule_id,
+            approval_type=approval_request.approval_type,
+            rule_data=approval_request.rule_data,
+            requested_by=user,
+            justification=approval_request.justification,
+            original_rule_data=approval_request.original_rule_data
+        )
+        
+        approval_entry = approval_manager.get_approval_request(request_id)
+        
+        return {
+            \"request_id\": request_id,
+            \"message\": \"Approval request created successfully\",
+            \"expires_at\": approval_entry.expires_at.isoformat() if approval_entry else None
+        }
+    
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get(
+    \"/v1/approvals\",
+    summary=\"List Approval Requests\",
+    description=\"Get paginated list of policy approval requests with filtering\",
+    tags=[\"Policy Approval\"]
+)
+async def list_approval_requests(
+    request: Request,
+    page: int = 1,
+    page_size: int = 50,
+    status: Optional[str] = None,
+    requested_by: Optional[str] = None
+):
+    \"\"\"List policy approval requests with filtering.\"\"\"
+    from app.rbac import get_rbac, Role
+    from app.policy_approval import get_approval_manager, ApprovalStatus
+    
+    # Check VIEWER role access
+    rbac = get_rbac()
+    user = rbac.extract_user_from_request(request)
+    if not rbac.has_role(user, Role.VIEWER):
+        raise HTTPException(
+            status_code=403,
+            detail=\"Viewer access required to list approvals\"
+        )
+    
+    try:
+        approval_manager = get_approval_manager()
+        
+        status_filter = None
+        if status:
+            try:
+                status_filter = ApprovalStatus(status)
+            except ValueError:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f\"Invalid status '{status}'. Valid values: {[s.value for s in ApprovalStatus]}\"
+                )
+        
+        return approval_manager.list_approval_requests(
+            status_filter=status_filter,
+            requested_by=requested_by,
+            page=page,
+            page_size=page_size
+        )
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get(
+    \"/v1/approvals/{request_id}\",
+    summary=\"Get Approval Request\",
+    description=\"Retrieve a specific policy approval request by ID\",
+    tags=[\"Policy Approval\"]
+)
+async def get_approval_request(request_id: str, request: Request):
+    \"\"\"Get a specific approval request by ID.\"\"\"
+    from app.rbac import get_rbac, Role
+    from app.policy_approval import get_approval_manager
+    
+    # Check VIEWER role access
+    rbac = get_rbac()
+    user = rbac.extract_user_from_request(request)
+    if not rbac.has_role(user, Role.VIEWER):
+        raise HTTPException(
+            status_code=403,
+            detail=\"Viewer access required to view approval requests\"
+        )
+    
+    try:
+        approval_manager = get_approval_manager()
+        approval_request = approval_manager.get_approval_request(request_id)
+        
+        if not approval_request:
+            raise HTTPException(
+                status_code=404,
+                detail=f\"Approval request '{request_id}' not found\"
+            )
+        
+        from dataclasses import asdict
+        return asdict(approval_request)
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post(
+    \"/v1/approvals/{request_id}/approve\",
+    summary=\"Approve Request\",
+    description=\"Approve a pending policy approval request\",
+    tags=[\"Policy Approval\"]
+)
+async def approve_request(request_id: str, request: Request):
+    \"\"\"Approve a pending policy approval request.\"\"\"
+    from app.rbac import get_rbac, Role
+    from app.policy_approval import get_approval_manager
+    from app.rule_management import get_rule_manager
+    
+    # Check ADMIN role access for approving
+    rbac = get_rbac()
+    user = rbac.extract_user_from_request(request)
+    if not rbac.has_role(user, Role.ADMIN):
+        raise HTTPException(
+            status_code=403,
+            detail=\"Admin access required to approve policy requests\"
+        )
+    
+    try:
+        approval_manager = get_approval_manager()
+        rule_manager = get_rule_manager()
+        
+        # Get the approval request
+        approval_request = approval_manager.get_approval_request(request_id)
+        if not approval_request:
+            raise HTTPException(
+                status_code=404,
+                detail=f\"Approval request '{request_id}' not found\"
+            )
+        
+        # Approve the request
+        approval_manager.approve_request(request_id, user)
+        
+        # Execute the approved change
+        if approval_request.approval_type == \"create\":
+            rule_manager.create_rule(approval_request.rule_data)
+        elif approval_request.approval_type == \"update\":
+            rule_manager.update_rule(approval_request.rule_id, approval_request.rule_data)
+        elif approval_request.approval_type == \"delete\":
+            rule_manager.delete_rule(approval_request.rule_id)
+        
+        return {
+            \"message\": f\"Approval request {request_id} approved and applied successfully\",
+            \"approved_by\": user,
+            \"applied_at\": datetime.now(timezone.utc).isoformat()
+        }
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post(
+    \"/v1/approvals/{request_id}/reject\",
+    summary=\"Reject Request\",
+    description=\"Reject a pending policy approval request\",
+    tags=[\"Policy Approval\"]
+)
+async def reject_request(
+    request_id: str, 
+    approval_response: ApprovalResponse,
+    request: Request
+):
+    \"\"\"Reject a pending policy approval request.\"\"\"
+    from app.rbac import get_rbac, Role
+    from app.policy_approval import get_approval_manager
+    from app.models import ApprovalResponse
+    
+    # Check ADMIN role access for rejecting
+    rbac = get_rbac()
+    user = rbac.extract_user_from_request(request)
+    if not rbac.has_role(user, Role.ADMIN):
+        raise HTTPException(
+            status_code=403,
+            detail=\"Admin access required to reject policy requests\"
+        )
+    
+    # Validate rejection reason is provided
+    if not approval_response.reason or len(approval_response.reason.strip()) < 5:
+        raise HTTPException(
+            status_code=400,
+            detail=\"Rejection reason must be at least 5 characters\"
+        )
+    
+    try:
+        approval_manager = get_approval_manager()
+        
+        # Get the approval request to verify it exists
+        approval_request = approval_manager.get_approval_request(request_id)
+        if not approval_request:
+            raise HTTPException(
+                status_code=404,
+                detail=f\"Approval request '{request_id}' not found\"
+            )
+        
+        # Reject the request
+        approval_manager.reject_request(
+            request_id, 
+            user, 
+            approval_response.reason
+        )
+        
+        return {
+            \"message\": f\"Approval request {request_id} rejected successfully\",
+            \"rejected_by\": user,
+            \"reason\": approval_response.reason,
+            \"rejected_at\": datetime.now(timezone.utc).isoformat()
+        }
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get(
+    \"/v1/approvals/stats\",
+    summary=\"Approval Statistics\",
+    description=\"Get aggregated statistics for policy approval workflows\",
+    tags=[\"Policy Approval\"]
+)
+async def get_approval_stats(request: Request):
+    \"\"\"Get approval workflow statistics.\"\"\"
+    from app.rbac import get_rbac, Role
+    from app.policy_approval import get_approval_manager
+    
+    # Check VIEWER role access
+    rbac = get_rbac()
+    user = rbac.extract_user_from_request(request)
+    if not rbac.has_role(user, Role.VIEWER):
+        raise HTTPException(
+            status_code=403,
+            detail=\"Viewer access required to view approval statistics\"
+        )
+    
+    try:
+        approval_manager = get_approval_manager()
+        return approval_manager.get_approval_stats()
+    
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# =============================================================================
 
 # Add telemetry endpoints
 @app.get("/v1/telemetry/counters")
