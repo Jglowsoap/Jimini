@@ -6,14 +6,15 @@ from typing import Any, Dict, Deque, Optional
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Request, Body
 from fastapi.middleware.cors import CORSMiddleware
 import urllib.request
 import json
 
 from app.models import (
     EvaluateRequest, EvaluateResponse, 
-    ApprovalRequest, ApprovalResponse
+    ApprovalRequest, ApprovalResponse,
+    RuleValidationRequest, RuleTestRequest
 )
 from app.rules_loader import load_rules, rules_store
 from app.enforcement import evaluate, apply_shadow_logic
@@ -921,11 +922,10 @@ async def delete_rule(rule_id: str, request: Request):
     description="Validate rule syntax and configuration without creating it",
     tags=["Rule Management"]
 )
-async def validate_rule(rule_request: "RuleValidationRequest", request: Request):
+async def validate_rule(request: Request, rule_request: RuleValidationRequest = Body(...)):
     """Validate rule syntax and configuration."""
     from app.rbac import get_rbac, Role
     from app.rule_management import get_rule_manager
-    from app.models import RuleValidationRequest
     
     # Check VIEWER role access
     rbac = get_rbac()
@@ -949,11 +949,10 @@ async def validate_rule(rule_request: "RuleValidationRequest", request: Request)
     description="Test a rule against sample text to see if it matches",
     tags=["Rule Management"]
 )
-async def test_rule(rule_test: "RuleTestRequest", request: Request):
+async def test_rule(request: Request, rule_test: RuleTestRequest = Body(...)):
     """Test a rule against sample text."""
     from app.rbac import get_rbac, Role
     from app.rule_management import get_rule_manager, RuleNotFoundError
-    from app.models import RuleTestRequest
     
     # Check VIEWER role access
     rbac = get_rbac()
@@ -1167,6 +1166,12 @@ async def get_decision_stats(
             status_code=403,
             detail="Viewer access required to view decision statistics"
         )
+    
+    # Convert empty strings to None
+    if start_time == "":
+        start_time = None
+    if end_time == "":
+        end_time = None
     
     try:
         log_manager = get_decision_log_manager()
