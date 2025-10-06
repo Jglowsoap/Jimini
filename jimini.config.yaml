@@ -26,7 +26,7 @@ notifiers:
 siem:
   jsonl:
     enabled: true
-    file_path: "logs/jimini_events.jsonl"
+    file_path: "logs/audit.jsonl"
     rotate_daily: true
     retention_days: 30
 

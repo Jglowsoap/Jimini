@@ -138,7 +138,7 @@ class DecisionLogManager:
             minute_counts = defaultdict(int)
             for decision in decisions:
                 # Truncate to minute
-                dt = datetime.fromisoformat(decision.timestamp.replace('Z', '+00:00'))
+                dt = datetime.fromisoformat(decision.timestamp.rstrip('Z').replace('Z', '+00:00'))
                 minute_key = dt.replace(second=0, microsecond=0)
                 minute_counts[minute_key] += 1
             
@@ -271,6 +271,10 @@ class DecisionLogManager:
                     try:
                         record = json.loads(line)
                         
+                        # Skip non-policy-decision entries (e.g., audit_initialized events)
+                        if 'action' not in record:
+                            continue
+                        
                         # Convert audit record to decision log entry
                         decision = DecisionLogEntry(
                             request_id=record.get('request_id', ''),
@@ -280,11 +284,11 @@ class DecisionLogManager:
                             endpoint=record.get('endpoint', ''),
                             direction=record.get('direction', 'inbound'),
                             text_excerpt=record.get('text_excerpt'),
-                            agent_id=record.get('metadata', {}).get('agent_id'),
-                            latency_ms=record.get('metadata', {}).get('latency_ms'),
-                            shadow_mode=record.get('metadata', {}).get('shadow_mode'),
-                            raw_decision=record.get('metadata', {}).get('raw_decision'),
-                            metadata=record.get('metadata', {})
+                            agent_id=record.get('metadata', {}).get('agent_id') if record.get('metadata') else None,
+                            latency_ms=record.get('metadata', {}).get('latency_ms') if record.get('metadata') else None,
+                            shadow_mode=record.get('metadata', {}).get('shadow_mode') if record.get('metadata') else None,
+                            raw_decision=record.get('metadata', {}).get('raw_decision') if record.get('metadata') else None,
+                            metadata=record.get('metadata', {}) if record.get('metadata') else {}
                         )
                         decisions.append(decision)
                         
@@ -325,22 +329,32 @@ class DecisionLogManager:
         # Time range filters
         if start_time:
             try:
-                start_dt = datetime.fromisoformat(start_time.replace('Z', '+00:00'))
+                # Normalize timezone info: add +00:00 if no timezone present
+                start_time_normalized = start_time
+                if not ('+' in start_time[-6:] or start_time.endswith('Z')):
+                    start_time_normalized = start_time + '+00:00'
+                start_dt = datetime.fromisoformat(start_time_normalized.replace('Z', '+00:00'))
+                
                 filtered = [
                     d for d in filtered 
-                    if datetime.fromisoformat(d.timestamp.replace('Z', '+00:00')) >= start_dt
+                    if datetime.fromisoformat(d.timestamp.rstrip('Z').replace('Z', '+00:00')) >= start_dt
                 ]
-            except ValueError:
+            except (ValueError, AttributeError):
                 pass  # Invalid date format, skip filter
         
         if end_time:
             try:
-                end_dt = datetime.fromisoformat(end_time.replace('Z', '+00:00'))
+                # Normalize timezone info: add +00:00 if no timezone present
+                end_time_normalized = end_time
+                if not ('+' in end_time[-6:] or end_time.endswith('Z')):
+                    end_time_normalized = end_time + '+00:00'
+                end_dt = datetime.fromisoformat(end_time_normalized.replace('Z', '+00:00'))
+                
                 filtered = [
                     d for d in filtered 
-                    if datetime.fromisoformat(d.timestamp.replace('Z', '+00:00')) <= end_dt
+                    if datetime.fromisoformat(d.timestamp.rstrip('Z').replace('Z', '+00:00')) <= end_dt
                 ]
-            except ValueError:
+            except (ValueError, AttributeError):
                 pass  # Invalid date format, skip filter
         
         # Text search
