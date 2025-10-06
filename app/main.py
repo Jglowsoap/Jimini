@@ -14,7 +14,8 @@ import json
 from app.models import (
     EvaluateRequest, EvaluateResponse, 
     ApprovalRequest, ApprovalResponse,
-    RuleValidationRequest, RuleTestRequest
+    RuleValidationRequest, RuleTestRequest,
+    RuleCreateRequest, RuleUpdateRequest
 )
 from app.rules_loader import load_rules, rules_store
 from app.enforcement import evaluate, apply_shadow_logic
@@ -825,11 +826,10 @@ async def get_rule_by_id(rule_id: str, request: Request):
     },
     tags=["Rule Management"]
 )
-async def create_rule(rule_request: "RuleCreateRequest", request: Request):
+async def create_rule(request: Request, rule_request: RuleCreateRequest = Body(...)):
     """Create a new policy rule."""
     from app.rbac import get_rbac, Role
     from app.rule_management import get_rule_manager, RuleValidationError
-    from app.models import RuleCreateRequest
     
     # Check ADMIN role access
     rbac = get_rbac()
@@ -859,11 +859,10 @@ async def create_rule(rule_request: "RuleCreateRequest", request: Request):
     description="Update an existing policy rule",
     tags=["Rule Management"]
 )
-async def update_rule(rule_id: str, rule_update: "RuleUpdateRequest", request: Request):
+async def update_rule(rule_id: str, request: Request, rule_update: RuleUpdateRequest = Body(...)):
     """Update an existing policy rule."""
     from app.rbac import get_rbac, Role
     from app.rule_management import get_rule_manager, RuleNotFoundError, RuleValidationError
-    from app.models import RuleUpdateRequest
     
     # Check ADMIN role access
     rbac = get_rbac()

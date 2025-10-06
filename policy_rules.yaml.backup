@@ -341,3 +341,14 @@
   severity: low
   shadow_override: null
   title: Test Published Rule
+- action: flag
+  applies_to: null
+  endpoints: null
+  id: TEST-FINAL-002
+  llm_prompt: null
+  max_chars: null
+  min_count: 1
+  pattern: testword
+  severity: medium
+  shadow_override: null
+  title: Final Test Rule
