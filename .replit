@@ -9,11 +9,11 @@ run = ["python", "replit_main.py"]
 deploymentTarget = "cloudrun"
 
 [[ports]]
-localPort = 8000
+localPort = 5000
 externalPort = 80
 
 [[ports]]
-localPort = 3000
+localPort = 46535
 externalPort = 3000
 
 [env]
@@ -24,3 +24,30 @@ JIMINI_SHADOW = "0"
 
 [gitHubImport]
 requiredFiles = [".replit", "replit.nix", "replit_main.py"]
+
+[agent]
+expertMode = true
+
+[workflows]
+runButton = "Project"
+
+[[workflows.workflow]]
+name = "Project"
+mode = "parallel"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "Server"
+
+[[workflows.workflow]]
+name = "Server"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "python replit_main.py"
+waitForPort = 5000
+
+[workflows.workflow.metadata]
+outputType = "webview"
