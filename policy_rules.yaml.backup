@@ -352,3 +352,14 @@
   severity: medium
   shadow_override: null
   title: Final Test Rule
+- action: flag
+  applies_to: null
+  endpoints: null
+  id: TEST-VERIFY-001
+  llm_prompt: null
+  max_chars: null
+  min_count: 1
+  pattern: verify
+  severity: low
+  shadow_override: null
+  title: Verify

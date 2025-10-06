@@ -363,3 +363,14 @@
   severity: low
   shadow_override: null
   title: Verify
+- action: flag
+  applies_to: null
+  endpoints: null
+  id: TEST-123
+  llm_prompt: null
+  max_chars: null
+  min_count: 1
+  pattern: test
+  severity: low
+  shadow_override: null
+  title: Test
