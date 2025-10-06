@@ -12,11 +12,17 @@ deploymentTarget = "autoscale"
 localPort = 5000
 externalPort = 80
 
+[[ports]]
+localPort = 9000
+externalPort = 9000
+
 [env]
 PYTHONPATH = "$REPL_HOME"
 JIMINI_API_KEY = "jimini-api-key-10062025"
 JIMINI_RULES_PATH = "policy_rules.yaml"
 JIMINI_SHADOW = "0"
+
+AUDIT_LOG_PATH = "logs/audit.jsonl"
 
 [gitHubImport]
 requiredFiles = [".replit", "replit.nix", "replit_main.py"]
