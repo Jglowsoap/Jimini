@@ -1,9 +1,14 @@
-modules = ["python-3.11"]
+modules = ["python-3.11", "nodejs-20"]
+
 [agent]
 expertMode = true
 
 [nix]
 channel = "stable-25_05"
+
+[deployment]
+run = ["python", "replit_main.py"]
+deploymentTarget = "cloudrun"
 
 [workflows]
 runButton = "Project"
@@ -36,3 +41,19 @@ externalPort = 80
 [deployment]
 deploymentTarget = "vm"
 run = ["python", "replit_main.py"]
+
+[[ports]]
+localPort = 8080
+externalPort = 8080
+
+[env]
+PYTHONPATH = "$REPL_HOME"
+JIMINI_API_KEY = "replit-secure-api-key-2025"
+JIMINI_RULES_PATH = "policy_rules.yaml"
+JIMINI_SHADOW = "0"
+OPENAI_API_KEY = ""
+AUDIT_LOG_PATH = "logs/audit.jsonl"
+
+[gitHubImport]
+requiredFiles = [".replit", "replit.nix", "replit_main.py"]
+
