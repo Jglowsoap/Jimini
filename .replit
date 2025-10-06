@@ -5,8 +5,8 @@ modules = ["python-3.11", "nodejs-20"]
 channel = "stable-23.05"
 
 [deployment]
-run = ["python", "replit_main.py"]
-deploymentTarget = "cloudrun"
+run = ["python3", "replit_main.py"]
+deploymentTarget = "autoscale"
 
 [[ports]]
 localPort = 5000
