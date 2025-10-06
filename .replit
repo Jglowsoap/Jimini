@@ -15,7 +15,7 @@ externalPort = 80
 [env]
 PYTHONPATH = "$REPL_HOME"
 JIMINI_API_KEY = "jimini-api-key-10062025"
-JIMINI_RULES_PATH = "packs/government/v1_fixed.yaml"
+JIMINI_RULES_PATH = "policy_rules.yaml"
 JIMINI_SHADOW = "0"
 
 [gitHubImport]

@@ -37,8 +37,9 @@ def load_rules(rules_path: str):
 
             rules.append(rule)
 
-        global rules_store
-        rules_store = rules
+        # Update the global list in-place so imports see the changes
+        rules_store.clear()
+        rules_store.extend(rules)
         print(f"Loaded {len(rules)} rules from {rules_path}")
     except Exception as e:
         print(f"Error loading rules: {e}")
