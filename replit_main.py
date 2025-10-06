@@ -12,13 +12,6 @@ import sys
 import uvicorn
 from pathlib import Path
 
-<<<<<<< HEAD
-=======
-# Add app directory to Python path
-app_dir = Path(__file__).parent / "app"
-sys.path.insert(0, str(app_dir))
-
->>>>>>> 97e114ee0ebca43db3feddd86eed0ae12add784d
 # Set default environment variables for Replit
 def setup_replit_environment():
     """Configure environment variables for Replit deployment"""
@@ -53,11 +46,7 @@ def start_jimini_gateway():
     
     # Import the FastAPI app
     try:
-<<<<<<< HEAD
         from app.main import app
-=======
-        from main import app
->>>>>>> 97e114ee0ebca43db3feddd86eed0ae12add784d
         print("✅ Jimini FastAPI app loaded successfully")
     except ImportError as e:
         print(f"❌ Failed to import Jimini app: {e}")
@@ -68,12 +57,8 @@ def start_jimini_gateway():
     port = int(os.getenv("PORT", 5000))
     
     print(f"🌍 Server will start on: http://{host}:{port}")
-<<<<<<< HEAD
     api_key = os.getenv('JIMINI_API_KEY', '')
     print(f"🔑 API Key: {api_key[:10] if api_key else 'Not set'}...")
-=======
-    print(f"🔑 API Key: {os.getenv('JIMINI_API_KEY')[:10]}...")
->>>>>>> 97e114ee0ebca43db3feddd86eed0ae12add784d
     print(f"📋 Rules: {os.getenv('JIMINI_RULES_PATH')}")
     print(f"🛡️ Mode: {'ENFORCE' if os.getenv('JIMINI_SHADOW') == '0' else 'SHADOW'}")
     print("=" * 60)

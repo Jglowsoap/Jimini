@@ -38,7 +38,6 @@ rules:
     title: "Security: Generic long alphanumeric sequence"
     text: "Block long alphanumeric blobs (potential API keys/secrets)"
     pattern: '\b[A-Za-z0-9_\-]{20,}\b'
-<<<<<<< HEAD
     severity: "error"
     action: "block"
     tags: ["security","credentials"]
@@ -66,14 +65,11 @@ rules:
     title: "CJIS: Biometric data exposure"
     text: "Block biometric terms on CJIS endpoints"
     pattern: '(?i)\b(fingerprint|mugshot|iris scan|retina scan|palm print|dna profile|voiceprint|biometric record)\b'
-=======
->>>>>>> 97e114ee0ebca43db3feddd86eed0ae12add784d
     severity: "error"
     action: "block"
     tags: ["security","credentials"]
     shadow_override: "enforce"
 
-<<<<<<< HEAD
   - id: "HIPAA-PHI-EMAIL-1.0"
     title: "HIPAA: Email addresses (PHI risk)"
     text: "Flag emails in healthcare contexts; tune with endpoint scoping if desired"
@@ -87,19 +83,11 @@ rules:
     title: "Bulk output: >5,000 characters"
     text: "Block unusually large outputs (tune per endpoint)"
     max_chars: 5000
-=======
-  # Microsoft Copilot Protections
-  - id: "MS-COPILOT-1.0"
-    title: "Microsoft Copilot: Block data sharing prompts"
-    text: "Prevent users from requesting Copilot to store, remember, or share government data"
-    pattern: '(?i)\b(?:copilot|github copilot|microsoft copilot)[^.]{0,50}(?:save|store|remember|share|upload|send|transmit|export|backup|sync|cloud)\b'
->>>>>>> 97e114ee0ebca43db3feddd86eed0ae12add784d
     severity: "error"
     action: "block"
     tags: ["copilot","data_exfiltration","microsoft"]
     shadow_override: "enforce"
 
-<<<<<<< HEAD
   - id: "BULK-EMAIL-3"
     title: "Bulk email leakage"
     text: "Block if 3+ email addresses appear in a single response"
@@ -135,26 +123,6 @@ rules:
     tags: ["secret","jwt"]
     shadow_override: "enforce"
 
-=======
-  - id: "MS-COPILOT-2.0"
-    title: "Microsoft Copilot: Block credential extraction attempts"
-    text: "Prevent attempts to extract or identify credentials from code or config files"
-    pattern: '(?i)\b(?:find|extract|identify|locate|get|show|list)[^.]{0,30}(?:credentials|passwords|keys|tokens|secrets|api keys|config|configuration|env|environment)\b'
-    severity: "error"
-    action: "block"
-    tags: ["copilot","credential_extraction","security"]
-    shadow_override: "enforce"
-
-  - id: "MS-COPILOT-3.0"
-    title: "Microsoft Copilot: Block compliance bypass attempts"
-    text: "Prevent requests to bypass security controls or compliance measures"
-    pattern: '(?i)\b(?:bypass|circumvent|avoid|skip|ignore|disable|override|turn off)[^.]{0,30}(?:security|compliance|audit|logging|monitoring|controls|restrictions|policies|rules)\b'
-    severity: "error"
-    action: "block"
-    tags: ["copilot","compliance_bypass","security_override"]
-    shadow_override: "enforce"
-
->>>>>>> 97e114ee0ebca43db3feddd86eed0ae12add784d
   # Hallucination Detection
   - id: "HALLUC-1.0"
     title: "AI Hallucination Check"
