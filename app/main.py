@@ -974,6 +974,159 @@ async def test_rule(request: Request, rule_test: RuleTestRequest = Body(...)):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@app.post(
+    "/v1/rules/dryrun",
+    summary="Dry-Run Rule Test",
+    description="Test a rule against sample data without saving it",
+    tags=["Rule Management"]
+)
+async def dryrun_rule(request: Request, rule_test: RuleTestRequest = Body(...)):
+    """Perform a dry-run test of a rule without saving it."""
+    from app.rbac import get_rbac, Role
+    from app.enforcement import evaluate
+    from app.models import Rule
+    import re
+    
+    # Check VIEWER role access
+    rbac = get_rbac()
+    user = rbac.extract_user_from_request(request)
+    if not rbac.has_role(user, Role.USER):
+        raise HTTPException(
+            status_code=403,
+            detail="Viewer access required to dry-run rules"
+        )
+    
+    try:
+        # Get pattern from rule object or use provided rule_id
+        if rule_test.rule:
+            pattern = rule_test.rule.pattern
+            action = rule_test.rule.action or "flag"
+            rule_id = rule_test.rule_id or "dryrun-test"
+            title = "Dry Run Test"
+        elif rule_test.rule_id:
+            # Test existing rule
+            from app.rule_management import get_rule_manager
+            from app.rules_loader import rules_store
+            rule_manager = get_rule_manager()
+            
+            # Find the rule in rules_store
+            existing_rule = None
+            for rule in rules_store:
+                if rule.id == rule_test.rule_id:
+                    existing_rule = rule
+                    break
+            
+            if not existing_rule:
+                raise HTTPException(status_code=404, detail=f"Rule '{rule_test.rule_id}' not found")
+            
+            pattern = existing_rule.pattern
+            action = existing_rule.action
+            rule_id = rule_test.rule_id
+            title = existing_rule.title
+        else:
+            raise HTTPException(status_code=400, detail="Either rule or rule_id must be provided")
+        
+        # Validate pattern exists
+        if not pattern:
+            raise HTTPException(status_code=400, detail="Rule pattern is required")
+        
+        # Create a temporary rule for testing
+        temp_rule = Rule(
+            id=rule_id,
+            title=title,
+            pattern=pattern,
+            action=action,
+            severity="medium",
+            category="test",
+            enabled=True
+        )
+        # Compile the pattern
+        try:
+            compiled_pattern = re.compile(pattern)
+            temp_rule.compiled_pattern = compiled_pattern
+        except re.error as e:
+            raise HTTPException(status_code=400, detail=f"Invalid regex pattern: {str(e)}")
+        
+        # Create rules_dict for evaluate function (same format as used in enforcement)
+        rules_dict = {rule_id: (temp_rule, compiled_pattern)}
+        
+        # Test against sample text
+        decision, rule_ids, enforce_even_in_shadow = evaluate(
+            text=rule_test.test_text,
+            agent_id="dryrun-test",
+            rules_store=rules_dict,
+            direction=rule_test.direction or "outbound",
+            endpoint=rule_test.endpoint or "/dryrun"
+        )
+        
+        return {
+            "matched": bool(rule_ids),
+            "action": decision,
+            "rule_ids": rule_ids,
+            "message": f"Matched {len(rule_ids)} rule(s)" if rule_ids else "No rules matched",
+            "test_text": rule_test.test_text
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post(
+    "/v1/rules/publish",
+    summary="Publish Rule",
+    description="Publish a validated rule to production",
+    tags=["Rule Management"]
+)
+async def publish_rule(request: Request, rule_data: dict = Body(...)):
+    """Publish a validated rule to production."""
+    from app.rbac import get_rbac, Role
+    from app.rule_management import get_rule_manager
+    from app.models import RuleCreateRequest
+    
+    # Check ADMIN role access
+    rbac = get_rbac()
+    user = rbac.extract_user_from_request(request)
+    if not rbac.has_role(user, Role.ADMIN):
+        raise HTTPException(
+            status_code=403,
+            detail="Admin access required to publish rules"
+        )
+    
+    try:
+        rule_manager = get_rule_manager()
+        
+        # Create the rule directly (bypassing approval workflow)
+        rule_id = rule_data.get("id") or rule_data.get("rule_id")
+        if not rule_id:
+            raise HTTPException(status_code=400, detail="Rule ID is required")
+        
+        # Ensure the rule_data has the required fields
+        if "title" not in rule_data:
+            rule_data["title"] = f"Published Rule {rule_id}"
+        if "pattern" not in rule_data and "llm_prompt" not in rule_data:
+            raise HTTPException(status_code=400, detail="Rule pattern or llm_prompt is required")
+        if "action" not in rule_data:
+            rule_data["action"] = "flag"
+        if "severity" not in rule_data:
+            rule_data["severity"] = "medium"
+        
+        # Create RuleCreateRequest from dict
+        rule_request = RuleCreateRequest(**rule_data)
+        
+        # Create the rule
+        new_rule = rule_manager.create_rule(rule_request)
+        
+        return {
+            "message": f"Rule '{rule_id}' published successfully",
+            "rule_id": rule_id,
+            "published_by": user,
+            "published_at": datetime.now(timezone.utc).isoformat()
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @app.get(
     "/v1/rules/{rule_id}/stats",
     summary="Get Rule Statistics",
@@ -1696,6 +1849,27 @@ async def reject_request(
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post(
+    "/v1/approvals/{request_id}/decline",
+    summary="Decline Request",
+    description="Decline a pending policy approval request (alias for reject)",
+    tags=["Policy Approval"]
+)
+async def decline_request(
+    request_id: str, 
+    request: Request,
+    decline_reason: dict = Body(...)
+):
+    """Decline a pending policy approval request."""
+    # Create ApprovalResponse from decline request
+    approval_response = ApprovalResponse(
+        request_id=request_id,
+        action="reject",
+        reason=decline_reason.get("reason", "Declined")
+    )
+    return await reject_request(request_id, approval_response, request)
 
 
 @app.get(
