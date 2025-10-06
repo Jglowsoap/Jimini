@@ -1,4 +1,7 @@
+<<<<<<< HEAD
+=======
 # Python
+>>>>>>> 97e114ee0ebca43db3feddd86eed0ae12add784d
 __pycache__/
 *.py[cod]
 *$py.class
@@ -16,11 +19,34 @@ parts/
 sdist/
 var/
 wheels/
+<<<<<<< HEAD
+pip-wheel-metadata/
+=======
+>>>>>>> 97e114ee0ebca43db3feddd86eed0ae12add784d
 share/python-wheels/
 *.egg-info/
 .installed.cfg
 *.egg
 MANIFEST
+<<<<<<< HEAD
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+.hypothesis/
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+*.log
+logs/*.jsonl
+logs/*.bak
+=======
 
 # Virtual environments
 .venv/
@@ -29,10 +55,15 @@ ENV/
 env/
 
 # IDE
+>>>>>>> 97e114ee0ebca43db3feddd86eed0ae12add784d
 .vscode/
 .idea/
 *.swp
 *.swo
+<<<<<<< HEAD
+*~
+.DS_Store
+=======
 
 # OS
 .DS_Store
@@ -49,3 +80,4 @@ audit.jsonl
 # Temporary files
 *.tmp
 *.temp
+>>>>>>> 97e114ee0ebca43db3feddd86eed0ae12add784d
