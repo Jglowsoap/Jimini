@@ -765,7 +765,7 @@ async def list_rules(
     # Check VIEWER role access
     rbac = get_rbac()
     user = rbac.extract_user_from_request(request)
-    if not rbac.has_role(user, Role.VIEWER):
+    if not rbac.has_role(user, Role.USER):
         raise HTTPException(
             status_code=403,
             detail="Viewer access required to list rules"
@@ -798,7 +798,7 @@ async def get_rule_by_id(rule_id: str, request: Request):
     # Check VIEWER role access
     rbac = get_rbac()
     user = rbac.extract_user_from_request(request)
-    if not rbac.has_role(user, Role.VIEWER):
+    if not rbac.has_role(user, Role.USER):
         raise HTTPException(
             status_code=403,
             detail="Viewer access required to view rules"
@@ -930,7 +930,7 @@ async def validate_rule(rule_request: "RuleValidationRequest", request: Request)
     # Check VIEWER role access
     rbac = get_rbac()
     user = rbac.extract_user_from_request(request)
-    if not rbac.has_role(user, Role.VIEWER):
+    if not rbac.has_role(user, Role.USER):
         raise HTTPException(
             status_code=403,
             detail="Viewer access required to validate rules"
@@ -958,7 +958,7 @@ async def test_rule(rule_test: "RuleTestRequest", request: Request):
     # Check VIEWER role access
     rbac = get_rbac()
     user = rbac.extract_user_from_request(request)
-    if not rbac.has_role(user, Role.VIEWER):
+    if not rbac.has_role(user, Role.USER):
         raise HTTPException(
             status_code=403,
             detail="Viewer access required to test rules"
@@ -989,7 +989,7 @@ async def get_rule_stats(rule_id: str, request: Request):
     # Check VIEWER role access
     rbac = get_rbac()
     user = rbac.extract_user_from_request(request)
-    if not rbac.has_role(user, Role.VIEWER):
+    if not rbac.has_role(user, Role.USER):
         raise HTTPException(
             status_code=403,
             detail="Viewer access required to view rule statistics"
@@ -1122,7 +1122,7 @@ async def query_decisions(
     # Check VIEWER role access
     rbac = get_rbac()
     user = rbac.extract_user_from_request(request)
-    if not rbac.has_role(user, Role.VIEWER):
+    if not rbac.has_role(user, Role.USER):
         raise HTTPException(
             status_code=403,
             detail="Viewer access required to query decisions"
@@ -1145,6 +1145,40 @@ async def query_decisions(
 
 
 @app.get(
+    "/v1/decisions/stats",
+    summary="Get Decision Statistics",
+    description="Get aggregated statistics for policy decisions in a time range",
+    tags=["Decision Logs"]
+)
+async def get_decision_stats(
+    request: Request,
+    start_time: Optional[str] = None,
+    end_time: Optional[str] = None
+):
+    """Get aggregated decision statistics for a time range."""
+    from app.rbac import get_rbac, Role
+    from app.decision_logs import get_decision_log_manager
+    
+    # Check VIEWER role access
+    rbac = get_rbac()
+    user = rbac.extract_user_from_request(request)
+    if not rbac.has_role(user, Role.USER):
+        raise HTTPException(
+            status_code=403,
+            detail="Viewer access required to view decision statistics"
+        )
+    
+    try:
+        log_manager = get_decision_log_manager()
+        return log_manager.get_decision_stats(
+            start_time=start_time,
+            end_time=end_time
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get(
     "/v1/decisions/{request_id}",
     summary="Get Decision by Request ID",
     description="Retrieve a specific policy decision by request ID",
@@ -1158,7 +1192,7 @@ async def get_decision(request_id: str, request: Request):
     # Check VIEWER role access
     rbac = get_rbac()
     user = rbac.extract_user_from_request(request)
-    if not rbac.has_role(user, Role.VIEWER):
+    if not rbac.has_role(user, Role.USER):
         raise HTTPException(
             status_code=403,
             detail="Viewer access required to view decisions"
@@ -1177,40 +1211,6 @@ async def get_decision(request_id: str, request: Request):
         return decision
     except HTTPException:
         raise
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-@app.get(
-    "/v1/decisions/stats",
-    summary="Get Decision Statistics",
-    description="Get aggregated statistics for policy decisions in a time range",
-    tags=["Decision Logs"]
-)
-async def get_decision_stats(
-    request: Request,
-    start_time: Optional[str] = None,
-    end_time: Optional[str] = None
-):
-    """Get aggregated decision statistics for a time range."""
-    from app.rbac import get_rbac, Role
-    from app.decision_logs import get_decision_log_manager
-    
-    # Check VIEWER role access
-    rbac = get_rbac()
-    user = rbac.extract_user_from_request(request)
-    if not rbac.has_role(user, Role.VIEWER):
-        raise HTTPException(
-            status_code=403,
-            detail="Viewer access required to view decision statistics"
-        )
-    
-    try:
-        log_manager = get_decision_log_manager()
-        return log_manager.get_decision_stats(
-            start_time=start_time,
-            end_time=end_time
-        )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -1250,7 +1250,7 @@ async def get_shadow_status(request: Request):
     # Check VIEWER role access
     rbac = get_rbac()
     user = rbac.extract_user_from_request(request)
-    if not rbac.has_role(user, Role.VIEWER):
+    if not rbac.has_role(user, Role.USER):
         raise HTTPException(
             status_code=403,
             detail="Viewer access required to view shadow mode status"
@@ -1283,7 +1283,7 @@ async def get_shadow_decisions(
     # Check VIEWER role access
     rbac = get_rbac()
     user = rbac.extract_user_from_request(request)
-    if not rbac.has_role(user, Role.VIEWER):
+    if not rbac.has_role(user, Role.USER):
         raise HTTPException(
             status_code=403,
             detail="Viewer access required to view shadow decisions"
@@ -1387,7 +1387,7 @@ async def list_approval_requests(
     # Check VIEWER role access
     rbac = get_rbac()
     user = rbac.extract_user_from_request(request)
-    if not rbac.has_role(user, Role.VIEWER):
+    if not rbac.has_role(user, Role.USER):
         raise HTTPException(
             status_code=403,
             detail="Viewer access required to list approvals"
@@ -1504,7 +1504,7 @@ async def list_approval_requests(
     # Check VIEWER role access
     rbac = get_rbac()
     user = rbac.extract_user_from_request(request)
-    if not rbac.has_role(user, Role.VIEWER):
+    if not rbac.has_role(user, Role.USER):
         raise HTTPException(
             status_code=403,
             detail="Viewer access required to list approvals"
@@ -1550,7 +1550,7 @@ async def get_approval_request(request_id: str, request: Request):
     # Check VIEWER role access
     rbac = get_rbac()
     user = rbac.extract_user_from_request(request)
-    if not rbac.has_role(user, Role.VIEWER):
+    if not rbac.has_role(user, Role.USER):
         raise HTTPException(
             status_code=403,
             detail="Viewer access required to view approval requests"
@@ -1707,7 +1707,7 @@ async def get_approval_stats(request: Request):
     # Check VIEWER role access
     rbac = get_rbac()
     user = rbac.extract_user_from_request(request)
-    if not rbac.has_role(user, Role.VIEWER):
+    if not rbac.has_role(user, Role.USER):
         raise HTTPException(
             status_code=403,
             detail="Viewer access required to view approval statistics"
