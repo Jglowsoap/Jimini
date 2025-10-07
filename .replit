@@ -5,7 +5,7 @@ modules = ["python-3.11", "nodejs-20"]
 channel = "stable-25_05"
 
 [deployment]
-run = ["python3", "replit_main.py"]
+run = ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "5000"]
 deploymentTarget = "autoscale"
 
 [[ports]]
