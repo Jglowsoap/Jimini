@@ -1,0 +1,83 @@
+🎯 Dashboard Overview
+Component: GovernmentPortal.js
+Base URL: /api/jimini
+Authentication: Bearer Token + Tenant/Session headers
+
+4 Main Tabs:
+
+📋 Decision Logs - View and filter policy decisions
+📝 Rules - YAML-based rule authoring with validation
+✅ Approvals - Policy proposal workflow
+📊 Coverage - Rule effectiveness statistics
+✅ Currently Working Endpoints (6)
+Your backend already proxies these to the external Jimini service:
+
+✅ GET  /api/jimini/rules              - Returns 29 active rules
+✅ GET  /api/jimini/approvals          - Returns approval queue  
+✅ GET  /api/jimini/decisions/stats    - Returns coverage stats
+✅ GET  /api/jimini/health             - Service health check
+✅ GET  /api/jimini/metrics            - System metrics
+✅ POST /api/jimini/evaluate           - Policy evaluation (used by SecureLLMWrapper)
+❓ Endpoints Needing Verification (8)
+The dashboard calls these, but we need to verify they're properly routed:
+
+❓ GET  /api/jimini/shadow/status               - Shadow mode toggle
+❓ GET  /api/jimini/decisions                   - Decision list with filters
+❓ GET  /api/jimini/decisions/{request_id}      - Decision details
+❓ POST /api/jimini/rules/validate              - YAML validation
+❓ POST /api/jimini/rules/dryrun                - Rule dry-run testing
+❓ POST /api/jimini/rules/publish               - Rule publishing
+❓ POST /api/jimini/approvals/{id}/approve      - Approve action
+❓ POST /api/jimini/approvals/{id}/decline      - Decline action
+📋 Expected Response Formats
+<details> <summary><b>Decision List Response</b></summary>
+{
+  "items": [
+    {
+      "request_id": "uuid",
+      "timestamp": "2025-10-06T16:19:00Z",
+      "decision": "ALLOW|FLAG|BLOCK",
+      "system": "LDAP|IDG|UMS|DB2|ServiceNow",
+      "endpoint": "/api/path",
+      "rule_id": "IL-AI-4.2",
+      "latency_ms": 15,
+      "tenant_id": "illinois-pki"
+    }
+  ],
+  "total": 150
+}
+</details> <details> <summary><b>Decision Details Response</b></summary>
+{
+  "request_id": "uuid",
+  "timestamp": "2025-10-06T16:19:00Z",
+  "decision": "BLOCK",
+  "system": "LDAP",
+  "endpoint": "/api/ldap/search",
+  "rule_id": "IL-AI-4.2",
+  "latency_ms": 15,
+  "tenant_id": "illinois-pki",
+  "request_masked": {"query": "***MASKED***"},
+  "response_masked": {"result": "***MASKED***"},
+  "citations": ["IL-AI-4.2: SSN Pattern Detected"]
+}
+</details> <details> <summary><b>Coverage Stats Response</b></summary>
+{
+  "rules_active": 29,
+  "coverage_pct": 85.5,
+  "freshness_days": 3,
+  "top_rules": [
+    {
+      "rule_id": "IL-AI-4.2",
+      "flags": 45,
+      "blocks": 12,
+      "total_hits": 57
+    }
+  ]
+}
+</details>
+🔍 Key Findings
+Dashboard expects all responses to use items array format
+Pagination uses page and size query params
+Timestamps must be ISO8601 format
+Masked PII shown in separate request_masked/response_masked fields
+Authentication via Bearer token with tenant headers
