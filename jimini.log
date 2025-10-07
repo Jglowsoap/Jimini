@@ -1,15 +1,197 @@
 nohup: ignoring input
-2025-10-02 21:19:49 [warning  ] OTEL setup failed: type object 'trace' has no attribute 'set_tracer_provider'
-2025-10-02 21:19:49 [warning  ] Failed to load retention policy, using defaults: app.data_privacy.RetentionPolicy() argument after ** must be a mapping, not PrivacySettings
-INFO:     Started server process [50731]
+2025-10-07 15:39:50 [warning  ] OTEL setup failed: type object 'trace' has no attribute 'set_tracer_provider'
+2025-10-07 15:39:50 [warning  ] Failed to load retention policy, using defaults: app.data_privacy.RetentionPolicy() argument after ** must be a mapping, not PrivacySettings
+INFO:     Started server process [18192]
 INFO:     Waiting for application startup.
 INFO:     Application startup complete.
 INFO:     Uvicorn running on http://0.0.0.0:9000 (Press CTRL+C to quit)
 Intelligence features not available: cannot import name 'validate_intelligence_setup' from 'app.intelligence' (/workspaces/Jimini/app/intelligence/__init__.py)
 ℹ️ Intelligence expansion features not available (install: pip install spacy transformers)
-Loaded 11 rules from packs/secrets/v1.yaml
-INFO:     127.0.0.1:56344 - "GET /health HTTP/1.1" 200 OK
+Loaded 143 rules from policy_rules.yaml
+INFO:     127.0.0.1:56852 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56854 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56870 - "POST /v1/evaluate HTTP/1.1" 422 Unprocessable Entity
+INFO:     127.0.0.1:56876 - "POST /v1/evaluate HTTP/1.1" 422 Unprocessable Entity
+INFO:     127.0.0.1:56890 - "POST /v1/evaluate HTTP/1.1" 422 Unprocessable Entity
+INFO:     127.0.0.1:56898 - "POST /v1/evaluate HTTP/1.1" 422 Unprocessable Entity
+INFO:     127.0.0.1:56908 - "POST /v1/evaluate HTTP/1.1" 422 Unprocessable Entity
+INFO:     127.0.0.1:56920 - "POST /v1/evaluate HTTP/1.1" 422 Unprocessable Entity
+INFO:     127.0.0.1:56922 - "POST /v1/evaluate HTTP/1.1" 422 Unprocessable Entity
+INFO:     127.0.0.1:56930 - "POST /v1/evaluate HTTP/1.1" 422 Unprocessable Entity
+INFO:     127.0.0.1:56938 - "POST /v1/evaluate HTTP/1.1" 422 Unprocessable Entity
+INFO:     127.0.0.1:56954 - "POST /v1/evaluate HTTP/1.1" 422 Unprocessable Entity
+INFO:     127.0.0.1:56964 - "POST /v1/evaluate HTTP/1.1" 422 Unprocessable Entity
+INFO:     127.0.0.1:56968 - "POST /v1/evaluate HTTP/1.1" 422 Unprocessable Entity
+INFO:     127.0.0.1:56976 - "POST /v1/evaluate HTTP/1.1" 422 Unprocessable Entity
+INFO:     127.0.0.1:56992 - "POST /v1/evaluate HTTP/1.1" 422 Unprocessable Entity
+INFO:     127.0.0.1:57002 - "POST /v1/evaluate HTTP/1.1" 422 Unprocessable Entity
+INFO:     127.0.0.1:57010 - "POST /v1/evaluate HTTP/1.1" 422 Unprocessable Entity
+INFO:     127.0.0.1:57022 - "POST /v1/evaluate HTTP/1.1" 422 Unprocessable Entity
+INFO:     127.0.0.1:57038 - "POST /v1/evaluate HTTP/1.1" 422 Unprocessable Entity
+INFO:     127.0.0.1:57046 - "POST /v1/evaluate HTTP/1.1" 422 Unprocessable Entity
+INFO:     127.0.0.1:57054 - "POST /v1/evaluate HTTP/1.1" 422 Unprocessable Entity
+INFO:     127.0.0.1:57062 - "POST /v1/evaluate HTTP/1.1" 422 Unprocessable Entity
+INFO:     127.0.0.1:57072 - "POST /v1/evaluate HTTP/1.1" 422 Unprocessable Entity
+INFO:     127.0.0.1:57080 - "POST /v1/evaluate HTTP/1.1" 422 Unprocessable Entity
+INFO:     127.0.0.1:57082 - "POST /v1/evaluate HTTP/1.1" 422 Unprocessable Entity
+INFO:     127.0.0.1:57094 - "POST /v1/evaluate HTTP/1.1" 422 Unprocessable Entity
+INFO:     127.0.0.1:57108 - "POST /v1/evaluate HTTP/1.1" 422 Unprocessable Entity
+INFO:     127.0.0.1:57110 - "POST /v1/evaluate HTTP/1.1" 422 Unprocessable Entity
+INFO:     127.0.0.1:57116 - "POST /v1/evaluate HTTP/1.1" 422 Unprocessable Entity
+INFO:     127.0.0.1:57132 - "POST /v1/evaluate HTTP/1.1" 422 Unprocessable Entity
+INFO:     127.0.0.1:57142 - "POST /v1/evaluate HTTP/1.1" 422 Unprocessable Entity
+INFO:     127.0.0.1:57158 - "POST /v1/evaluate HTTP/1.1" 422 Unprocessable Entity
+INFO:     127.0.0.1:57162 - "POST /v1/evaluate HTTP/1.1" 422 Unprocessable Entity
+INFO:     127.0.0.1:57176 - "POST /v1/evaluate HTTP/1.1" 422 Unprocessable Entity
+INFO:     127.0.0.1:57192 - "POST /v1/evaluate HTTP/1.1" 422 Unprocessable Entity
+INFO:     127.0.0.1:57204 - "POST /v1/evaluate HTTP/1.1" 422 Unprocessable Entity
+INFO:     127.0.0.1:57208 - "POST /v1/evaluate HTTP/1.1" 422 Unprocessable Entity
+INFO:     127.0.0.1:57222 - "POST /v1/evaluate HTTP/1.1" 422 Unprocessable Entity
+INFO:     127.0.0.1:57224 - "POST /v1/evaluate HTTP/1.1" 422 Unprocessable Entity
+INFO:     127.0.0.1:57240 - "POST /v1/evaluate HTTP/1.1" 422 Unprocessable Entity
+INFO:     127.0.0.1:57242 - "POST /v1/evaluate HTTP/1.1" 422 Unprocessable Entity
+INFO:     127.0.0.1:57246 - "POST /v1/evaluate HTTP/1.1" 422 Unprocessable Entity
+INFO:     127.0.0.1:57262 - "POST /v1/evaluate HTTP/1.1" 422 Unprocessable Entity
+INFO:     127.0.0.1:57276 - "POST /v1/evaluate HTTP/1.1" 422 Unprocessable Entity
+INFO:     127.0.0.1:57284 - "POST /v1/evaluate HTTP/1.1" 422 Unprocessable Entity
+INFO:     127.0.0.1:57288 - "POST /v1/evaluate HTTP/1.1" 422 Unprocessable Entity
+INFO:     127.0.0.1:57296 - "POST /v1/evaluate HTTP/1.1" 422 Unprocessable Entity
+INFO:     127.0.0.1:57312 - "POST /v1/evaluate HTTP/1.1" 422 Unprocessable Entity
+INFO:     127.0.0.1:57320 - "POST /v1/evaluate HTTP/1.1" 422 Unprocessable Entity
+INFO:     127.0.0.1:57328 - "POST /v1/evaluate HTTP/1.1" 422 Unprocessable Entity
+INFO:     127.0.0.1:57334 - "POST /v1/evaluate HTTP/1.1" 422 Unprocessable Entity
+INFO:     127.0.0.1:57348 - "POST /v1/evaluate HTTP/1.1" 422 Unprocessable Entity
+INFO:     127.0.0.1:57358 - "POST /v1/evaluate HTTP/1.1" 422 Unprocessable Entity
+INFO:     127.0.0.1:57374 - "POST /v1/evaluate HTTP/1.1" 422 Unprocessable Entity
+INFO:     127.0.0.1:57376 - "POST /v1/evaluate HTTP/1.1" 422 Unprocessable Entity
+INFO:     127.0.0.1:57390 - "POST /v1/evaluate HTTP/1.1" 422 Unprocessable Entity
+INFO:     127.0.0.1:57402 - "POST /v1/evaluate HTTP/1.1" 422 Unprocessable Entity
+INFO:     127.0.0.1:57414 - "POST /v1/evaluate HTTP/1.1" 422 Unprocessable Entity
+INFO:     127.0.0.1:57430 - "POST /v1/evaluate HTTP/1.1" 422 Unprocessable Entity
+INFO:     127.0.0.1:57436 - "POST /v1/evaluate HTTP/1.1" 422 Unprocessable Entity
+INFO:     127.0.0.1:57446 - "POST /v1/evaluate HTTP/1.1" 422 Unprocessable Entity
+INFO:     127.0.0.1:57454 - "POST /v1/evaluate HTTP/1.1" 422 Unprocessable Entity
+INFO:     127.0.0.1:57468 - "POST /v1/evaluate HTTP/1.1" 422 Unprocessable Entity
+INFO:     127.0.0.1:57476 - "POST /v1/evaluate HTTP/1.1" 422 Unprocessable Entity
+INFO:     127.0.0.1:57484 - "POST /v1/evaluate HTTP/1.1" 422 Unprocessable Entity
+INFO:     127.0.0.1:57500 - "POST /v1/evaluate HTTP/1.1" 422 Unprocessable Entity
+INFO:     127.0.0.1:57506 - "POST /v1/evaluate HTTP/1.1" 422 Unprocessable Entity
+INFO:     127.0.0.1:57512 - "POST /v1/evaluate HTTP/1.1" 422 Unprocessable Entity
+INFO:     127.0.0.1:57528 - "POST /v1/evaluate HTTP/1.1" 422 Unprocessable Entity
+INFO:     127.0.0.1:57530 - "POST /v1/evaluate HTTP/1.1" 422 Unprocessable Entity
+INFO:     127.0.0.1:57538 - "POST /v1/evaluate HTTP/1.1" 422 Unprocessable Entity
+INFO:     127.0.0.1:57548 - "POST /v1/evaluate HTTP/1.1" 422 Unprocessable Entity
+INFO:     127.0.0.1:57550 - "POST /v1/evaluate HTTP/1.1" 422 Unprocessable Entity
+INFO:     127.0.0.1:57562 - "POST /v1/evaluate HTTP/1.1" 422 Unprocessable Entity
+INFO:     127.0.0.1:57576 - "POST /v1/evaluate HTTP/1.1" 422 Unprocessable Entity
+INFO:     127.0.0.1:57586 - "POST /v1/evaluate HTTP/1.1" 422 Unprocessable Entity
+INFO:     127.0.0.1:57592 - "POST /v1/evaluate HTTP/1.1" 422 Unprocessable Entity
+INFO:     127.0.0.1:57608 - "POST /v1/evaluate HTTP/1.1" 422 Unprocessable Entity
+INFO:     127.0.0.1:57612 - "POST /v1/evaluate HTTP/1.1" 422 Unprocessable Entity
+INFO:     127.0.0.1:57616 - "POST /v1/evaluate HTTP/1.1" 422 Unprocessable Entity
+INFO:     127.0.0.1:57618 - "POST /v1/evaluate HTTP/1.1" 422 Unprocessable Entity
+INFO:     127.0.0.1:57628 - "POST /v1/evaluate HTTP/1.1" 422 Unprocessable Entity
+INFO:     127.0.0.1:57644 - "POST /v1/evaluate HTTP/1.1" 422 Unprocessable Entity
+INFO:     127.0.0.1:57650 - "POST /v1/evaluate HTTP/1.1" 422 Unprocessable Entity
+INFO:     127.0.0.1:57664 - "POST /v1/evaluate HTTP/1.1" 422 Unprocessable Entity
+INFO:     127.0.0.1:57674 - "POST /v1/evaluate HTTP/1.1" 422 Unprocessable Entity
+INFO:     127.0.0.1:57684 - "POST /v1/evaluate HTTP/1.1" 422 Unprocessable Entity
+INFO:     127.0.0.1:57698 - "POST /v1/evaluate HTTP/1.1" 422 Unprocessable Entity
+INFO:     127.0.0.1:57710 - "POST /v1/evaluate HTTP/1.1" 422 Unprocessable Entity
+INFO:     127.0.0.1:54560 - "POST /v1/evaluate HTTP/1.1" 422 Unprocessable Entity
+INFO:     127.0.0.1:53622 - "POST /v1/evaluate HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33594 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33602 - "POST /v1/evaluate HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33612 - "POST /v1/evaluate HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33616 - "POST /v1/evaluate HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33622 - "POST /v1/evaluate HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33634 - "POST /v1/evaluate HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33642 - "POST /v1/evaluate HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33648 - "POST /v1/evaluate HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33654 - "POST /v1/evaluate HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33656 - "POST /v1/evaluate HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33664 - "POST /v1/evaluate HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33678 - "POST /v1/evaluate HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33680 - "POST /v1/evaluate HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33686 - "POST /v1/evaluate HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33702 - "POST /v1/evaluate HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33710 - "POST /v1/evaluate HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33716 - "POST /v1/evaluate HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33722 - "POST /v1/evaluate HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33738 - "POST /v1/evaluate HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33750 - "POST /v1/evaluate HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33766 - "POST /v1/evaluate HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33782 - "POST /v1/evaluate HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33792 - "POST /v1/evaluate HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33802 - "POST /v1/evaluate HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33808 - "POST /v1/evaluate HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33812 - "POST /v1/evaluate HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33828 - "POST /v1/evaluate HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33836 - "POST /v1/evaluate HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33850 - "POST /v1/evaluate HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33852 - "POST /v1/evaluate HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33860 - "POST /v1/evaluate HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33872 - "POST /v1/evaluate HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33888 - "POST /v1/evaluate HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33896 - "POST /v1/evaluate HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33906 - "POST /v1/evaluate HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33908 - "POST /v1/evaluate HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33920 - "POST /v1/evaluate HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33932 - "POST /v1/evaluate HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33940 - "POST /v1/evaluate HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33942 - "POST /v1/evaluate HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33944 - "POST /v1/evaluate HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33960 - "POST /v1/evaluate HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33968 - "POST /v1/evaluate HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33974 - "POST /v1/evaluate HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33978 - "POST /v1/evaluate HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33992 - "POST /v1/evaluate HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33994 - "POST /v1/evaluate HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33998 - "POST /v1/evaluate HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34004 - "POST /v1/evaluate HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34020 - "POST /v1/evaluate HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34026 - "POST /v1/evaluate HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34028 - "POST /v1/evaluate HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34038 - "POST /v1/evaluate HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34044 - "POST /v1/evaluate HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34060 - "POST /v1/evaluate HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34074 - "POST /v1/evaluate HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34090 - "POST /v1/evaluate HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34092 - "POST /v1/evaluate HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34108 - "POST /v1/evaluate HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34110 - "POST /v1/evaluate HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34124 - "POST /v1/evaluate HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34128 - "POST /v1/evaluate HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34144 - "POST /v1/evaluate HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34150 - "POST /v1/evaluate HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34164 - "POST /v1/evaluate HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34176 - "POST /v1/evaluate HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34182 - "POST /v1/evaluate HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34186 - "POST /v1/evaluate HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34202 - "POST /v1/evaluate HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34206 - "POST /v1/evaluate HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34212 - "POST /v1/evaluate HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34228 - "POST /v1/evaluate HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34232 - "POST /v1/evaluate HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34248 - "POST /v1/evaluate HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34250 - "POST /v1/evaluate HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34254 - "POST /v1/evaluate HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34256 - "POST /v1/evaluate HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40972 - "POST /v1/evaluate HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40988 - "POST /v1/evaluate HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40998 - "POST /v1/evaluate HTTP/1.1" 200 OK
+INFO:     127.0.0.1:41002 - "POST /v1/evaluate HTTP/1.1" 200 OK
+INFO:     127.0.0.1:41004 - "POST /v1/evaluate HTTP/1.1" 200 OK
+INFO:     127.0.0.1:41008 - "POST /v1/evaluate HTTP/1.1" 200 OK
+INFO:     127.0.0.1:41012 - "POST /v1/evaluate HTTP/1.1" 200 OK
+INFO:     127.0.0.1:41024 - "POST /v1/evaluate HTTP/1.1" 200 OK
+INFO:     127.0.0.1:41040 - "POST /v1/evaluate HTTP/1.1" 200 OK
+INFO:     127.0.0.1:41044 - "POST /v1/evaluate HTTP/1.1" 200 OK
+INFO:     127.0.0.1:41048 - "POST /v1/evaluate HTTP/1.1" 200 OK
+INFO:     127.0.0.1:41056 - "POST /v1/evaluate HTTP/1.1" 200 OK
+INFO:     127.0.0.1:43364 - "POST /v1/evaluate HTTP/1.1" 200 OK
+INFO:     127.0.0.1:43376 - "GET /health HTTP/1.1" 200 OK
 INFO:     Shutting down
 INFO:     Waiting for application shutdown.
 INFO:     Application shutdown complete.
-INFO:     Finished server process [50731]
+INFO:     Finished server process [18192]

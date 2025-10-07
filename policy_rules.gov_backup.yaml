@@ -1,0 +1,1394 @@
+rules:
+- id: IL-AI-4.2
+  title: 'PII: Social Security Numbers'
+  text: Block any full SSN patterns
+  pattern: \b\d{3}-\d{2}-\d{4}\b
+  severity: error
+  action: block
+  tags:
+  - PII
+  - personal_data
+  shadow_override: enforce
+- id: EMAIL-1.0
+  title: 'PII: Email Address'
+  text: Flag any standard email address
+  pattern: \b[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}\b
+  severity: warning
+  action: flag
+  tags:
+  - PII
+  - personal_data
+- id: GITHUB-TOKEN-1.0
+  title: 'Secret: GitHub Personal Access Token'
+  pattern: \bghp_[A-Za-z0-9]{36}\b
+  severity: error
+  action: block
+  tags:
+  - secret
+  - github
+  shadow_override: enforce
+- id: OPENAI-KEY-1.0
+  title: 'Secret: OpenAI API Key (all formats)'
+  pattern: \bsk-(?:proj-|[A-Za-z0-9]{20,}|[A-Za-z0-9]{32,})\b
+  severity: error
+  action: block
+  tags:
+  - secret
+  - openai
+  shadow_override: enforce
+- id: API-1.0
+  title: 'Security: Generic long alphanumeric sequence'
+  text: Block long alphanumeric blobs (potential API keys/secrets)
+  pattern: \b[A-Za-z0-9_\-]{20,}\b
+  severity: error
+  action: block
+  tags:
+  - security
+  - credentials
+  shadow_override: enforce
+- id: INJ-1.0
+  title: 'Injection: Prompt-Injection Keywords (basic)'
+  text: Flag if the content references system/assistant prompts explicitly
+  pattern: \b(system prompt|assistant prompt)\b
+  severity: warning
+  action: flag
+  tags:
+  - injection
+  - security
+- id: INJ-2.0
+  title: 'Injection: Override/Ignore Directives'
+  text: Flag common instruction-subversion phrases
+  pattern: \b(ignore previous|as system|developer message|tool output)\b
+  severity: warning
+  action: flag
+  tags:
+  - injection
+  - security
+- id: CJIS-BIOMETRIC-1.0
+  title: 'CJIS: Biometric data exposure'
+  text: Block biometric terms on CJIS endpoints
+  pattern: (?i)\b(fingerprint|mugshot|iris scan|retina scan|palm print|dna profile|voiceprint|biometric
+    record)\b
+  severity: error
+  action: block
+  tags:
+  - security
+  - credentials
+  shadow_override: enforce
+- id: HIPAA-PHI-EMAIL-1.0
+  title: 'HIPAA: Email addresses (PHI risk)'
+  text: Flag emails in healthcare contexts; tune with endpoint scoping if desired
+  pattern: (?i)\b[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-ZaZ]{2,}\b
+  severity: warning
+  action: flag
+  tags:
+  - hipaa
+  - phi
+  - pii
+- id: MAX-DUMP-5K
+  title: 'Bulk output: >5,000 characters'
+  text: Block unusually large outputs (tune per endpoint)
+  max_chars: 5000
+  severity: error
+  action: block
+  tags:
+  - copilot
+  - data_exfiltration
+  - microsoft
+  shadow_override: enforce
+- id: BULK-EMAIL-3
+  title: Bulk email leakage
+  text: Block if 3+ email addresses appear in a single response
+  pattern: (?i)[A-ZaZ0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-ZaZ]{2,}
+  min_count: 3
+  severity: error
+  action: block
+  tags:
+  - exfiltration
+  - pii
+  applies_to:
+  - outbound
+- id: AWS-ACCESS-KEY-1.0
+  title: 'Secret: AWS Access Key ID'
+  pattern: \bAKIA[0-9A-Z]{16}\b
+  severity: error
+  action: block
+  tags:
+  - secret
+  - aws
+  shadow_override: enforce
+- id: AWS-SECRET-KEY-1.0
+  title: 'Secret: AWS Secret Access Key pattern'
+  pattern: \b[A-Za-z0-9/+=]{40}\b
+  severity: error
+  action: block
+  tags:
+  - secret
+  - aws
+  shadow_override: enforce
+- id: JWT-1.0
+  title: 'Secret: JSON Web Token (JWT) structure'
+  pattern: \beyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\b
+  severity: error
+  action: block
+  tags:
+  - secret
+  - jwt
+  shadow_override: enforce
+- id: HALLUC-1.0
+  title: AI Hallucination Check
+  text: Flag if the agent output seems hallucinated
+  llm_prompt: 'You are a strict compliance checker. The user provided an AI output.
+
+    Determine if it is likely hallucinated or non-factual. Reply with exactly:
+
+    "Yes" if likely hallucinated, or "No" if not.
+
+    '
+  severity: warning
+  action: flag
+  tags:
+  - AI
+  - hallucination
+- id: MS-COPILOT-1.0
+  title: 'Microsoft Copilot: Block data sharing prompts'
+  text: Prevent users from requesting Copilot to store, remember, or share government
+    data
+  pattern: (?i)\b(?:copilot|github copilot|microsoft copilot)[^.]{0,50}(?:save|store|remember|share|upload|send|transmit|export|backup|sync|cloud)\b
+  severity: error
+  action: block
+  tags:
+  - copilot
+  - data_exfiltration
+  - microsoft
+  shadow_override: enforce
+- id: MS-COPILOT-2.0
+  title: 'Microsoft Copilot: Block telemetry requests'
+  text: Prevent prompts asking Copilot to analyze usage patterns or generate analytics
+  pattern: (?i)\b(?:analyze|generate|create|produce)[^.]{0,30}(?:report|analytics|statistics|metrics|usage|patterns|trends)[^.]{0,30}(?:about|from|of|for)[^.]{0,30}(?:this|my|our|government|department|agency|office)\b
+  severity: error
+  action: block
+  tags:
+  - copilot
+  - analytics
+  - telemetry
+  shadow_override: enforce
+- id: MS-COPILOT-3.0
+  title: 'Microsoft Copilot: Block training data requests'
+  text: Prevent attempts to use government data to improve AI models
+  pattern: (?i)\b(?:use|train|improve|enhance|update|feed|add)[^.]{0,30}(?:this|my|our)[^.]{0,30}(?:data|information|content|code|documents)[^.]{0,30}(?:to|for)[^.]{0,30}(?:training|learning|improvement|enhancement|model|ai)\b
+  severity: error
+  action: block
+  tags:
+  - copilot
+  - training_data
+  - model_improvement
+  shadow_override: enforce
+- id: MS-COPILOT-4.0
+  title: 'Microsoft Copilot: Block code repository scanning'
+  text: Prevent Copilot from being asked to scan entire repositories or codebases
+  pattern: (?i)\b(?:scan|analyze|review|examine|audit|check)[^.]{0,30}(?:entire|whole|all|my|our)[^.]{0,30}(?:repository|repo|codebase|project|files|source
+    code)\b
+  severity: error
+  action: block
+  tags:
+  - copilot
+  - repository_scan
+  - code_analysis
+  shadow_override: enforce
+- id: MS-COPILOT-5.0
+  title: 'Microsoft Copilot: Block credential extraction attempts'
+  text: Prevent attempts to extract or identify credentials from code or config files
+  pattern: (?i)\b(?:find|extract|identify|locate|get|show|list)[^.]{0,30}(?:credentials|passwords|keys|tokens|secrets|api
+    keys|config|configuration|env|environment)\b
+  severity: error
+  action: block
+  tags:
+  - copilot
+  - credential_extraction
+  - security
+  shadow_override: enforce
+- id: MS-COPILOT-6.0
+  title: 'Microsoft Copilot: Block infrastructure disclosure'
+  text: Prevent requests for information about government IT infrastructure
+  pattern: (?i)\b(?:describe|explain|show|tell me about|what is)[^.]{0,30}(?:our|my|this|the)[^.]{0,30}(?:infrastructure|architecture|network|servers|databases|systems|environment|deployment|setup|configuration)\b
+  severity: error
+  action: block
+  tags:
+  - copilot
+  - infrastructure
+  - disclosure
+  shadow_override: enforce
+- id: MS-COPILOT-7.0
+  title: 'Microsoft Copilot: Block PII combination requests'
+  text: Prevent requests to combine or correlate PII from multiple sources
+  pattern: (?i)\b(?:combine|merge|correlate|join|match|link|connect)[^.]{0,50}(?:citizen|resident|employee|person|individual|user)[^.]{0,30}(?:data|information|records|profiles)\b
+  severity: error
+  action: block
+  tags:
+  - copilot
+  - pii_correlation
+  - data_mining
+  shadow_override: enforce
+- id: MS-COPILOT-8.0
+  title: 'Microsoft Copilot: Block database query generation'
+  text: Prevent generation of SQL queries against government databases
+  pattern: (?i)\b(?:generate|create|write|build)[^.]{0,30}(?:sql|query|database)[^.]{0,50}(?:select|from|where|join|update|insert|delete)\b
+  severity: error
+  action: block
+  tags:
+  - copilot
+  - sql_generation
+  - database_access
+  shadow_override: enforce
+- id: MS-COPILOT-9.0
+  title: 'Microsoft Copilot: Block citizen data profiling'
+  text: Prevent attempts to profile or categorize citizens based on data patterns
+  pattern: (?i)\b(?:profile|categorize|classify|segment|group|analyze|identify)[^.]{0,30}(?:citizens|residents|people|individuals|users)[^.]{0,30}(?:based
+    on|by|using|from)[^.]{0,30}(?:data|information|patterns|behavior|demographics)\b
+  severity: error
+  action: block
+  tags:
+  - copilot
+  - citizen_profiling
+  - demographics
+  shadow_override: enforce
+- id: MS-COPILOT-10.0
+  title: 'Microsoft Copilot: Block compliance bypass attempts'
+  text: Prevent requests to bypass security controls or compliance measures
+  pattern: (?i)\b(?:bypass|circumvent|avoid|skip|ignore|disable|override|turn off)[^.]{0,30}(?:security|compliance|audit|logging|monitoring|controls|restrictions|policies|rules)\b
+  severity: error
+  action: block
+  tags:
+  - copilot
+  - compliance_bypass
+  - security_override
+  shadow_override: enforce
+- id: MS-COPILOT-11.0
+  title: 'Microsoft Copilot: Government entity identification'
+  text: Flag references to specific government entities to ensure proper data handling
+  pattern: (?i)\b(?:illinois|state of illinois|il gov|department of|secretary of state|dmv|revenue|healthcare|human
+    services|corrections|transportation|dnr|dcfs|dhs|idor|idot)\b
+  severity: warning
+  action: flag
+  tags:
+  - copilot
+  - government_entity
+  - context
+- id: MS-COPILOT-12.0
+  title: 'Microsoft Copilot: Bulk data export attempts'
+  text: Block attempts to export large datasets or generate bulk reports
+  pattern: (?i)\b(?:export|download|generate|create|extract)[^.]{0,30}(?:all|bulk|entire|complete|full)[^.]{0,30}(?:data|dataset|records|report|file|csv|excel|json|xml)\b
+  severity: error
+  action: block
+  tags:
+  - copilot
+  - bulk_export
+  - data_exfiltration
+  shadow_override: enforce
+- id: MS-COPILOT-MICROSOFT-REFS
+  title: 'Microsoft Copilot: Microsoft service integration references'
+  text: Flag mentions of Microsoft cloud services that could enable data transfer
+  pattern: (?i)\b(?:azure|office 365|o365|sharepoint|onedrive|teams|outlook|exchange|power
+    bi|dynamics|microsoft cloud|m365|microsoft 365)\b
+  severity: warning
+  action: flag
+  tags:
+  - copilot
+  - microsoft_services
+  - cloud_integration
+- id: MS-COPILOT-CODE-SUGGESTIONS
+  title: 'Microsoft Copilot: Code suggestions with embedded secrets'
+  text: Block code suggestions that might contain hardcoded credentials or keys
+  pattern: (?i)(?:const|var|let|string|password|key|token|secret)\s*[=:]\s*["'](?:[A-Za-z0-9+/=_\-]{16,}|[a-f0-9]{32,})["']
+  severity: error
+  action: block
+  tags:
+  - copilot
+  - code_suggestions
+  - embedded_secrets
+  shadow_override: enforce
+- id: PII-DL-AL-1.0
+  title: Alabama Driver's License Detection
+  severity: medium
+  pattern: \b\d{1,8}\b
+  action: flag
+  applies_to:
+  - request
+  - response
+  endpoints:
+  - '*'
+  metadata:
+    category: PII
+    subcategory: drivers_license
+    state: AL
+    format: 1-8 digits
+    example: '1234567'
+    confidence: high
+- id: PII-DL-AK-1.0
+  title: Alaska Driver's License Detection
+  severity: medium
+  pattern: \b\d{1,7}\b
+  action: flag
+  applies_to:
+  - request
+  - response
+  endpoints:
+  - '*'
+  metadata:
+    category: PII
+    subcategory: drivers_license
+    state: AK
+    format: 1-7 digits
+    example: '1234567'
+    confidence: high
+- id: PII-DL-AZ-1.0
+  title: Arizona Driver's License Detection
+  severity: medium
+  pattern: \b[A-Z]\d{8}\b|\b[A-Z]{2}\d{2,5}\b|\b\d{9}\b
+  action: flag
+  applies_to:
+  - request
+  - response
+  endpoints:
+  - '*'
+  metadata:
+    category: PII
+    subcategory: drivers_license
+    state: AZ
+    format: 1 letter + 8 digits OR 2 letters + 2-5 digits OR 9 digits
+    example: A12345678
+    confidence: high
+- id: PII-DL-AR-1.0
+  title: Arkansas Driver's License Detection
+  severity: medium
+  pattern: \b\d{4,9}\b
+  action: flag
+  applies_to:
+  - request
+  - response
+  endpoints:
+  - '*'
+  metadata:
+    category: PII
+    subcategory: drivers_license
+    state: AR
+    format: 4-9 digits
+    example: '123456789'
+    confidence: high
+- id: PII-DL-CA-1.0
+  title: California Driver's License Detection
+  severity: medium
+  pattern: \b[A-Z]\d{7}\b
+  action: flag
+  applies_to:
+  - request
+  - response
+  endpoints:
+  - '*'
+  metadata:
+    category: PII
+    subcategory: drivers_license
+    state: CA
+    format: 1 letter + 7 digits
+    example: A1234567
+    confidence: high
+- id: PII-DL-CO-1.0
+  title: Colorado Driver's License Detection
+  severity: medium
+  pattern: \b\d{9}\b|\b[A-Z]{1,2}\d{1,6}\b
+  action: flag
+  applies_to:
+  - request
+  - response
+  endpoints:
+  - '*'
+  metadata:
+    category: PII
+    subcategory: drivers_license
+    state: CO
+    format: 9 digits OR 1-2 letters + 1-6 digits
+    example: '123456789'
+    confidence: high
+- id: PII-DL-CT-1.0
+  title: Connecticut Driver's License Detection
+  severity: medium
+  pattern: \b\d{9}\b
+  action: flag
+  applies_to:
+  - request
+  - response
+  endpoints:
+  - '*'
+  metadata:
+    category: PII
+    subcategory: drivers_license
+    state: CT
+    format: 9 digits
+    example: '123456789'
+    confidence: high
+- id: PII-DL-DE-1.0
+  title: Delaware Driver's License Detection
+  severity: medium
+  pattern: \b\d{1,7}\b
+  action: flag
+  applies_to:
+  - request
+  - response
+  endpoints:
+  - '*'
+  metadata:
+    category: PII
+    subcategory: drivers_license
+    state: DE
+    format: 1-7 digits
+    example: '1234567'
+    confidence: high
+- id: PII-DL-DC-1.0
+  title: District of Columbia Driver's License Detection
+  severity: medium
+  pattern: \b\d{7}\b|\b[A-Z]{1,3}\d{3,7}\b
+  action: flag
+  applies_to:
+  - request
+  - response
+  endpoints:
+  - '*'
+  metadata:
+    category: PII
+    subcategory: drivers_license
+    state: DC
+    format: 7 digits OR 1-3 letters + 3-7 digits
+    example: '1234567'
+    confidence: high
+- id: PII-DL-FL-1.0
+  title: Florida Driver's License Detection
+  severity: medium
+  pattern: \b[A-Z]\d{12}\b
+  action: flag
+  applies_to:
+  - request
+  - response
+  endpoints:
+  - '*'
+  metadata:
+    category: PII
+    subcategory: drivers_license
+    state: FL
+    format: 1 letter + 12 digits
+    example: A123456789012
+    confidence: high
+- id: PII-DL-GA-1.0
+  title: Georgia Driver's License Detection
+  severity: medium
+  pattern: \b\d{7,9}\b
+  action: flag
+  applies_to:
+  - request
+  - response
+  endpoints:
+  - '*'
+  metadata:
+    category: PII
+    subcategory: drivers_license
+    state: GA
+    format: 7-9 digits
+    example: '123456789'
+    confidence: high
+- id: PII-DL-HI-1.0
+  title: Hawaii Driver's License Detection
+  severity: medium
+  pattern: \b[A-Z]\d{8}\b|\b\d{9}\b
+  action: flag
+  applies_to:
+  - request
+  - response
+  endpoints:
+  - '*'
+  metadata:
+    category: PII
+    subcategory: drivers_license
+    state: HI
+    format: 1 letter + 8 digits OR 9 digits
+    example: H12345678
+    confidence: high
+- id: PII-DL-ID-1.0
+  title: Idaho Driver's License Detection
+  severity: medium
+  pattern: \b[A-Z]{2}\d{6}[A-Z]\b|\b\d{9}\b
+  action: flag
+  applies_to:
+  - request
+  - response
+  endpoints:
+  - '*'
+  metadata:
+    category: PII
+    subcategory: drivers_license
+    state: ID
+    format: 2 letters + 6 digits + 1 letter OR 9 digits
+    example: AB123456C
+    confidence: high
+- id: PII-DL-IL-1.0
+  title: Illinois Driver's License Detection
+  severity: medium
+  pattern: \b[A-Z]\d{11}\b|\b\d{11}[A-Z]\b
+  action: flag
+  applies_to:
+  - request
+  - response
+  endpoints:
+  - '*'
+  metadata:
+    category: PII
+    subcategory: drivers_license
+    state: IL
+    format: 1 letter + 11 digits (DL) OR 11 digits + 1 letter (ID)
+    example: A12345678901
+    confidence: high
+- id: PII-DL-IN-1.0
+  title: Indiana Driver's License Detection
+  severity: medium
+  pattern: \b[A-Z]\d{9}\b|\b\d{10}\b
+  action: flag
+  applies_to:
+  - request
+  - response
+  endpoints:
+  - '*'
+  metadata:
+    category: PII
+    subcategory: drivers_license
+    state: IN
+    format: 1 letter + 9 digits OR 10 digits
+    example: A123456789
+    confidence: high
+- id: PII-DL-IA-1.0
+  title: Iowa Driver's License Detection
+  severity: medium
+  pattern: \b\d{9}\b|\b\d{3}[A-Z]{2}\d{4}\b
+  action: flag
+  applies_to:
+  - request
+  - response
+  endpoints:
+  - '*'
+  metadata:
+    category: PII
+    subcategory: drivers_license
+    state: IA
+    format: 9 digits OR 3 digits + 2 letters + 4 digits
+    example: '123456789'
+    confidence: high
+- id: PII-DL-KS-1.0
+  title: Kansas Driver's License Detection
+  severity: medium
+  pattern: \b[A-Z]\d{8}\b|\b\d{9}\b
+  action: flag
+  applies_to:
+  - request
+  - response
+  endpoints:
+  - '*'
+  metadata:
+    category: PII
+    subcategory: drivers_license
+    state: KS
+    format: 1 letter + 8 digits OR 9 digits
+    example: K12345678
+    confidence: high
+- id: PII-DL-KY-1.0
+  title: Kentucky Driver's License Detection
+  severity: medium
+  pattern: \b[A-Z]\d{8}\b|\b\d{9}\b
+  action: flag
+  applies_to:
+  - request
+  - response
+  endpoints:
+  - '*'
+  metadata:
+    category: PII
+    subcategory: drivers_license
+    state: KY
+    format: 1 letter + 8 digits OR 9 digits
+    example: K12345678
+    confidence: high
+- id: PII-DL-LA-1.0
+  title: Louisiana Driver's License Detection
+  severity: medium
+  pattern: \b\d{1,9}\b
+  action: flag
+  applies_to:
+  - request
+  - response
+  endpoints:
+  - '*'
+  metadata:
+    category: PII
+    subcategory: drivers_license
+    state: LA
+    format: 1-9 digits
+    example: '123456789'
+    confidence: high
+- id: PII-DL-ME-1.0
+  title: Maine Driver's License Detection
+  severity: medium
+  pattern: \b\d{7}[A-Z]?\b
+  action: flag
+  applies_to:
+  - request
+  - response
+  endpoints:
+  - '*'
+  metadata:
+    category: PII
+    subcategory: drivers_license
+    state: ME
+    format: 7 digits OR 7 digits + 1 letter
+    example: '1234567'
+    confidence: high
+- id: PII-DL-MD-1.0
+  title: Maryland Driver's License Detection
+  severity: medium
+  pattern: \b[A-Z]\d{12}\b
+  action: flag
+  applies_to:
+  - request
+  - response
+  endpoints:
+  - '*'
+  metadata:
+    category: PII
+    subcategory: drivers_license
+    state: MD
+    format: 1 letter + 12 digits
+    example: M123456789012
+    confidence: high
+- id: PII-DL-MA-1.0
+  title: Massachusetts Driver's License Detection
+  severity: medium
+  pattern: \b[A-Z]\d{8}\b|\b\d{9}\b
+  action: flag
+  applies_to:
+  - request
+  - response
+  endpoints:
+  - '*'
+  metadata:
+    category: PII
+    subcategory: drivers_license
+    state: MA
+    format: 1 letter + 8 digits OR 9 digits
+    example: S12345678
+    confidence: high
+- id: PII-DL-MI-1.0
+  title: Michigan Driver's License Detection
+  severity: medium
+  pattern: \b[A-Z]\d{10,12}\b
+  action: flag
+  applies_to:
+  - request
+  - response
+  endpoints:
+  - '*'
+  metadata:
+    category: PII
+    subcategory: drivers_license
+    state: MI
+    format: 1 letter + 12 digits OR 1 letter + 10 digits
+    example: A123456789012
+    confidence: high
+- id: PII-DL-MN-1.0
+  title: Minnesota Driver's License Detection
+  severity: medium
+  pattern: \b[A-Z]\d{12}\b
+  action: flag
+  applies_to:
+  - request
+  - response
+  endpoints:
+  - '*'
+  metadata:
+    category: PII
+    subcategory: drivers_license
+    state: MN
+    format: 1 letter + 12 digits
+    example: A123456789012
+    confidence: high
+- id: PII-DL-MS-1.0
+  title: Mississippi Driver's License Detection
+  severity: medium
+  pattern: \b\d{9}\b
+  action: flag
+  applies_to:
+  - request
+  - response
+  endpoints:
+  - '*'
+  metadata:
+    category: PII
+    subcategory: drivers_license
+    state: MS
+    format: 9 digits
+    example: '123456789'
+    confidence: high
+- id: PII-DL-MO-1.0
+  title: Missouri Driver's License Detection
+  severity: medium
+  pattern: \b[A-Z]\d{5,9}\b|\b[A-Z]\d{6}R\b|\b\d{8,9}\b
+  action: flag
+  applies_to:
+  - request
+  - response
+  endpoints:
+  - '*'
+  metadata:
+    category: PII
+    subcategory: drivers_license
+    state: MO
+    format: 1 letter + 5-9 digits OR 1 letter + 6 digits + R OR 8-9 digits
+    example: A123456789
+    confidence: high
+- id: PII-DL-MT-1.0
+  title: Montana Driver's License Detection
+  severity: medium
+  pattern: \b\d{13}\b|\b\d{9}[A-Z]{3}\b|\b\d{14}\b
+  action: flag
+  applies_to:
+  - request
+  - response
+  endpoints:
+  - '*'
+  metadata:
+    category: PII
+    subcategory: drivers_license
+    state: MT
+    format: 13 digits OR 9 digits + 3 letters OR 14 digits
+    example: '1234567890123'
+    confidence: high
+- id: PII-DL-NE-1.0
+  title: Nebraska Driver's License Detection
+  severity: medium
+  pattern: \b[A-Z]\d{3,8}\b
+  action: flag
+  applies_to:
+  - request
+  - response
+  endpoints:
+  - '*'
+  metadata:
+    category: PII
+    subcategory: drivers_license
+    state: NE
+    format: 1 letter + 3-8 digits
+    example: A12345678
+    confidence: high
+- id: PII-DL-NV-1.0
+  title: Nevada Driver's License Detection
+  severity: medium
+  pattern: \b\d{4}\d{12}\b|\b\d{12}\b
+  action: flag
+  applies_to:
+  - request
+  - response
+  endpoints:
+  - '*'
+  metadata:
+    category: PII
+    subcategory: drivers_license
+    state: NV
+    format: 4 digits + 12 digits OR 12 digits
+    example: '123456789012'
+    confidence: high
+- id: PII-DL-NH-1.0
+  title: New Hampshire Driver's License Detection
+  severity: medium
+  pattern: \b\d{2}[A-Z]{3}\d{5}\b
+  action: flag
+  applies_to:
+  - request
+  - response
+  endpoints:
+  - '*'
+  metadata:
+    category: PII
+    subcategory: drivers_license
+    state: NH
+    format: 2 digits + 3 letters + 5 digits
+    example: 12ABC34567
+    confidence: high
+- id: PII-DL-NJ-1.0
+  title: New Jersey Driver's License Detection
+  severity: medium
+  pattern: \b[A-Z]\d{14}\b
+  action: flag
+  applies_to:
+  - request
+  - response
+  endpoints:
+  - '*'
+  metadata:
+    category: PII
+    subcategory: drivers_license
+    state: NJ
+    format: 1 letter + 14 digits
+    example: A12345678901234
+    confidence: high
+- id: PII-DL-NM-1.0
+  title: New Mexico Driver's License Detection
+  severity: medium
+  pattern: \b\d{8,9}\b
+  action: flag
+  applies_to:
+  - request
+  - response
+  endpoints:
+  - '*'
+  metadata:
+    category: PII
+    subcategory: drivers_license
+    state: NM
+    format: 8-9 digits
+    example: '123456789'
+    confidence: high
+- id: PII-DL-NY-1.0
+  title: New York Driver's License Detection
+  severity: medium
+  pattern: \b[A-Z]\d{7}\b|\b[A-Z]\d{18}\b|\b\d{8,9}\b|\b\d{16}\b
+  action: flag
+  applies_to:
+  - request
+  - response
+  endpoints:
+  - '*'
+  metadata:
+    category: PII
+    subcategory: drivers_license
+    state: NY
+    format: 1 letter + 7 digits OR 1 letter + 18 digits OR 8-9 digits OR 16 digits
+    example: A1234567
+    confidence: high
+- id: PII-DL-NC-1.0
+  title: North Carolina Driver's License Detection
+  severity: medium
+  pattern: \b\d{1,12}\b
+  action: flag
+  applies_to:
+  - request
+  - response
+  endpoints:
+  - '*'
+  metadata:
+    category: PII
+    subcategory: drivers_license
+    state: NC
+    format: 1-12 digits
+    example: '123456789012'
+    confidence: high
+- id: PII-DL-ND-1.0
+  title: North Dakota Driver's License Detection
+  severity: medium
+  pattern: \b[A-Z]{3}\d{6}\b|\b\d{9}\b
+  action: flag
+  applies_to:
+  - request
+  - response
+  endpoints:
+  - '*'
+  metadata:
+    category: PII
+    subcategory: drivers_license
+    state: ND
+    format: 3 letters + 6 digits OR 9 digits
+    example: ABC123456
+    confidence: high
+- id: PII-DL-OH-1.0
+  title: Ohio Driver's License Detection
+  severity: medium
+  pattern: \b[A-Z]\d{4,8}\b|\b[A-Z]{2}\d{3,7}\b|\b\d{8}\b
+  action: flag
+  applies_to:
+  - request
+  - response
+  endpoints:
+  - '*'
+  metadata:
+    category: PII
+    subcategory: drivers_license
+    state: OH
+    format: 1 letter + 4-8 digits OR 2 letters + 3-7 digits OR 8 digits
+    example: A12345678
+    confidence: high
+- id: PII-DL-OK-1.0
+  title: Oklahoma Driver's License Detection
+  severity: medium
+  pattern: \b[A-Z]\d{9}\b|\b\d{9}\b
+  action: flag
+  applies_to:
+  - request
+  - response
+  endpoints:
+  - '*'
+  metadata:
+    category: PII
+    subcategory: drivers_license
+    state: OK
+    format: 1 letter + 9 digits OR 9 digits
+    example: A123456789
+    confidence: high
+- id: PII-DL-OR-1.0
+  title: Oregon Driver's License Detection
+  severity: medium
+  pattern: \b\d{1,9}\b
+  action: flag
+  applies_to:
+  - request
+  - response
+  endpoints:
+  - '*'
+  metadata:
+    category: PII
+    subcategory: drivers_license
+    state: OR
+    format: 1-9 digits
+    example: '123456789'
+    confidence: high
+- id: PII-DL-PA-1.0
+  title: Pennsylvania Driver's License Detection
+  severity: medium
+  pattern: \b\d{8}\b
+  action: flag
+  applies_to:
+  - request
+  - response
+  endpoints:
+  - '*'
+  metadata:
+    category: PII
+    subcategory: drivers_license
+    state: PA
+    format: 8 digits
+    example: '12345678'
+    confidence: high
+- id: PII-DL-RI-1.0
+  title: Rhode Island Driver's License Detection
+  severity: medium
+  pattern: \b[A-Z]\d{6}\b|\b\d{7}\b
+  action: flag
+  applies_to:
+  - request
+  - response
+  endpoints:
+  - '*'
+  metadata:
+    category: PII
+    subcategory: drivers_license
+    state: RI
+    format: 1 letter + 6 digits OR 7 digits
+    example: A123456
+    confidence: high
+- id: PII-DL-SC-1.0
+  title: South Carolina Driver's License Detection
+  severity: medium
+  pattern: \b\d{5,11}\b
+  action: flag
+  applies_to:
+  - request
+  - response
+  endpoints:
+  - '*'
+  metadata:
+    category: PII
+    subcategory: drivers_license
+    state: SC
+    format: 5-11 digits
+    example: '12345678901'
+    confidence: high
+- id: PII-DL-SD-1.0
+  title: South Dakota Driver's License Detection
+  severity: medium
+  pattern: \b\d{6,10}\b|\b\d{12}\b
+  action: flag
+  applies_to:
+  - request
+  - response
+  endpoints:
+  - '*'
+  metadata:
+    category: PII
+    subcategory: drivers_license
+    state: SD
+    format: 6-10 digits OR 12 digits
+    example: '123456789'
+    confidence: high
+- id: PII-DL-TN-1.0
+  title: Tennessee Driver's License Detection
+  severity: medium
+  pattern: \b\d{7,9}\b
+  action: flag
+  applies_to:
+  - request
+  - response
+  endpoints:
+  - '*'
+  metadata:
+    category: PII
+    subcategory: drivers_license
+    state: TN
+    format: 7-9 digits
+    example: '123456789'
+    confidence: high
+- id: PII-DL-TX-1.0
+  title: Texas Driver's License Detection
+  severity: medium
+  pattern: \b\d{7,8}\b
+  action: flag
+  applies_to:
+  - request
+  - response
+  endpoints:
+  - '*'
+  metadata:
+    category: PII
+    subcategory: drivers_license
+    state: TX
+    format: 7-8 digits
+    example: '12345678'
+    confidence: high
+- id: PII-DL-UT-1.0
+  title: Utah Driver's License Detection
+  severity: medium
+  pattern: \b\d{4,10}\b
+  action: flag
+  applies_to:
+  - request
+  - response
+  endpoints:
+  - '*'
+  metadata:
+    category: PII
+    subcategory: drivers_license
+    state: UT
+    format: 4-10 digits
+    example: '1234567890'
+    confidence: high
+- id: PII-DL-VT-1.0
+  title: Vermont Driver's License Detection
+  severity: medium
+  pattern: \b\d{8}\b|\b\d{7}A\b
+  action: flag
+  applies_to:
+  - request
+  - response
+  endpoints:
+  - '*'
+  metadata:
+    category: PII
+    subcategory: drivers_license
+    state: VT
+    format: 8 digits OR 7 digits + A
+    example: '12345678'
+    confidence: high
+- id: PII-DL-VA-1.0
+  title: Virginia Driver's License Detection
+  severity: medium
+  pattern: \b[A-Z]\d{8}\b|\b\d{9}\b
+  action: flag
+  applies_to:
+  - request
+  - response
+  endpoints:
+  - '*'
+  metadata:
+    category: PII
+    subcategory: drivers_license
+    state: VA
+    format: 1 letter + 8 digits OR 9 digits
+    example: A12345678
+    confidence: high
+- id: PII-DL-WA-1.0
+  title: Washington Driver's License Detection
+  severity: medium
+  pattern: \b(?=.*[A-Z])[A-Z0-9]{1,12}\b|\bWDL\d{9}\b
+  action: flag
+  applies_to:
+  - request
+  - response
+  endpoints:
+  - '*'
+  metadata:
+    category: PII
+    subcategory: drivers_license
+    state: WA
+    format: 1-12 letters/digits with at least 1 letter OR WDL + 9 digits
+    example: ABC123DEF456
+    confidence: high
+- id: PII-DL-WV-1.0
+  title: West Virginia Driver's License Detection
+  severity: medium
+  pattern: \b[A-Z]{1,2}\d{5,6}\b|\b\d{7}\b
+  action: flag
+  applies_to:
+  - request
+  - response
+  endpoints:
+  - '*'
+  metadata:
+    category: PII
+    subcategory: drivers_license
+    state: WV
+    format: 1-2 letters + 5-6 digits OR 7 digits
+    example: A123456
+    confidence: high
+- id: PII-DL-WI-1.0
+  title: Wisconsin Driver's License Detection
+  severity: medium
+  pattern: \b[A-Z]\d{13}\b
+  action: flag
+  applies_to:
+  - request
+  - response
+  endpoints:
+  - '*'
+  metadata:
+    category: PII
+    subcategory: drivers_license
+    state: WI
+    format: 1 letter + 13 digits
+    example: A1234567890123
+    confidence: high
+- id: PII-DL-WY-1.0
+  title: Wyoming Driver's License Detection
+  severity: medium
+  pattern: \b\d{9,10}\b
+  action: flag
+  applies_to:
+  - request
+  - response
+  endpoints:
+  - '*'
+  metadata:
+    category: PII
+    subcategory: drivers_license
+    state: WY
+    format: 9-10 digits
+    example: '1234567890'
+    confidence: high
+- id: PII-DL-US-1.0
+  title: US Driver's License Comprehensive Detection
+  severity: medium
+  pattern: (\b\d{1,8}\b)|(\b\d{1,7}\b)|(\b[A-Z]\d{8}\b|\b[A-Z]{2}\d{2,5}\b|\b\d{9}\b)|(\b\d{4,9}\b)|(\b[A-Z]\d{7}\b)|(\b\d{9}\b|\b[A-Z]{1,2}\d{1,6}\b)|(\b\d{9}\b)|(\b\d{1,7}\b)|(\b\d{7}\b|\b[A-Z]{1,3}\d{3,7}\b)|(\b[A-Z]\d{12}\b)|(\b\d{7,9}\b)|(\b[A-Z]\d{8}\b|\b\d{9}\b)|(\b[A-Z]{2}\d{6}[A-Z]\b|\b\d{9}\b)|(\b[A-Z]\d{11}\b|\b\d{11}[A-Z]\b)|(\b[A-Z]\d{9}\b|\b\d{10}\b)|(\b\d{9}\b|\b\d{3}[A-Z]{2}\d{4}\b)|(\b[A-Z]\d{8}\b|\b\d{9}\b)|(\b[A-Z]\d{8}\b|\b\d{9}\b)|(\b\d{1,9}\b)|(\b\d{7}[A-Z]?\b)|(\b[A-Z]\d{12}\b)|(\b[A-Z]\d{8}\b|\b\d{9}\b)|(\b[A-Z]\d{10,12}\b)|(\b[A-Z]\d{12}\b)|(\b\d{9}\b)|(\b[A-Z]\d{5,9}\b|\b[A-Z]\d{6}R\b|\b\d{8,9}\b)|(\b\d{13}\b|\b\d{9}[A-Z]{3}\b|\b\d{14}\b)|(\b[A-Z]\d{3,8}\b)|(\b\d{4}\d{12}\b|\b\d{12}\b)|(\b\d{2}[A-Z]{3}\d{5}\b)|(\b[A-Z]\d{14}\b)|(\b\d{8,9}\b)|(\b[A-Z]\d{7}\b|\b[A-Z]\d{18}\b|\b\d{8,9}\b|\b\d{16}\b)|(\b\d{1,12}\b)|(\b[A-Z]{3}\d{6}\b|\b\d{9}\b)|(\b[A-Z]\d{4,8}\b|\b[A-Z]{2}\d{3,7}\b|\b\d{8}\b)|(\b[A-Z]\d{9}\b|\b\d{9}\b)|(\b\d{1,9}\b)|(\b\d{8}\b)|(\b[A-Z]\d{6}\b|\b\d{7}\b)|(\b\d{5,11}\b)|(\b\d{6,10}\b|\b\d{12}\b)|(\b\d{7,9}\b)|(\b\d{7,8}\b)|(\b\d{4,10}\b)|(\b\d{8}\b|\b\d{7}A\b)|(\b[A-Z]\d{8}\b|\b\d{9}\b)|(\b(?=.*[A-Z])[A-Z0-9]{1,12}\b|\bWDL\d{9}\b)|(\b[A-Z]{1,2}\d{5,6}\b|\b\d{7}\b)|(\b[A-Z]\d{13}\b)|(\b\d{9,10}\b)
+  action: flag
+  applies_to:
+  - request
+  - response
+  endpoints:
+  - '*'
+  metadata:
+    category: PII
+    subcategory: drivers_license
+    scope: all_states
+    confidence: high
+    states_covered:
+    - AL
+    - AK
+    - AZ
+    - AR
+    - CA
+    - CO
+    - CT
+    - DE
+    - DC
+    - FL
+    - GA
+    - HI
+    - ID
+    - IL
+    - IN
+    - IA
+    - KS
+    - KY
+    - LA
+    - ME
+    - MD
+    - MA
+    - MI
+    - MN
+    - MS
+    - MO
+    - MT
+    - NE
+    - NV
+    - NH
+    - NJ
+    - NM
+    - NY
+    - NC
+    - ND
+    - OH
+    - OK
+    - OR
+    - PA
+    - RI
+    - SC
+    - SD
+    - TN
+    - TX
+    - UT
+    - VT
+    - VA
+    - WA
+    - WV
+    - WI
+    - WY
+- id: PII-LP-STANDARD-1.0
+  title: Standard US License Plates Detection
+  severity: medium
+  pattern: \b[A-Z]{3}[-\s]?\d{3,4}\b|\b\d{3,4}[-\s]?[A-Z]{3}\b|\b[A-Z]{2,3}[-\s]?\d{2,4}[-\s]?[A-Z]?\b
+  action: flag
+  applies_to:
+  - request
+  - response
+  endpoints:
+  - '*'
+  metadata:
+    category: PII
+    subcategory: license_plate
+    type: standard
+    format: 3 letters + 3-4 digits OR 3-4 digits + 3 letters OR mixed patterns
+    example: ABC1234
+    confidence: medium
+- id: PII-LP-SPECIALTY-1.0
+  title: Specialty/Vanity Plates Detection
+  severity: medium
+  pattern: \b(?=.*[A-Z])(?=.*\d)[A-Z0-9]{2,8}\b
+  action: flag
+  applies_to:
+  - request
+  - response
+  endpoints:
+  - '*'
+  metadata:
+    category: PII
+    subcategory: license_plate
+    type: specialty
+    format: Custom alphanumeric combinations 2-8 characters
+    example: CUSTOM1
+    confidence: medium
+- id: PII-LP-COMMERCIAL-1.0
+  title: Commercial Vehicle Plates Detection
+  severity: medium
+  pattern: \bT\d{6}\b|\bC\d{5,7}\b|\bCOM\d{4}\b
+  action: flag
+  applies_to:
+  - request
+  - response
+  endpoints:
+  - '*'
+  metadata:
+    category: PII
+    subcategory: license_plate
+    type: commercial
+    format: Commercial format patterns
+    example: T123456
+    confidence: medium
+- id: PII-ADDR-STREET-1.0
+  title: US Street Address Detection
+  severity: medium
+  pattern: \b\d+\s+[A-Za-z\s]+(?:Street|St|Avenue|Ave|Road|Rd|Drive|Dr|Lane|Ln|Boulevard|Blvd|Circle|Cir|Court|Ct|Place|Pl|Way)\b
+  action: flag
+  applies_to:
+  - request
+  - response
+  endpoints:
+  - '*'
+  metadata:
+    category: PII
+    subcategory: address
+    type: street_address
+    confidence: high
+- id: PII-ADDR-ZIP-1.0
+  title: US ZIP Code Detection
+  severity: medium
+  pattern: \b\d{5}(?:-\d{4})?\b
+  action: flag
+  applies_to:
+  - request
+  - response
+  endpoints:
+  - '*'
+  metadata:
+    category: PII
+    subcategory: address
+    type: zip_code
+    confidence: high
+- id: PII-PHONE-US-1.0
+  title: US Phone Number Detection (US phone with parentheses)
+  severity: medium
+  pattern: \(\d{3}\)\s*\d{3}[-.\s]?\d{4}
+  action: flag
+  applies_to:
+  - request
+  - response
+  endpoints:
+  - '*'
+  metadata:
+    category: PII
+    subcategory: phone_number
+    format: US phone with parentheses
+    example: (555) 123-4567
+    confidence: high
+- id: PII-PHONE-US-2.0
+  title: US Phone Number Detection (US phone with separators)
+  severity: medium
+  pattern: \d{3}[-.\s]\d{3}[-.\s]\d{4}
+  action: flag
+  applies_to:
+  - request
+  - response
+  endpoints:
+  - '*'
+  metadata:
+    category: PII
+    subcategory: phone_number
+    format: US phone with separators
+    example: 555-123-4567
+    confidence: high
+- id: PII-PHONE-US-3.0
+  title: US Phone Number Detection (US phone 10 digits)
+  severity: medium
+  pattern: \b\d{10}\b
+  action: flag
+  applies_to:
+  - request
+  - response
+  endpoints:
+  - '*'
+  metadata:
+    category: PII
+    subcategory: phone_number
+    format: US phone 10 digits
+    example: '5551234567'
+    confidence: high
+- id: PII-PHONE-US-4.0
+  title: US Phone Number Detection (US phone with country code)
+  severity: medium
+  pattern: \+1[-.\s]?\d{3}[-.\s]?\d{3}[-.\s]?\d{4}
+  action: flag
+  applies_to:
+  - request
+  - response
+  endpoints:
+  - '*'
+  metadata:
+    category: PII
+    subcategory: phone_number
+    format: US phone with country code
+    example: +1-555-123-4567
+    confidence: high
+metadata:
+  generated_by: generate_state_dl_rules.py
+  total_rules: 90
+  pii_rules_added: 61
+  states_covered: 51

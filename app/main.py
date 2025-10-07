@@ -604,14 +604,8 @@ async def evaluate_text(request: EvaluateRequest):
     # Convert rules_store to the format expected by evaluate function
     rules_dict = {}
     for rule in rules_store:
-        compiled_regex = None
-        if rule.pattern:
-            import re
-
-            try:
-                compiled_regex = re.compile(rule.pattern)
-            except re.error:
-                pass
+        # Use the already compiled pattern from rule loading
+        compiled_regex = rule.compiled_pattern if hasattr(rule, 'compiled_pattern') and rule.compiled_pattern else None
         rules_dict[rule.id] = (rule, compiled_regex)
 
     # Phase 6B: Enhanced evaluation with risk assessment
