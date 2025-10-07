@@ -309,8 +309,8 @@ rules:
   - embedded_secrets
   shadow_override: enforce
 - id: PII-DL-AL-1.0
-  title: Alabama Driver's License Detection
-  severity: medium
+  name: Alabama Driver's License Detection
+  description: Detects Alabama driver's license numbers (1-8 digits)
   pattern: \b\d{1,8}\b
   action: flag
   applies_to:
@@ -326,8 +326,8 @@ rules:
     example: '1234567'
     confidence: high
 - id: PII-DL-AK-1.0
-  title: Alaska Driver's License Detection
-  severity: medium
+  name: Alaska Driver's License Detection
+  description: Detects Alaska driver's license numbers (1-7 digits)
   pattern: \b\d{1,7}\b
   action: flag
   applies_to:
@@ -343,8 +343,9 @@ rules:
     example: '1234567'
     confidence: high
 - id: PII-DL-AZ-1.0
-  title: Arizona Driver's License Detection
-  severity: medium
+  name: Arizona Driver's License Detection
+  description: Detects Arizona driver's license numbers (1 letter + 8 digits OR 2
+    letters + 2-5 digits OR 9 digits)
   pattern: \b[A-Z]\d{8}\b|\b[A-Z]{2}\d{2,5}\b|\b\d{9}\b
   action: flag
   applies_to:
@@ -360,8 +361,8 @@ rules:
     example: A12345678
     confidence: high
 - id: PII-DL-AR-1.0
-  title: Arkansas Driver's License Detection
-  severity: medium
+  name: Arkansas Driver's License Detection
+  description: Detects Arkansas driver's license numbers (4-9 digits)
   pattern: \b\d{4,9}\b
   action: flag
   applies_to:
@@ -377,8 +378,8 @@ rules:
     example: '123456789'
     confidence: high
 - id: PII-DL-CA-1.0
-  title: California Driver's License Detection
-  severity: medium
+  name: California Driver's License Detection
+  description: Detects California driver's license numbers (1 letter + 7 digits)
   pattern: \b[A-Z]\d{7}\b
   action: flag
   applies_to:
@@ -394,8 +395,9 @@ rules:
     example: A1234567
     confidence: high
 - id: PII-DL-CO-1.0
-  title: Colorado Driver's License Detection
-  severity: medium
+  name: Colorado Driver's License Detection
+  description: Detects Colorado driver's license numbers (9 digits OR 1-2 letters
+    + 1-6 digits)
   pattern: \b\d{9}\b|\b[A-Z]{1,2}\d{1,6}\b
   action: flag
   applies_to:
@@ -411,8 +413,8 @@ rules:
     example: '123456789'
     confidence: high
 - id: PII-DL-CT-1.0
-  title: Connecticut Driver's License Detection
-  severity: medium
+  name: Connecticut Driver's License Detection
+  description: Detects Connecticut driver's license numbers (9 digits)
   pattern: \b\d{9}\b
   action: flag
   applies_to:
@@ -428,8 +430,8 @@ rules:
     example: '123456789'
     confidence: high
 - id: PII-DL-DE-1.0
-  title: Delaware Driver's License Detection
-  severity: medium
+  name: Delaware Driver's License Detection
+  description: Detects Delaware driver's license numbers (1-7 digits)
   pattern: \b\d{1,7}\b
   action: flag
   applies_to:
@@ -445,8 +447,9 @@ rules:
     example: '1234567'
     confidence: high
 - id: PII-DL-DC-1.0
-  title: District of Columbia Driver's License Detection
-  severity: medium
+  name: District of Columbia Driver's License Detection
+  description: Detects District of Columbia driver's license numbers (7 digits OR
+    1-3 letters + 3-7 digits)
   pattern: \b\d{7}\b|\b[A-Z]{1,3}\d{3,7}\b
   action: flag
   applies_to:
@@ -462,8 +465,8 @@ rules:
     example: '1234567'
     confidence: high
 - id: PII-DL-FL-1.0
-  title: Florida Driver's License Detection
-  severity: medium
+  name: Florida Driver's License Detection
+  description: Detects Florida driver's license numbers (1 letter + 12 digits)
   pattern: \b[A-Z]\d{12}\b
   action: flag
   applies_to:
@@ -479,8 +482,8 @@ rules:
     example: A123456789012
     confidence: high
 - id: PII-DL-GA-1.0
-  title: Georgia Driver's License Detection
-  severity: medium
+  name: Georgia Driver's License Detection
+  description: Detects Georgia driver's license numbers (7-9 digits)
   pattern: \b\d{7,9}\b
   action: flag
   applies_to:
@@ -496,8 +499,8 @@ rules:
     example: '123456789'
     confidence: high
 - id: PII-DL-HI-1.0
-  title: Hawaii Driver's License Detection
-  severity: medium
+  name: Hawaii Driver's License Detection
+  description: Detects Hawaii driver's license numbers (1 letter + 8 digits OR 9 digits)
   pattern: \b[A-Z]\d{8}\b|\b\d{9}\b
   action: flag
   applies_to:
@@ -513,8 +516,9 @@ rules:
     example: H12345678
     confidence: high
 - id: PII-DL-ID-1.0
-  title: Idaho Driver's License Detection
-  severity: medium
+  name: Idaho Driver's License Detection
+  description: Detects Idaho driver's license numbers (2 letters + 6 digits + 1 letter
+    OR 9 digits)
   pattern: \b[A-Z]{2}\d{6}[A-Z]\b|\b\d{9}\b
   action: flag
   applies_to:
@@ -530,8 +534,9 @@ rules:
     example: AB123456C
     confidence: high
 - id: PII-DL-IL-1.0
-  title: Illinois Driver's License Detection
-  severity: medium
+  name: Illinois Driver's License Detection
+  description: Detects Illinois driver's license numbers (1 letter + 11 digits (DL)
+    OR 11 digits + 1 letter (ID))
   pattern: \b[A-Z]\d{11}\b|\b\d{11}[A-Z]\b
   action: flag
   applies_to:
@@ -547,8 +552,9 @@ rules:
     example: A12345678901
     confidence: high
 - id: PII-DL-IN-1.0
-  title: Indiana Driver's License Detection
-  severity: medium
+  name: Indiana Driver's License Detection
+  description: Detects Indiana driver's license numbers (1 letter + 9 digits OR 10
+    digits)
   pattern: \b[A-Z]\d{9}\b|\b\d{10}\b
   action: flag
   applies_to:
@@ -564,8 +570,9 @@ rules:
     example: A123456789
     confidence: high
 - id: PII-DL-IA-1.0
-  title: Iowa Driver's License Detection
-  severity: medium
+  name: Iowa Driver's License Detection
+  description: Detects Iowa driver's license numbers (9 digits OR 3 digits + 2 letters
+    + 4 digits)
   pattern: \b\d{9}\b|\b\d{3}[A-Z]{2}\d{4}\b
   action: flag
   applies_to:
@@ -581,8 +588,8 @@ rules:
     example: '123456789'
     confidence: high
 - id: PII-DL-KS-1.0
-  title: Kansas Driver's License Detection
-  severity: medium
+  name: Kansas Driver's License Detection
+  description: Detects Kansas driver's license numbers (1 letter + 8 digits OR 9 digits)
   pattern: \b[A-Z]\d{8}\b|\b\d{9}\b
   action: flag
   applies_to:
@@ -598,8 +605,9 @@ rules:
     example: K12345678
     confidence: high
 - id: PII-DL-KY-1.0
-  title: Kentucky Driver's License Detection
-  severity: medium
+  name: Kentucky Driver's License Detection
+  description: Detects Kentucky driver's license numbers (1 letter + 8 digits OR 9
+    digits)
   pattern: \b[A-Z]\d{8}\b|\b\d{9}\b
   action: flag
   applies_to:
@@ -615,8 +623,8 @@ rules:
     example: K12345678
     confidence: high
 - id: PII-DL-LA-1.0
-  title: Louisiana Driver's License Detection
-  severity: medium
+  name: Louisiana Driver's License Detection
+  description: Detects Louisiana driver's license numbers (1-9 digits)
   pattern: \b\d{1,9}\b
   action: flag
   applies_to:
@@ -632,8 +640,8 @@ rules:
     example: '123456789'
     confidence: high
 - id: PII-DL-ME-1.0
-  title: Maine Driver's License Detection
-  severity: medium
+  name: Maine Driver's License Detection
+  description: Detects Maine driver's license numbers (7 digits OR 7 digits + 1 letter)
   pattern: \b\d{7}[A-Z]?\b
   action: flag
   applies_to:
@@ -649,8 +657,8 @@ rules:
     example: '1234567'
     confidence: high
 - id: PII-DL-MD-1.0
-  title: Maryland Driver's License Detection
-  severity: medium
+  name: Maryland Driver's License Detection
+  description: Detects Maryland driver's license numbers (1 letter + 12 digits)
   pattern: \b[A-Z]\d{12}\b
   action: flag
   applies_to:
@@ -666,8 +674,9 @@ rules:
     example: M123456789012
     confidence: high
 - id: PII-DL-MA-1.0
-  title: Massachusetts Driver's License Detection
-  severity: medium
+  name: Massachusetts Driver's License Detection
+  description: Detects Massachusetts driver's license numbers (1 letter + 8 digits
+    OR 9 digits)
   pattern: \b[A-Z]\d{8}\b|\b\d{9}\b
   action: flag
   applies_to:
@@ -683,8 +692,9 @@ rules:
     example: S12345678
     confidence: high
 - id: PII-DL-MI-1.0
-  title: Michigan Driver's License Detection
-  severity: medium
+  name: Michigan Driver's License Detection
+  description: Detects Michigan driver's license numbers (1 letter + 12 digits OR
+    1 letter + 10 digits)
   pattern: \b[A-Z]\d{10,12}\b
   action: flag
   applies_to:
@@ -700,8 +710,8 @@ rules:
     example: A123456789012
     confidence: high
 - id: PII-DL-MN-1.0
-  title: Minnesota Driver's License Detection
-  severity: medium
+  name: Minnesota Driver's License Detection
+  description: Detects Minnesota driver's license numbers (1 letter + 12 digits)
   pattern: \b[A-Z]\d{12}\b
   action: flag
   applies_to:
@@ -717,8 +727,8 @@ rules:
     example: A123456789012
     confidence: high
 - id: PII-DL-MS-1.0
-  title: Mississippi Driver's License Detection
-  severity: medium
+  name: Mississippi Driver's License Detection
+  description: Detects Mississippi driver's license numbers (9 digits)
   pattern: \b\d{9}\b
   action: flag
   applies_to:
@@ -734,8 +744,9 @@ rules:
     example: '123456789'
     confidence: high
 - id: PII-DL-MO-1.0
-  title: Missouri Driver's License Detection
-  severity: medium
+  name: Missouri Driver's License Detection
+  description: Detects Missouri driver's license numbers (1 letter + 5-9 digits OR
+    1 letter + 6 digits + R OR 8-9 digits)
   pattern: \b[A-Z]\d{5,9}\b|\b[A-Z]\d{6}R\b|\b\d{8,9}\b
   action: flag
   applies_to:
@@ -751,8 +762,9 @@ rules:
     example: A123456789
     confidence: high
 - id: PII-DL-MT-1.0
-  title: Montana Driver's License Detection
-  severity: medium
+  name: Montana Driver's License Detection
+  description: Detects Montana driver's license numbers (13 digits OR 9 digits + 3
+    letters OR 14 digits)
   pattern: \b\d{13}\b|\b\d{9}[A-Z]{3}\b|\b\d{14}\b
   action: flag
   applies_to:
@@ -768,8 +780,8 @@ rules:
     example: '1234567890123'
     confidence: high
 - id: PII-DL-NE-1.0
-  title: Nebraska Driver's License Detection
-  severity: medium
+  name: Nebraska Driver's License Detection
+  description: Detects Nebraska driver's license numbers (1 letter + 3-8 digits)
   pattern: \b[A-Z]\d{3,8}\b
   action: flag
   applies_to:
@@ -785,8 +797,9 @@ rules:
     example: A12345678
     confidence: high
 - id: PII-DL-NV-1.0
-  title: Nevada Driver's License Detection
-  severity: medium
+  name: Nevada Driver's License Detection
+  description: Detects Nevada driver's license numbers (4 digits + 12 digits OR 12
+    digits)
   pattern: \b\d{4}\d{12}\b|\b\d{12}\b
   action: flag
   applies_to:
@@ -802,8 +815,9 @@ rules:
     example: '123456789012'
     confidence: high
 - id: PII-DL-NH-1.0
-  title: New Hampshire Driver's License Detection
-  severity: medium
+  name: New Hampshire Driver's License Detection
+  description: Detects New Hampshire driver's license numbers (2 digits + 3 letters
+    + 5 digits)
   pattern: \b\d{2}[A-Z]{3}\d{5}\b
   action: flag
   applies_to:
@@ -819,8 +833,8 @@ rules:
     example: 12ABC34567
     confidence: high
 - id: PII-DL-NJ-1.0
-  title: New Jersey Driver's License Detection
-  severity: medium
+  name: New Jersey Driver's License Detection
+  description: Detects New Jersey driver's license numbers (1 letter + 14 digits)
   pattern: \b[A-Z]\d{14}\b
   action: flag
   applies_to:
@@ -836,8 +850,8 @@ rules:
     example: A12345678901234
     confidence: high
 - id: PII-DL-NM-1.0
-  title: New Mexico Driver's License Detection
-  severity: medium
+  name: New Mexico Driver's License Detection
+  description: Detects New Mexico driver's license numbers (8-9 digits)
   pattern: \b\d{8,9}\b
   action: flag
   applies_to:
@@ -853,8 +867,9 @@ rules:
     example: '123456789'
     confidence: high
 - id: PII-DL-NY-1.0
-  title: New York Driver's License Detection
-  severity: medium
+  name: New York Driver's License Detection
+  description: Detects New York driver's license numbers (1 letter + 7 digits OR 1
+    letter + 18 digits OR 8-9 digits OR 16 digits)
   pattern: \b[A-Z]\d{7}\b|\b[A-Z]\d{18}\b|\b\d{8,9}\b|\b\d{16}\b
   action: flag
   applies_to:
@@ -870,8 +885,8 @@ rules:
     example: A1234567
     confidence: high
 - id: PII-DL-NC-1.0
-  title: North Carolina Driver's License Detection
-  severity: medium
+  name: North Carolina Driver's License Detection
+  description: Detects North Carolina driver's license numbers (1-12 digits)
   pattern: \b\d{1,12}\b
   action: flag
   applies_to:
@@ -887,8 +902,9 @@ rules:
     example: '123456789012'
     confidence: high
 - id: PII-DL-ND-1.0
-  title: North Dakota Driver's License Detection
-  severity: medium
+  name: North Dakota Driver's License Detection
+  description: Detects North Dakota driver's license numbers (3 letters + 6 digits
+    OR 9 digits)
   pattern: \b[A-Z]{3}\d{6}\b|\b\d{9}\b
   action: flag
   applies_to:
@@ -904,8 +920,9 @@ rules:
     example: ABC123456
     confidence: high
 - id: PII-DL-OH-1.0
-  title: Ohio Driver's License Detection
-  severity: medium
+  name: Ohio Driver's License Detection
+  description: Detects Ohio driver's license numbers (1 letter + 4-8 digits OR 2 letters
+    + 3-7 digits OR 8 digits)
   pattern: \b[A-Z]\d{4,8}\b|\b[A-Z]{2}\d{3,7}\b|\b\d{8}\b
   action: flag
   applies_to:
@@ -921,8 +938,9 @@ rules:
     example: A12345678
     confidence: high
 - id: PII-DL-OK-1.0
-  title: Oklahoma Driver's License Detection
-  severity: medium
+  name: Oklahoma Driver's License Detection
+  description: Detects Oklahoma driver's license numbers (1 letter + 9 digits OR 9
+    digits)
   pattern: \b[A-Z]\d{9}\b|\b\d{9}\b
   action: flag
   applies_to:
@@ -938,8 +956,8 @@ rules:
     example: A123456789
     confidence: high
 - id: PII-DL-OR-1.0
-  title: Oregon Driver's License Detection
-  severity: medium
+  name: Oregon Driver's License Detection
+  description: Detects Oregon driver's license numbers (1-9 digits)
   pattern: \b\d{1,9}\b
   action: flag
   applies_to:
@@ -955,8 +973,8 @@ rules:
     example: '123456789'
     confidence: high
 - id: PII-DL-PA-1.0
-  title: Pennsylvania Driver's License Detection
-  severity: medium
+  name: Pennsylvania Driver's License Detection
+  description: Detects Pennsylvania driver's license numbers (8 digits)
   pattern: \b\d{8}\b
   action: flag
   applies_to:
@@ -972,8 +990,9 @@ rules:
     example: '12345678'
     confidence: high
 - id: PII-DL-RI-1.0
-  title: Rhode Island Driver's License Detection
-  severity: medium
+  name: Rhode Island Driver's License Detection
+  description: Detects Rhode Island driver's license numbers (1 letter + 6 digits
+    OR 7 digits)
   pattern: \b[A-Z]\d{6}\b|\b\d{7}\b
   action: flag
   applies_to:
@@ -989,8 +1008,8 @@ rules:
     example: A123456
     confidence: high
 - id: PII-DL-SC-1.0
-  title: South Carolina Driver's License Detection
-  severity: medium
+  name: South Carolina Driver's License Detection
+  description: Detects South Carolina driver's license numbers (5-11 digits)
   pattern: \b\d{5,11}\b
   action: flag
   applies_to:
@@ -1006,8 +1025,8 @@ rules:
     example: '12345678901'
     confidence: high
 - id: PII-DL-SD-1.0
-  title: South Dakota Driver's License Detection
-  severity: medium
+  name: South Dakota Driver's License Detection
+  description: Detects South Dakota driver's license numbers (6-10 digits OR 12 digits)
   pattern: \b\d{6,10}\b|\b\d{12}\b
   action: flag
   applies_to:
@@ -1023,8 +1042,8 @@ rules:
     example: '123456789'
     confidence: high
 - id: PII-DL-TN-1.0
-  title: Tennessee Driver's License Detection
-  severity: medium
+  name: Tennessee Driver's License Detection
+  description: Detects Tennessee driver's license numbers (7-9 digits)
   pattern: \b\d{7,9}\b
   action: flag
   applies_to:
@@ -1040,8 +1059,8 @@ rules:
     example: '123456789'
     confidence: high
 - id: PII-DL-TX-1.0
-  title: Texas Driver's License Detection
-  severity: medium
+  name: Texas Driver's License Detection
+  description: Detects Texas driver's license numbers (7-8 digits)
   pattern: \b\d{7,8}\b
   action: flag
   applies_to:
@@ -1057,8 +1076,8 @@ rules:
     example: '12345678'
     confidence: high
 - id: PII-DL-UT-1.0
-  title: Utah Driver's License Detection
-  severity: medium
+  name: Utah Driver's License Detection
+  description: Detects Utah driver's license numbers (4-10 digits)
   pattern: \b\d{4,10}\b
   action: flag
   applies_to:
@@ -1074,8 +1093,8 @@ rules:
     example: '1234567890'
     confidence: high
 - id: PII-DL-VT-1.0
-  title: Vermont Driver's License Detection
-  severity: medium
+  name: Vermont Driver's License Detection
+  description: Detects Vermont driver's license numbers (8 digits OR 7 digits + A)
   pattern: \b\d{8}\b|\b\d{7}A\b
   action: flag
   applies_to:
@@ -1091,8 +1110,9 @@ rules:
     example: '12345678'
     confidence: high
 - id: PII-DL-VA-1.0
-  title: Virginia Driver's License Detection
-  severity: medium
+  name: Virginia Driver's License Detection
+  description: Detects Virginia driver's license numbers (1 letter + 8 digits OR 9
+    digits)
   pattern: \b[A-Z]\d{8}\b|\b\d{9}\b
   action: flag
   applies_to:
@@ -1108,8 +1128,9 @@ rules:
     example: A12345678
     confidence: high
 - id: PII-DL-WA-1.0
-  title: Washington Driver's License Detection
-  severity: medium
+  name: Washington Driver's License Detection
+  description: Detects Washington driver's license numbers (1-12 letters/digits with
+    at least 1 letter OR WDL + 9 digits)
   pattern: \b(?=.*[A-Z])[A-Z0-9]{1,12}\b|\bWDL\d{9}\b
   action: flag
   applies_to:
@@ -1125,8 +1146,9 @@ rules:
     example: ABC123DEF456
     confidence: high
 - id: PII-DL-WV-1.0
-  title: West Virginia Driver's License Detection
-  severity: medium
+  name: West Virginia Driver's License Detection
+  description: Detects West Virginia driver's license numbers (1-2 letters + 5-6 digits
+    OR 7 digits)
   pattern: \b[A-Z]{1,2}\d{5,6}\b|\b\d{7}\b
   action: flag
   applies_to:
@@ -1142,8 +1164,8 @@ rules:
     example: A123456
     confidence: high
 - id: PII-DL-WI-1.0
-  title: Wisconsin Driver's License Detection
-  severity: medium
+  name: Wisconsin Driver's License Detection
+  description: Detects Wisconsin driver's license numbers (1 letter + 13 digits)
   pattern: \b[A-Z]\d{13}\b
   action: flag
   applies_to:
@@ -1159,8 +1181,8 @@ rules:
     example: A1234567890123
     confidence: high
 - id: PII-DL-WY-1.0
-  title: Wyoming Driver's License Detection
-  severity: medium
+  name: Wyoming Driver's License Detection
+  description: Detects Wyoming driver's license numbers (9-10 digits)
   pattern: \b\d{9,10}\b
   action: flag
   applies_to:
@@ -1176,8 +1198,8 @@ rules:
     example: '1234567890'
     confidence: high
 - id: PII-DL-US-1.0
-  title: US Driver's License Comprehensive Detection
-  severity: medium
+  name: US Driver's License Comprehensive Detection
+  description: Detects driver's license numbers from all US states and DC
   pattern: (\b\d{1,8}\b)|(\b\d{1,7}\b)|(\b[A-Z]\d{8}\b|\b[A-Z]{2}\d{2,5}\b|\b\d{9}\b)|(\b\d{4,9}\b)|(\b[A-Z]\d{7}\b)|(\b\d{9}\b|\b[A-Z]{1,2}\d{1,6}\b)|(\b\d{9}\b)|(\b\d{1,7}\b)|(\b\d{7}\b|\b[A-Z]{1,3}\d{3,7}\b)|(\b[A-Z]\d{12}\b)|(\b\d{7,9}\b)|(\b[A-Z]\d{8}\b|\b\d{9}\b)|(\b[A-Z]{2}\d{6}[A-Z]\b|\b\d{9}\b)|(\b[A-Z]\d{11}\b|\b\d{11}[A-Z]\b)|(\b[A-Z]\d{9}\b|\b\d{10}\b)|(\b\d{9}\b|\b\d{3}[A-Z]{2}\d{4}\b)|(\b[A-Z]\d{8}\b|\b\d{9}\b)|(\b[A-Z]\d{8}\b|\b\d{9}\b)|(\b\d{1,9}\b)|(\b\d{7}[A-Z]?\b)|(\b[A-Z]\d{12}\b)|(\b[A-Z]\d{8}\b|\b\d{9}\b)|(\b[A-Z]\d{10,12}\b)|(\b[A-Z]\d{12}\b)|(\b\d{9}\b)|(\b[A-Z]\d{5,9}\b|\b[A-Z]\d{6}R\b|\b\d{8,9}\b)|(\b\d{13}\b|\b\d{9}[A-Z]{3}\b|\b\d{14}\b)|(\b[A-Z]\d{3,8}\b)|(\b\d{4}\d{12}\b|\b\d{12}\b)|(\b\d{2}[A-Z]{3}\d{5}\b)|(\b[A-Z]\d{14}\b)|(\b\d{8,9}\b)|(\b[A-Z]\d{7}\b|\b[A-Z]\d{18}\b|\b\d{8,9}\b|\b\d{16}\b)|(\b\d{1,12}\b)|(\b[A-Z]{3}\d{6}\b|\b\d{9}\b)|(\b[A-Z]\d{4,8}\b|\b[A-Z]{2}\d{3,7}\b|\b\d{8}\b)|(\b[A-Z]\d{9}\b|\b\d{9}\b)|(\b\d{1,9}\b)|(\b\d{8}\b)|(\b[A-Z]\d{6}\b|\b\d{7}\b)|(\b\d{5,11}\b)|(\b\d{6,10}\b|\b\d{12}\b)|(\b\d{7,9}\b)|(\b\d{7,8}\b)|(\b\d{4,10}\b)|(\b\d{8}\b|\b\d{7}A\b)|(\b[A-Z]\d{8}\b|\b\d{9}\b)|(\b(?=.*[A-Z])[A-Z0-9]{1,12}\b|\bWDL\d{9}\b)|(\b[A-Z]{1,2}\d{5,6}\b|\b\d{7}\b)|(\b[A-Z]\d{13}\b)|(\b\d{9,10}\b)
   action: flag
   applies_to:
@@ -1243,8 +1265,9 @@ rules:
     - WI
     - WY
 - id: PII-LP-STANDARD-1.0
-  title: Standard US License Plates Detection
-  severity: medium
+  name: Standard US License Plates Detection
+  description: Detects standard us license plates (3 letters + 3-4 digits OR 3-4 digits
+    + 3 letters OR mixed patterns)
   pattern: \b[A-Z]{3}[-\s]?\d{3,4}\b|\b\d{3,4}[-\s]?[A-Z]{3}\b|\b[A-Z]{2,3}[-\s]?\d{2,4}[-\s]?[A-Z]?\b
   action: flag
   applies_to:
@@ -1260,8 +1283,9 @@ rules:
     example: ABC1234
     confidence: medium
 - id: PII-LP-SPECIALTY-1.0
-  title: Specialty/Vanity Plates Detection
-  severity: medium
+  name: Specialty/Vanity Plates Detection
+  description: Detects specialty/vanity plates (Custom alphanumeric combinations 2-8
+    characters)
   pattern: \b(?=.*[A-Z])(?=.*\d)[A-Z0-9]{2,8}\b
   action: flag
   applies_to:
@@ -1277,8 +1301,8 @@ rules:
     example: CUSTOM1
     confidence: medium
 - id: PII-LP-COMMERCIAL-1.0
-  title: Commercial Vehicle Plates Detection
-  severity: medium
+  name: Commercial Vehicle Plates Detection
+  description: Detects commercial vehicle plates (Commercial format patterns)
   pattern: \bT\d{6}\b|\bC\d{5,7}\b|\bCOM\d{4}\b
   action: flag
   applies_to:
@@ -1294,8 +1318,8 @@ rules:
     example: T123456
     confidence: medium
 - id: PII-ADDR-STREET-1.0
-  title: US Street Address Detection
-  severity: medium
+  name: US Street Address Detection
+  description: Detects US street addresses with number, street name, and type
   pattern: \b\d+\s+[A-Za-z\s]+(?:Street|St|Avenue|Ave|Road|Rd|Drive|Dr|Lane|Ln|Boulevard|Blvd|Circle|Cir|Court|Ct|Place|Pl|Way)\b
   action: flag
   applies_to:
@@ -1309,8 +1333,8 @@ rules:
     type: street_address
     confidence: high
 - id: PII-ADDR-ZIP-1.0
-  title: US ZIP Code Detection
-  severity: medium
+  name: US ZIP Code Detection
+  description: Detects US ZIP codes (5 digits or 5+4 format)
   pattern: \b\d{5}(?:-\d{4})?\b
   action: flag
   applies_to:
@@ -1324,8 +1348,8 @@ rules:
     type: zip_code
     confidence: high
 - id: PII-PHONE-US-1.0
-  title: US Phone Number Detection (US phone with parentheses)
-  severity: medium
+  name: US Phone Number Detection (US phone with parentheses)
+  description: 'Detects US phone numbers in format: US phone with parentheses'
   pattern: \(\d{3}\)\s*\d{3}[-.\s]?\d{4}
   action: flag
   applies_to:
@@ -1340,8 +1364,8 @@ rules:
     example: (555) 123-4567
     confidence: high
 - id: PII-PHONE-US-2.0
-  title: US Phone Number Detection (US phone with separators)
-  severity: medium
+  name: US Phone Number Detection (US phone with separators)
+  description: 'Detects US phone numbers in format: US phone with separators'
   pattern: \d{3}[-.\s]\d{3}[-.\s]\d{4}
   action: flag
   applies_to:
@@ -1356,8 +1380,8 @@ rules:
     example: 555-123-4567
     confidence: high
 - id: PII-PHONE-US-3.0
-  title: US Phone Number Detection (US phone 10 digits)
-  severity: medium
+  name: US Phone Number Detection (US phone 10 digits)
+  description: 'Detects US phone numbers in format: US phone 10 digits'
   pattern: \b\d{10}\b
   action: flag
   applies_to:
@@ -1372,8 +1396,8 @@ rules:
     example: '5551234567'
     confidence: high
 - id: PII-PHONE-US-4.0
-  title: US Phone Number Detection (US phone with country code)
-  severity: medium
+  name: US Phone Number Detection (US phone with country code)
+  description: 'Detects US phone numbers in format: US phone with country code'
   pattern: \+1[-.\s]?\d{3}[-.\s]?\d{3}[-.\s]?\d{4}
   action: flag
   applies_to:

@@ -1,0 +1,264 @@
+rules:
+  # PII Protection
+  - id: "IL-AI-4.2"
+    title: "PII: Social Security Numbers"
+    text: "Block any full SSN patterns"
+    pattern: '\b\d{3}-\d{2}-\d{4}\b'
+    severity: "error"
+    action: "block"
+    tags: ["PII","personal_data"]
+    shadow_override: "enforce"
+
+  - id: "EMAIL-1.0"
+    title: "PII: Email Address"
+    text: "Flag any standard email address"
+    pattern: '\b[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}\b'
+    severity: "warning"
+    action: "flag"
+    tags: ["PII","personal_data"]
+
+  # API Keys and Secrets
+  - id: "GITHUB-TOKEN-1.0"
+    title: "Secret: GitHub Personal Access Token"
+    pattern: '\bghp_[A-Za-z0-9]{36}\b'
+    severity: "error"
+    action: "block"
+    tags: ["secret","github"]
+    shadow_override: "enforce"
+
+  - id: "OPENAI-KEY-1.0"
+    title: "Secret: OpenAI API Key (all formats)"
+    pattern: '\bsk-(?:proj-|[A-Za-z0-9]{20,}|[A-Za-z0-9]{32,})\b'
+    severity: "error"
+    action: "block"
+    tags: ["secret","openai"]
+    shadow_override: "enforce"
+
+  - id: "API-1.0"
+    title: "Security: Generic long alphanumeric sequence"
+    text: "Block long alphanumeric blobs (potential API keys/secrets)"
+    pattern: '\b[A-Za-z0-9_\-]{20,}\b'
+    severity: "error"
+    action: "block"
+    tags: ["security","credentials"]
+    shadow_override: "enforce"
+
+  # Injection indicators
+  - id: "INJ-1.0"
+    title: "Injection: Prompt-Injection Keywords (basic)"
+    text: "Flag if the content references system/assistant prompts explicitly"
+    pattern: '\b(system prompt|assistant prompt)\b'
+    severity: "warning"
+    action: "flag"
+    tags: ["injection","security"]
+
+  - id: "INJ-2.0"
+    title: "Injection: Override/Ignore Directives"
+    text: "Flag common instruction-subversion phrases"
+    pattern: '\b(ignore previous|as system|developer message|tool output)\b'
+    severity: "warning"
+    action: "flag"
+    tags: ["injection","security"]
+
+  # CJIS / HIPAA specifics
+  - id: "CJIS-BIOMETRIC-1.0"
+    title: "CJIS: Biometric data exposure"
+    text: "Block biometric terms on CJIS endpoints"
+    pattern: '(?i)\b(fingerprint|mugshot|iris scan|retina scan|palm print|dna profile|voiceprint|biometric record)\b'
+    severity: "error"
+    action: "block"
+    tags: ["security","credentials"]
+    shadow_override: "enforce"
+
+  - id: "HIPAA-PHI-EMAIL-1.0"
+    title: "HIPAA: Email addresses (PHI risk)"
+    text: "Flag emails in healthcare contexts; tune with endpoint scoping if desired"
+    pattern: '(?i)\b[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-ZaZ]{2,}\b'
+    severity: "warning"
+    action: "flag"
+    tags: ["hipaa","phi","pii"]
+
+  # Bulk / Exfiltration Heuristics
+  - id: "MAX-DUMP-5K"
+    title: "Bulk output: >5,000 characters"
+    text: "Block unusually large outputs (tune per endpoint)"
+    max_chars: 5000
+    severity: "error"
+    action: "block"
+    tags: ["copilot","data_exfiltration","microsoft"]
+    shadow_override: "enforce"
+
+  - id: "BULK-EMAIL-3"
+    title: "Bulk email leakage"
+    text: "Block if 3+ email addresses appear in a single response"
+    pattern: '(?i)[A-ZaZ0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-ZaZ]{2,}'
+    min_count: 3
+    severity: "error"
+    action: "block"
+    tags: ["exfiltration","pii"]
+    applies_to: ["outbound"]
+
+  # AWS Secrets
+  - id: "AWS-ACCESS-KEY-1.0"
+    title: "Secret: AWS Access Key ID"
+    pattern: '\bAKIA[0-9A-Z]{16}\b'
+    severity: "error"
+    action: "block"
+    tags: ["secret","aws"]
+    shadow_override: "enforce"
+
+  - id: "AWS-SECRET-KEY-1.0"
+    title: "Secret: AWS Secret Access Key pattern"
+    pattern: '\b[A-Za-z0-9/+=]{40}\b'
+    severity: "error"
+    action: "block"
+    tags: ["secret","aws"]
+    shadow_override: "enforce"
+
+  - id: "JWT-1.0"
+    title: "Secret: JSON Web Token (JWT) structure"
+    pattern: '\beyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\b'
+    severity: "error"
+    action: "block"
+    tags: ["secret","jwt"]
+    shadow_override: "enforce"
+
+  # Hallucination Detection
+  - id: "HALLUC-1.0"
+    title: "AI Hallucination Check"
+    text: "Flag if the agent output seems hallucinated"
+    llm_prompt: |
+      You are a strict compliance checker. The user provided an AI output.
+      Determine if it is likely hallucinated or non-factual. Reply with exactly:
+      "Yes" if likely hallucinated, or "No" if not.
+    severity: "warning"
+    action: "flag"
+    tags: ["AI","hallucination"]
+
+  # ===============================================
+  # MICROSOFT COPILOT SECURITY PROTECTIONS (IL-GOV)
+  # ===============================================
+
+  - id: "MS-COPILOT-1.0"
+    title: "Microsoft Copilot: Block data sharing prompts"
+    text: "Prevent users from requesting Copilot to store, remember, or share government data"
+    pattern: '(?i)\b(?:copilot|github copilot|microsoft copilot)[^.]{0,50}(?:save|store|remember|share|upload|send|transmit|export|backup|sync|cloud)\b'
+    severity: "error"
+    action: "block"
+    tags: ["copilot","data_exfiltration","microsoft"]
+    shadow_override: "enforce"
+
+  - id: "MS-COPILOT-2.0"
+    title: "Microsoft Copilot: Block telemetry requests"
+    text: "Prevent prompts asking Copilot to analyze usage patterns or generate analytics"
+    pattern: '(?i)\b(?:analyze|generate|create|produce)[^.]{0,30}(?:report|analytics|statistics|metrics|usage|patterns|trends)[^.]{0,30}(?:about|from|of|for)[^.]{0,30}(?:this|my|our|government|department|agency|office)\b'
+    severity: "error" 
+    action: "block"
+    tags: ["copilot","analytics","telemetry"]
+    shadow_override: "enforce"
+
+  - id: "MS-COPILOT-3.0"
+    title: "Microsoft Copilot: Block training data requests"
+    text: "Prevent attempts to use government data to improve AI models"
+    pattern: '(?i)\b(?:use|train|improve|enhance|update|feed|add)[^.]{0,30}(?:this|my|our)[^.]{0,30}(?:data|information|content|code|documents)[^.]{0,30}(?:to|for)[^.]{0,30}(?:training|learning|improvement|enhancement|model|ai)\b'
+    severity: "error"
+    action: "block" 
+    tags: ["copilot","training_data","model_improvement"]
+    shadow_override: "enforce"
+
+  - id: "MS-COPILOT-4.0"
+    title: "Microsoft Copilot: Block code repository scanning"
+    text: "Prevent Copilot from being asked to scan entire repositories or codebases"
+    pattern: '(?i)\b(?:scan|analyze|review|examine|audit|check)[^.]{0,30}(?:entire|whole|all|my|our)[^.]{0,30}(?:repository|repo|codebase|project|files|source code)\b'
+    severity: "error"
+    action: "block"
+    tags: ["copilot","repository_scan","code_analysis"]
+    shadow_override: "enforce"
+
+  - id: "MS-COPILOT-5.0"
+    title: "Microsoft Copilot: Block credential extraction attempts"
+    text: "Prevent attempts to extract or identify credentials from code or config files"
+    pattern: '(?i)\b(?:find|extract|identify|locate|get|show|list)[^.]{0,30}(?:credentials|passwords|keys|tokens|secrets|api keys|config|configuration|env|environment)\b'
+    severity: "error"
+    action: "block"
+    tags: ["copilot","credential_extraction","security"]
+    shadow_override: "enforce"
+
+  - id: "MS-COPILOT-6.0"
+    title: "Microsoft Copilot: Block infrastructure disclosure"
+    text: "Prevent requests for information about government IT infrastructure"
+    pattern: '(?i)\b(?:describe|explain|show|tell me about|what is)[^.]{0,30}(?:our|my|this|the)[^.]{0,30}(?:infrastructure|architecture|network|servers|databases|systems|environment|deployment|setup|configuration)\b'
+    severity: "error"
+    action: "block"
+    tags: ["copilot","infrastructure","disclosure"]
+    shadow_override: "enforce"
+
+  - id: "MS-COPILOT-7.0"
+    title: "Microsoft Copilot: Block PII combination requests"
+    text: "Prevent requests to combine or correlate PII from multiple sources"
+    pattern: '(?i)\b(?:combine|merge|correlate|join|match|link|connect)[^.]{0,50}(?:citizen|resident|employee|person|individual|user)[^.]{0,30}(?:data|information|records|profiles)\b'
+    severity: "error"
+    action: "block"
+    tags: ["copilot","pii_correlation","data_mining"]
+    shadow_override: "enforce"
+
+  - id: "MS-COPILOT-8.0"
+    title: "Microsoft Copilot: Block database query generation"
+    text: "Prevent generation of SQL queries against government databases"
+    pattern: '(?i)\b(?:generate|create|write|build)[^.]{0,30}(?:sql|query|database)[^.]{0,50}(?:select|from|where|join|update|insert|delete)\b'
+    severity: "error"
+    action: "block"
+    tags: ["copilot","sql_generation","database_access"]
+    shadow_override: "enforce"
+
+  - id: "MS-COPILOT-9.0" 
+    title: "Microsoft Copilot: Block citizen data profiling"
+    text: "Prevent attempts to profile or categorize citizens based on data patterns"
+    pattern: '(?i)\b(?:profile|categorize|classify|segment|group|analyze|identify)[^.]{0,30}(?:citizens|residents|people|individuals|users)[^.]{0,30}(?:based on|by|using|from)[^.]{0,30}(?:data|information|patterns|behavior|demographics)\b'
+    severity: "error"
+    action: "block"
+    tags: ["copilot","citizen_profiling","demographics"]
+    shadow_override: "enforce"
+
+  - id: "MS-COPILOT-10.0"
+    title: "Microsoft Copilot: Block compliance bypass attempts"
+    text: "Prevent requests to bypass security controls or compliance measures"
+    pattern: '(?i)\b(?:bypass|circumvent|avoid|skip|ignore|disable|override|turn off)[^.]{0,30}(?:security|compliance|audit|logging|monitoring|controls|restrictions|policies|rules)\b'
+    severity: "error"
+    action: "block"
+    tags: ["copilot","compliance_bypass","security_override"]
+    shadow_override: "enforce"
+
+  - id: "MS-COPILOT-11.0"
+    title: "Microsoft Copilot: Government entity identification"
+    text: "Flag references to specific government entities to ensure proper data handling"
+    pattern: '(?i)\b(?:illinois|state of illinois|il gov|department of|secretary of state|dmv|revenue|healthcare|human services|corrections|transportation|dnr|dcfs|dhs|idor|idot)\b'
+    severity: "warning"
+    action: "flag"
+    tags: ["copilot","government_entity","context"]
+
+  - id: "MS-COPILOT-12.0"
+    title: "Microsoft Copilot: Bulk data export attempts"
+    text: "Block attempts to export large datasets or generate bulk reports"
+    pattern: '(?i)\b(?:export|download|generate|create|extract)[^.]{0,30}(?:all|bulk|entire|complete|full)[^.]{0,30}(?:data|dataset|records|report|file|csv|excel|json|xml)\b'
+    severity: "error"
+    action: "block"
+    tags: ["copilot","bulk_export","data_exfiltration"]
+    shadow_override: "enforce"
+
+  - id: "MS-COPILOT-MICROSOFT-REFS"
+    title: "Microsoft Copilot: Microsoft service integration references"
+    text: "Flag mentions of Microsoft cloud services that could enable data transfer"
+    pattern: '(?i)\b(?:azure|office 365|o365|sharepoint|onedrive|teams|outlook|exchange|power bi|dynamics|microsoft cloud|m365|microsoft 365)\b'
+    severity: "warning"
+    action: "flag"
+    tags: ["copilot","microsoft_services","cloud_integration"]
+
+  - id: "MS-COPILOT-CODE-SUGGESTIONS"
+    title: "Microsoft Copilot: Code suggestions with embedded secrets"
+    text: "Block code suggestions that might contain hardcoded credentials or keys"
+    pattern: "(?i)(?:const|var|let|string|password|key|token|secret)\\s*[=:]\\s*[\"'](?:[A-Za-z0-9+/=_\\-]{16,}|[a-f0-9]{32,})[\"']"
+    severity: "error"
+    action: "block"
+    tags: ["copilot","code_suggestions","embedded_secrets"]
+    shadow_override: "enforce"

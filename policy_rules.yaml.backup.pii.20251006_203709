@@ -1,0 +1,810 @@
+rules:
+- id: IL-AI-4.2
+  title: 'PII: Social Security Numbers'
+  text: Block any full SSN patterns
+  pattern: \b\d{3}-\d{2}-\d{4}\b
+  severity: error
+  action: block
+  tags:
+  - PII
+  - personal_data
+  shadow_override: enforce
+- id: EMAIL-1.0
+  title: 'PII: Email Address'
+  text: Flag any standard email address
+  pattern: \b[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}\b
+  severity: warning
+  action: flag
+  tags:
+  - PII
+  - personal_data
+- id: GITHUB-TOKEN-1.0
+  title: 'Secret: GitHub Personal Access Token'
+  pattern: \bghp_[A-Za-z0-9]{36}\b
+  severity: error
+  action: block
+  tags:
+  - secret
+  - github
+  shadow_override: enforce
+- id: OPENAI-KEY-1.0
+  title: 'Secret: OpenAI API Key (all formats)'
+  pattern: \bsk-(?:proj-|[A-Za-z0-9]{20,}|[A-Za-z0-9]{32,})\b
+  severity: error
+  action: block
+  tags:
+  - secret
+  - openai
+  shadow_override: enforce
+- id: API-1.0
+  title: 'Security: Generic long alphanumeric sequence'
+  text: Block long alphanumeric blobs (potential API keys/secrets)
+  pattern: \b[A-Za-z0-9_\-]{20,}\b
+  severity: error
+  action: block
+  tags:
+  - security
+  - credentials
+  shadow_override: enforce
+- id: INJ-1.0
+  title: 'Injection: Prompt-Injection Keywords (basic)'
+  text: Flag if the content references system/assistant prompts explicitly
+  pattern: \b(system prompt|assistant prompt)\b
+  severity: warning
+  action: flag
+  tags:
+  - injection
+  - security
+- id: INJ-2.0
+  title: 'Injection: Override/Ignore Directives'
+  text: Flag common instruction-subversion phrases
+  pattern: \b(ignore previous|as system|developer message|tool output)\b
+  severity: warning
+  action: flag
+  tags:
+  - injection
+  - security
+- id: CJIS-BIOMETRIC-1.0
+  title: 'CJIS: Biometric data exposure'
+  text: Block biometric terms on CJIS endpoints
+  pattern: (?i)\b(fingerprint|mugshot|iris scan|retina scan|palm print|dna profile|voiceprint|biometric
+    record)\b
+  severity: error
+  action: block
+  tags:
+  - security
+  - credentials
+  shadow_override: enforce
+- id: HIPAA-PHI-EMAIL-1.0
+  title: 'HIPAA: Email addresses (PHI risk)'
+  text: Flag emails in healthcare contexts; tune with endpoint scoping if desired
+  pattern: (?i)\b[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-ZaZ]{2,}\b
+  severity: warning
+  action: flag
+  tags:
+  - hipaa
+  - phi
+  - pii
+- id: MAX-DUMP-5K
+  title: 'Bulk output: >5,000 characters'
+  text: Block unusually large outputs (tune per endpoint)
+  max_chars: 5000
+  severity: error
+  action: block
+  tags:
+  - copilot
+  - data_exfiltration
+  - microsoft
+  shadow_override: enforce
+- id: BULK-EMAIL-3
+  title: Bulk email leakage
+  text: Block if 3+ email addresses appear in a single response
+  pattern: (?i)[A-ZaZ0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-ZaZ]{2,}
+  min_count: 3
+  severity: error
+  action: block
+  tags:
+  - exfiltration
+  - pii
+  applies_to:
+  - outbound
+- id: AWS-ACCESS-KEY-1.0
+  title: 'Secret: AWS Access Key ID'
+  pattern: \bAKIA[0-9A-Z]{16}\b
+  severity: error
+  action: block
+  tags:
+  - secret
+  - aws
+  shadow_override: enforce
+- id: AWS-SECRET-KEY-1.0
+  title: 'Secret: AWS Secret Access Key pattern'
+  pattern: \b[A-Za-z0-9/+=]{40}\b
+  severity: error
+  action: block
+  tags:
+  - secret
+  - aws
+  shadow_override: enforce
+- id: JWT-1.0
+  title: 'Secret: JSON Web Token (JWT) structure'
+  pattern: \beyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\b
+  severity: error
+  action: block
+  tags:
+  - secret
+  - jwt
+  shadow_override: enforce
+- id: HALLUC-1.0
+  title: AI Hallucination Check
+  text: Flag if the agent output seems hallucinated
+  llm_prompt: 'You are a strict compliance checker. The user provided an AI output.
+
+    Determine if it is likely hallucinated or non-factual. Reply with exactly:
+
+    "Yes" if likely hallucinated, or "No" if not.
+
+    '
+  severity: warning
+  action: flag
+  tags:
+  - AI
+  - hallucination
+- id: MS-COPILOT-1.0
+  title: 'Microsoft Copilot: Block data sharing prompts'
+  text: Prevent users from requesting Copilot to store, remember, or share government
+    data
+  pattern: (?i)\b(?:copilot|github copilot|microsoft copilot)[^.]{0,50}(?:save|store|remember|share|upload|send|transmit|export|backup|sync|cloud)\b
+  severity: error
+  action: block
+  tags:
+  - copilot
+  - data_exfiltration
+  - microsoft
+  shadow_override: enforce
+- id: MS-COPILOT-2.0
+  title: 'Microsoft Copilot: Block telemetry requests'
+  text: Prevent prompts asking Copilot to analyze usage patterns or generate analytics
+  pattern: (?i)\b(?:analyze|generate|create|produce)[^.]{0,30}(?:report|analytics|statistics|metrics|usage|patterns|trends)[^.]{0,30}(?:about|from|of|for)[^.]{0,30}(?:this|my|our|government|department|agency|office)\b
+  severity: error
+  action: block
+  tags:
+  - copilot
+  - analytics
+  - telemetry
+  shadow_override: enforce
+- id: MS-COPILOT-3.0
+  title: 'Microsoft Copilot: Block training data requests'
+  text: Prevent attempts to use government data to improve AI models
+  pattern: (?i)\b(?:use|train|improve|enhance|update|feed|add)[^.]{0,30}(?:this|my|our)[^.]{0,30}(?:data|information|content|code|documents)[^.]{0,30}(?:to|for)[^.]{0,30}(?:training|learning|improvement|enhancement|model|ai)\b
+  severity: error
+  action: block
+  tags:
+  - copilot
+  - training_data
+  - model_improvement
+  shadow_override: enforce
+- id: MS-COPILOT-4.0
+  title: 'Microsoft Copilot: Block code repository scanning'
+  text: Prevent Copilot from being asked to scan entire repositories or codebases
+  pattern: (?i)\b(?:scan|analyze|review|examine|audit|check)[^.]{0,30}(?:entire|whole|all|my|our)[^.]{0,30}(?:repository|repo|codebase|project|files|source
+    code)\b
+  severity: error
+  action: block
+  tags:
+  - copilot
+  - repository_scan
+  - code_analysis
+  shadow_override: enforce
+- id: MS-COPILOT-5.0
+  title: 'Microsoft Copilot: Block credential extraction attempts'
+  text: Prevent attempts to extract or identify credentials from code or config files
+  pattern: (?i)\b(?:find|extract|identify|locate|get|show|list)[^.]{0,30}(?:credentials|passwords|keys|tokens|secrets|api
+    keys|config|configuration|env|environment)\b
+  severity: error
+  action: block
+  tags:
+  - copilot
+  - credential_extraction
+  - security
+  shadow_override: enforce
+- id: MS-COPILOT-6.0
+  title: 'Microsoft Copilot: Block infrastructure disclosure'
+  text: Prevent requests for information about government IT infrastructure
+  pattern: (?i)\b(?:describe|explain|show|tell me about|what is)[^.]{0,30}(?:our|my|this|the)[^.]{0,30}(?:infrastructure|architecture|network|servers|databases|systems|environment|deployment|setup|configuration)\b
+  severity: error
+  action: block
+  tags:
+  - copilot
+  - infrastructure
+  - disclosure
+  shadow_override: enforce
+- id: MS-COPILOT-7.0
+  title: 'Microsoft Copilot: Block PII combination requests'
+  text: Prevent requests to combine or correlate PII from multiple sources
+  pattern: (?i)\b(?:combine|merge|correlate|join|match|link|connect)[^.]{0,50}(?:citizen|resident|employee|person|individual|user)[^.]{0,30}(?:data|information|records|profiles)\b
+  severity: error
+  action: block
+  tags:
+  - copilot
+  - pii_correlation
+  - data_mining
+  shadow_override: enforce
+- id: MS-COPILOT-8.0
+  title: 'Microsoft Copilot: Block database query generation'
+  text: Prevent generation of SQL queries against government databases
+  pattern: (?i)\b(?:generate|create|write|build)[^.]{0,30}(?:sql|query|database)[^.]{0,50}(?:select|from|where|join|update|insert|delete)\b
+  severity: error
+  action: block
+  tags:
+  - copilot
+  - sql_generation
+  - database_access
+  shadow_override: enforce
+- id: MS-COPILOT-9.0
+  title: 'Microsoft Copilot: Block citizen data profiling'
+  text: Prevent attempts to profile or categorize citizens based on data patterns
+  pattern: (?i)\b(?:profile|categorize|classify|segment|group|analyze|identify)[^.]{0,30}(?:citizens|residents|people|individuals|users)[^.]{0,30}(?:based
+    on|by|using|from)[^.]{0,30}(?:data|information|patterns|behavior|demographics)\b
+  severity: error
+  action: block
+  tags:
+  - copilot
+  - citizen_profiling
+  - demographics
+  shadow_override: enforce
+- id: MS-COPILOT-10.0
+  title: 'Microsoft Copilot: Block compliance bypass attempts'
+  text: Prevent requests to bypass security controls or compliance measures
+  pattern: (?i)\b(?:bypass|circumvent|avoid|skip|ignore|disable|override|turn off)[^.]{0,30}(?:security|compliance|audit|logging|monitoring|controls|restrictions|policies|rules)\b
+  severity: error
+  action: block
+  tags:
+  - copilot
+  - compliance_bypass
+  - security_override
+  shadow_override: enforce
+- id: MS-COPILOT-11.0
+  title: 'Microsoft Copilot: Government entity identification'
+  text: Flag references to specific government entities to ensure proper data handling
+  pattern: (?i)\b(?:illinois|state of illinois|il gov|department of|secretary of state|dmv|revenue|healthcare|human
+    services|corrections|transportation|dnr|dcfs|dhs|idor|idot)\b
+  severity: warning
+  action: flag
+  tags:
+  - copilot
+  - government_entity
+  - context
+- id: MS-COPILOT-12.0
+  title: 'Microsoft Copilot: Bulk data export attempts'
+  text: Block attempts to export large datasets or generate bulk reports
+  pattern: (?i)\b(?:export|download|generate|create|extract)[^.]{0,30}(?:all|bulk|entire|complete|full)[^.]{0,30}(?:data|dataset|records|report|file|csv|excel|json|xml)\b
+  severity: error
+  action: block
+  tags:
+  - copilot
+  - bulk_export
+  - data_exfiltration
+  shadow_override: enforce
+- id: MS-COPILOT-MICROSOFT-REFS
+  title: 'Microsoft Copilot: Microsoft service integration references'
+  text: Flag mentions of Microsoft cloud services that could enable data transfer
+  pattern: (?i)\b(?:azure|office 365|o365|sharepoint|onedrive|teams|outlook|exchange|power
+    bi|dynamics|microsoft cloud|m365|microsoft 365)\b
+  severity: warning
+  action: flag
+  tags:
+  - copilot
+  - microsoft_services
+  - cloud_integration
+- id: MS-COPILOT-CODE-SUGGESTIONS
+  title: 'Microsoft Copilot: Code suggestions with embedded secrets'
+  text: Block code suggestions that might contain hardcoded credentials or keys
+  pattern: (?i)(?:const|var|let|string|password|key|token|secret)\s*[=:]\s*["'](?:[A-Za-z0-9+/=_\-]{16,}|[a-f0-9]{32,})["']
+  severity: error
+  action: block
+  tags:
+  - copilot
+  - code_suggestions
+  - embedded_secrets
+  shadow_override: enforce
+- rule_id: STATE_DL_ALABAMA-1.0
+  pattern: \b(?:[0-9]{1,8})\b
+  action: flag
+  applies_to:
+  - request
+  - response
+  endpoints:
+  - '*'
+  description: 'Alabama Driver''s License detection - Alabama DL: 1-8 numeric digits'
+- rule_id: STATE_DL_ALASKA-1.0
+  pattern: \b(?:[0-9]{1,7})\b
+  action: flag
+  applies_to:
+  - request
+  - response
+  endpoints:
+  - '*'
+  description: 'Alaska Driver''s License detection - Alaska DL: 1-7 numeric digits'
+- rule_id: STATE_DL_ARIZONA-1.0
+  pattern: \b(?:[A-Z][0-9]{8}|[0-9]{9})\b
+  action: flag
+  applies_to:
+  - request
+  - response
+  endpoints:
+  - '*'
+  description: 'Arizona Driver''s License detection - Arizona DL: 1 letter + 8 digits
+    OR 9 digits'
+- rule_id: STATE_DL_ARKANSAS-1.0
+  pattern: \b(?:[0-9]{4,9})\b
+  action: flag
+  applies_to:
+  - request
+  - response
+  endpoints:
+  - '*'
+  description: 'Arkansas Driver''s License detection - Arkansas DL: 4-9 numeric digits'
+- rule_id: STATE_DL_CALIFORNIA-1.0
+  pattern: \b(?:[A-Z][0-9]{7})\b
+  action: flag
+  applies_to:
+  - request
+  - response
+  endpoints:
+  - '*'
+  description: 'California Driver''s License detection - California DL: 1 letter +
+    7 digits'
+- rule_id: STATE_DL_COLORADO-1.0
+  pattern: \b(?:[0-9]{9}|[A-Z][0-9]{3,6}|[A-Z]{2}[0-9]{2,5})\b
+  action: flag
+  applies_to:
+  - request
+  - response
+  endpoints:
+  - '*'
+  description: 'Colorado Driver''s License detection - Colorado DL: 9 digits OR 1-2
+    letters + 3-6 digits'
+- rule_id: STATE_DL_CONNECTICUT-1.0
+  pattern: \b(?:[0-9]{9})\b
+  action: flag
+  applies_to:
+  - request
+  - response
+  endpoints:
+  - '*'
+  description: 'Connecticut Driver''s License detection - Connecticut DL: 9 numeric
+    digits'
+- rule_id: STATE_DL_DELAWARE-1.0
+  pattern: \b(?:[0-9]{1,7})\b
+  action: flag
+  applies_to:
+  - request
+  - response
+  endpoints:
+  - '*'
+  description: 'Delaware Driver''s License detection - Delaware DL: 1-7 numeric digits'
+- rule_id: STATE_DL_DISTRICT_OF_COLUMBIA-1.0
+  pattern: \b(?:[0-9]{7}|[0-9]{9})\b
+  action: flag
+  applies_to:
+  - request
+  - response
+  endpoints:
+  - '*'
+  description: 'District of Columbia Driver''s License detection - DC DL: 7 or 9 numeric
+    digits'
+- rule_id: STATE_DL_FLORIDA-1.0
+  pattern: \b(?:[A-Z][0-9]{12}|[A-Z][0-9]{3}-[0-9]{3}-[0-9]{2}-[0-9]{3}-[0-9])\b
+  action: flag
+  applies_to:
+  - request
+  - response
+  endpoints:
+  - '*'
+  description: 'Florida Driver''s License detection - Florida DL: 1 letter + 12 digits
+    (with or without dashes)'
+- rule_id: STATE_DL_GEORGIA-1.0
+  pattern: \b(?:[0-9]{7,9})\b
+  action: flag
+  applies_to:
+  - request
+  - response
+  endpoints:
+  - '*'
+  description: 'Georgia Driver''s License detection - Georgia DL: 7-9 numeric digits'
+- rule_id: STATE_DL_HAWAII-1.0
+  pattern: \b(?:[A-Z][0-9]{8}|[0-9]{9})\b
+  action: flag
+  applies_to:
+  - request
+  - response
+  endpoints:
+  - '*'
+  description: 'Hawaii Driver''s License detection - Hawaii DL: 1 letter + 8 digits
+    OR 9 digits'
+- rule_id: STATE_DL_IDAHO-1.0
+  pattern: \b(?:[A-Z]{2}[0-9]{6}[A-Z]|[0-9]{9})\b
+  action: flag
+  applies_to:
+  - request
+  - response
+  endpoints:
+  - '*'
+  description: 'Idaho Driver''s License detection - Idaho DL: 2 letters + 6 digits
+    + 1 letter OR 9 digits'
+- rule_id: STATE_ID_DL_ILLINOIS-1.0
+  pattern: \b(?:[A-Z][0-9]{11}|[0-9]{11}[A-Z])\b
+  action: flag
+  applies_to:
+  - request
+  - response
+  endpoints:
+  - '*'
+  description: 'Illinois Driver''s License and State ID detection - Illinois DL: 1
+    letter + 11 digits; ID: 11 digits + 1 letter'
+- rule_id: STATE_DL_INDIANA-1.0
+  pattern: \b(?:[0-9]{9,10})\b
+  action: flag
+  applies_to:
+  - request
+  - response
+  endpoints:
+  - '*'
+  description: 'Indiana Driver''s License detection - Indiana DL: 9-10 numeric digits'
+- rule_id: STATE_DL_IOWA-1.0
+  pattern: \b(?:[0-9]{9}|[0-9]{3}[A-Z]{2}[0-9]{4})\b
+  action: flag
+  applies_to:
+  - request
+  - response
+  endpoints:
+  - '*'
+  description: 'Iowa Driver''s License detection - Iowa DL: 9 digits OR 3 digits +
+    2 letters + 4 digits'
+- rule_id: STATE_DL_KANSAS-1.0
+  pattern: \b(?:[A-Z][0-9]{8}|[0-9]{9})\b
+  action: flag
+  applies_to:
+  - request
+  - response
+  endpoints:
+  - '*'
+  description: 'Kansas Driver''s License detection - Kansas DL: 1 letter + 8 digits
+    OR 9 digits'
+- rule_id: STATE_DL_KENTUCKY-1.0
+  pattern: \b(?:[A-Z][0-9]{8,9}|[0-9]{9})\b
+  action: flag
+  applies_to:
+  - request
+  - response
+  endpoints:
+  - '*'
+  description: 'Kentucky Driver''s License detection - Kentucky DL: 1 letter + 8-9
+    digits OR 9 digits'
+- rule_id: STATE_DL_LOUISIANA-1.0
+  pattern: \b(?:[0-9]{1,9})\b
+  action: flag
+  applies_to:
+  - request
+  - response
+  endpoints:
+  - '*'
+  description: 'Louisiana Driver''s License detection - Louisiana DL: 1-9 numeric
+    digits'
+- rule_id: STATE_DL_MAINE-1.0
+  pattern: \b(?:[0-9]{7,8})\b
+  action: flag
+  applies_to:
+  - request
+  - response
+  endpoints:
+  - '*'
+  description: 'Maine Driver''s License detection - Maine DL: 7-8 numeric digits'
+- rule_id: STATE_DL_MARYLAND-1.0
+  pattern: \b(?:[A-Z][0-9]{12})\b
+  action: flag
+  applies_to:
+  - request
+  - response
+  endpoints:
+  - '*'
+  description: 'Maryland Driver''s License detection - Maryland DL: 1 letter + 12
+    digits'
+- rule_id: STATE_DL_MASSACHUSETTS-1.0
+  pattern: \b(?:[A-Z][0-9]{8}|[0-9]{9})\b
+  action: flag
+  applies_to:
+  - request
+  - response
+  endpoints:
+  - '*'
+  description: 'Massachusetts Driver''s License detection - Massachusetts DL: 1 letter
+    + 8 digits OR 9 digits'
+- rule_id: STATE_DL_MICHIGAN-1.0
+  pattern: \b(?:[A-Z][0-9]{10}|[A-Z][0-9]{12})\b
+  action: flag
+  applies_to:
+  - request
+  - response
+  endpoints:
+  - '*'
+  description: 'Michigan Driver''s License detection - Michigan DL: 1 letter + 10
+    or 12 digits'
+- rule_id: STATE_DL_MINNESOTA-1.0
+  pattern: \b(?:[A-Z][0-9]{12})\b
+  action: flag
+  applies_to:
+  - request
+  - response
+  endpoints:
+  - '*'
+  description: 'Minnesota Driver''s License detection - Minnesota DL: 1 letter + 12
+    digits'
+- rule_id: STATE_DL_MISSISSIPPI-1.0
+  pattern: \b(?:[0-9]{9})\b
+  action: flag
+  applies_to:
+  - request
+  - response
+  endpoints:
+  - '*'
+  description: 'Mississippi Driver''s License detection - Mississippi DL: 9 numeric
+    digits'
+- rule_id: STATE_DL_MISSOURI-1.0
+  pattern: \b(?:[A-Z][0-9]{5,9}|[A-Z][0-9]{6}[R]|[0-9]{8}[A-Z]{2}|[0-9]{9}[A-Z]|[0-9]{9})\b
+  action: flag
+  applies_to:
+  - request
+  - response
+  endpoints:
+  - '*'
+  description: 'Missouri Driver''s License detection - Missouri DL: Various formats
+    with 1 letter + 5-9 digits or other combinations'
+- rule_id: STATE_DL_MONTANA-1.0
+  pattern: \b(?:[A-Z][0-9]{8}|[0-9]{13,14}|[0-9]{9})\b
+  action: flag
+  applies_to:
+  - request
+  - response
+  endpoints:
+  - '*'
+  description: 'Montana Driver''s License detection - Montana DL: 1 letter + 8 digits
+    OR 13-14 digits OR 9 digits'
+- rule_id: STATE_DL_NEBRASKA-1.0
+  pattern: \b(?:[A-Z][0-9]{6,8}|[0-9]{8})\b
+  action: flag
+  applies_to:
+  - request
+  - response
+  endpoints:
+  - '*'
+  description: 'Nebraska Driver''s License detection - Nebraska DL: 1 letter + 6-8
+    digits OR 8 digits'
+- rule_id: STATE_DL_NEVADA-1.0
+  pattern: \b(?:[0-9]{9,10}|[0-9]{12}|[X][0-9]{8})\b
+  action: flag
+  applies_to:
+  - request
+  - response
+  endpoints:
+  - '*'
+  description: 'Nevada Driver''s License detection - Nevada DL: 9-10 digits OR 12
+    digits OR X + 8 digits'
+- rule_id: STATE_DL_NEW_HAMPSHIRE-1.0
+  pattern: \b(?:[0-9]{2}[A-Z]{3}[0-9]{5})\b
+  action: flag
+  applies_to:
+  - request
+  - response
+  endpoints:
+  - '*'
+  description: 'New Hampshire Driver''s License detection - New Hampshire DL: 2 digits
+    + 3 letters + 5 digits'
+- rule_id: STATE_DL_NEW_JERSEY-1.0
+  pattern: \b(?:[A-Z][0-9]{14})\b
+  action: flag
+  applies_to:
+  - request
+  - response
+  endpoints:
+  - '*'
+  description: 'New Jersey Driver''s License detection - New Jersey DL: 1 letter +
+    14 digits'
+- rule_id: STATE_DL_NEW_MEXICO-1.0
+  pattern: \b(?:[0-9]{8,9})\b
+  action: flag
+  applies_to:
+  - request
+  - response
+  endpoints:
+  - '*'
+  description: 'New Mexico Driver''s License detection - New Mexico DL: 8-9 numeric
+    digits'
+- rule_id: STATE_DL_NEW_YORK-1.0
+  pattern: \b(?:[0-9]{3}[,]?[0-9]{3}[,]?[0-9]{3}|[A-Z][0-9]{7}|[A-Z][0-9]{18}|[0-9]{8,9}|[0-9]{16}|[A-Z]{8})\b
+  action: flag
+  applies_to:
+  - request
+  - response
+  endpoints:
+  - '*'
+  description: 'New York Driver''s License detection - New York DL: Various formats
+    including 9 digits with commas, 1 letter + 7/18 digits'
+- rule_id: STATE_DL_NORTH_CAROLINA-1.0
+  pattern: \b(?:[0-9]{1,12})\b
+  action: flag
+  applies_to:
+  - request
+  - response
+  endpoints:
+  - '*'
+  description: 'North Carolina Driver''s License detection - North Carolina DL: 1-12
+    numeric digits'
+- rule_id: STATE_DL_NORTH_DAKOTA-1.0
+  pattern: \b(?:[A-Z]{3}[0-9]{6}|[0-9]{9})\b
+  action: flag
+  applies_to:
+  - request
+  - response
+  endpoints:
+  - '*'
+  description: 'North Dakota Driver''s License detection - North Dakota DL: 3 letters
+    + 6 digits OR 9 digits'
+- rule_id: STATE_DL_OHIO-1.0
+  pattern: \b(?:[A-Z]{2}[0-9]{6}|[0-9]{8})\b
+  action: flag
+  applies_to:
+  - request
+  - response
+  endpoints:
+  - '*'
+  description: 'Ohio Driver''s License detection - Ohio DL: 2 letters + 6 digits OR
+    8 digits'
+- rule_id: STATE_DL_OKLAHOMA-1.0
+  pattern: \b(?:[A-Z][0-9]{9}|[0-9]{9})\b
+  action: flag
+  applies_to:
+  - request
+  - response
+  endpoints:
+  - '*'
+  description: 'Oklahoma Driver''s License detection - Oklahoma DL: 1 letter + 9 digits
+    OR 9 digits'
+- rule_id: STATE_DL_OREGON-1.0
+  pattern: \b(?:[0-9]{1,9}|[A-Z][0-9]{6,8})\b
+  action: flag
+  applies_to:
+  - request
+  - response
+  endpoints:
+  - '*'
+  description: 'Oregon Driver''s License detection - Oregon DL: 1-9 digits OR 1 letter
+    + 6-8 digits'
+- rule_id: STATE_DL_PENNSYLVANIA-1.0
+  pattern: \b(?:[0-9]{8})\b
+  action: flag
+  applies_to:
+  - request
+  - response
+  endpoints:
+  - '*'
+  description: 'Pennsylvania Driver''s License detection - Pennsylvania DL: 8 numeric
+    digits'
+- rule_id: STATE_DL_RHODE_ISLAND-1.0
+  pattern: \b(?:[0-9]{7}|[A-Z][0-9]{6})\b
+  action: flag
+  applies_to:
+  - request
+  - response
+  endpoints:
+  - '*'
+  description: 'Rhode Island Driver''s License detection - Rhode Island DL: 7 digits
+    OR 1 letter + 6 digits'
+- rule_id: STATE_DL_SOUTH_CAROLINA-1.0
+  pattern: \b(?:[0-9]{5,11})\b
+  action: flag
+  applies_to:
+  - request
+  - response
+  endpoints:
+  - '*'
+  description: 'South Carolina Driver''s License detection - South Carolina DL: 5-11
+    numeric digits'
+- rule_id: STATE_DL_SOUTH_DAKOTA-1.0
+  pattern: \b(?:[0-9]{6,10}|[0-9]{12})\b
+  action: flag
+  applies_to:
+  - request
+  - response
+  endpoints:
+  - '*'
+  description: 'South Dakota Driver''s License detection - South Dakota DL: 6-10 digits
+    OR 12 digits'
+- rule_id: STATE_DL_TENNESSEE-1.0
+  pattern: \b(?:[0-9]{7,9})\b
+  action: flag
+  applies_to:
+  - request
+  - response
+  endpoints:
+  - '*'
+  description: 'Tennessee Driver''s License detection - Tennessee DL: 7-9 numeric
+    digits'
+- rule_id: STATE_DL_TEXAS-1.0
+  pattern: \b(?:[0-9]{7,8})\b
+  action: flag
+  applies_to:
+  - request
+  - response
+  endpoints:
+  - '*'
+  description: 'Texas Driver''s License detection - Texas DL: 7-8 numeric digits'
+- rule_id: STATE_DL_UTAH-1.0
+  pattern: \b(?:[0-9]{4,10})\b
+  action: flag
+  applies_to:
+  - request
+  - response
+  endpoints:
+  - '*'
+  description: 'Utah Driver''s License detection - Utah DL: 4-10 numeric digits'
+- rule_id: STATE_DL_VERMONT-1.0
+  pattern: \b(?:[0-9]{8}|[0-9]{7}[A])\b
+  action: flag
+  applies_to:
+  - request
+  - response
+  endpoints:
+  - '*'
+  description: 'Vermont Driver''s License detection - Vermont DL: 8 digits OR 7 digits
+    + A'
+- rule_id: STATE_DL_VIRGINIA-1.0
+  pattern: \b(?:[A-Z][0-9]{8,11}|[0-9]{9})\b
+  action: flag
+  applies_to:
+  - request
+  - response
+  endpoints:
+  - '*'
+  description: 'Virginia Driver''s License detection - Virginia DL: 1 letter + 8-11
+    digits OR 9 digits'
+- rule_id: STATE_DL_WASHINGTON-1.0
+  pattern: \b(?:[A-Z]{1,7}[A-Z0-9\*]{4,7}[0-9]{5}|[0-9]{12})\b
+  action: flag
+  applies_to:
+  - request
+  - response
+  endpoints:
+  - '*'
+  description: 'Washington Driver''s License detection - Washington DL: Complex alphanumeric
+    format or 12 digits'
+- rule_id: STATE_DL_WEST_VIRGINIA-1.0
+  pattern: \b(?:[A-Z][0-9]{6}|[0-9]{7})\b
+  action: flag
+  applies_to:
+  - request
+  - response
+  endpoints:
+  - '*'
+  description: 'West Virginia Driver''s License detection - West Virginia DL: 1 letter
+    + 6 digits OR 7 digits'
+- rule_id: STATE_DL_WISCONSIN-1.0
+  pattern: \b(?:[A-Z][0-9]{13})\b
+  action: flag
+  applies_to:
+  - request
+  - response
+  endpoints:
+  - '*'
+  description: 'Wisconsin Driver''s License detection - Wisconsin DL: 1 letter + 13
+    digits'
+- rule_id: STATE_DL_WYOMING-1.0
+  pattern: \b(?:[0-9]{9,10})\b
+  action: flag
+  applies_to:
+  - request
+  - response
+  endpoints:
+  - '*'
+  description: 'Wyoming Driver''s License detection - Wyoming DL: 9-10 numeric digits'
