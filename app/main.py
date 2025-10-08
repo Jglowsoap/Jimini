@@ -2,7 +2,7 @@
 from collections import defaultdict, deque
 import time
 import os
-from typing import Any, Dict, Deque, Optional
+from typing import Any, Dict, Deque, Optional, List
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 
@@ -49,6 +49,68 @@ from app.operational_guardrails import (
     get_deadletter_tool,
     get_runbook_automation
 )
+
+# AI Innovation Integrations
+try:
+    import sys
+    import importlib.util
+    from pathlib import Path
+    
+    # Import AI innovations from the main workspace
+    workspace_path = Path(__file__).parent.parent
+    
+    # Import AI Rule Generation Engine
+    ai_rule_gen_path = workspace_path / "ai_powered_rule_generation.py"
+    if ai_rule_gen_path.exists():
+        spec = importlib.util.spec_from_file_location("ai_powered_rule_generation", ai_rule_gen_path)
+        ai_rule_module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(ai_rule_module)
+        AIRuleGenerationEngine = ai_rule_module.AIRuleGenerationEngine
+    else:
+        AIRuleGenerationEngine = None
+        
+    # Import Multi-Language Obfuscation Engine
+    multilang_path = workspace_path / "multilanguage_obfuscation_engine.py"
+    if multilang_path.exists():
+        spec = importlib.util.spec_from_file_location("multilanguage_obfuscation_engine", multilang_path)
+        multilang_module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(multilang_module)
+        MultiLanguageObfuscationEngine = multilang_module.MultiLanguageObfuscationEngine
+    else:
+        MultiLanguageObfuscationEngine = None
+        
+    # Import Zero-Day Prediction Engine
+    zeroday_path = workspace_path / "zero_day_prediction_engine.py"
+    if zeroday_path.exists():
+        spec = importlib.util.spec_from_file_location("zero_day_prediction_engine", zeroday_path)
+        zeroday_module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(zeroday_module)
+        ZeroDayPredictionEngine = zeroday_module.ZeroDayPredictionEngine
+    else:
+        ZeroDayPredictionEngine = None
+        
+    # Import Enterprise AI Security Copilot
+    copilot_path = workspace_path / "enterprise_ai_security_copilot.py"
+    if copilot_path.exists():
+        spec = importlib.util.spec_from_file_location("enterprise_ai_security_copilot", copilot_path)
+        copilot_module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(copilot_module)
+        EnterpriseAISecurityCopilot = copilot_module.EnterpriseAISecurityCopilot
+        SecurityContext = copilot_module.SecurityContext
+        CopilotQuery = copilot_module.CopilotQuery
+        SecurityDomain = copilot_module.SecurityDomain
+        CopilotMode = copilot_module.CopilotMode
+        SeverityLevel = copilot_module.SeverityLevel
+    else:
+        EnterpriseAISecurityCopilot = None
+        SecurityContext = None
+        
+except Exception as e:
+    print(f"⚠️ AI Innovations import failed: {e}")
+    AIRuleGenerationEngine = None
+    MultiLanguageObfuscationEngine = None
+    ZeroDayPredictionEngine = None
+    EnterpriseAISecurityCopilot = None
 from app.continuous_improvement import (
     get_traffic_generator,
     get_benchmark_runner
@@ -1801,6 +1863,347 @@ async def comprehensive_health_check():
     return await runbook.health_check_all_services()
 
 
+# ========================================
+# 🚀 AI INNOVATION ENDPOINTS
+# ========================================
+
+# Global AI Engine Instances
+ai_rule_engine = None
+multilang_engine = None
+prediction_engine = None
+ai_copilot = None
+
+@app.on_event("startup")
+async def initialize_ai_engines():
+    """Initialize AI innovation engines on startup"""
+    global ai_rule_engine, multilang_engine, prediction_engine, ai_copilot
+    
+    print("🤖 Initializing AI Innovation Engines...")
+    
+    try:
+        if AIRuleGenerationEngine:
+            ai_rule_engine = AIRuleGenerationEngine()
+            print("   ✅ AI Rule Generation Engine loaded")
+    except Exception as e:
+        print(f"   ❌ AI Rule Generation Engine failed: {e}")
+    
+    try:
+        if MultiLanguageObfuscationEngine:
+            multilang_engine = MultiLanguageObfuscationEngine()
+            print("   ✅ Multi-Language Obfuscation Engine loaded")
+    except Exception as e:
+        print(f"   ❌ Multi-Language Engine failed: {e}")
+    
+    try:
+        if ZeroDayPredictionEngine:
+            prediction_engine = ZeroDayPredictionEngine()
+            print("   ✅ Zero-Day Prediction Engine loaded")
+    except Exception as e:
+        print(f"   ❌ Zero-Day Prediction Engine failed: {e}")
+    
+    try:
+        if EnterpriseAISecurityCopilot:
+            ai_copilot = EnterpriseAISecurityCopilot()
+            print("   ✅ Enterprise AI Security Copilot loaded")
+    except Exception as e:
+        print(f"   ❌ AI Security Copilot failed: {e}")
+
+# ========================================
+# 🧠 AI Rule Generation API
+# ========================================
+
+@app.post("/v1/ai/rules/generate")
+async def generate_ai_rules(request: Dict[str, Any] = Body(...)):
+    """Generate security rules using AI-powered rule generation engine"""
+    
+    if not ai_rule_engine:
+        raise HTTPException(status_code=503, detail="AI Rule Generation Engine not available")
+    
+    try:
+        attack_text = request.get("attack_text", "")
+        sophistication = request.get("sophistication", 5)
+        
+        if not attack_text:
+            raise HTTPException(status_code=400, detail="attack_text is required")
+        
+        # Process with AI rule generation
+        generated_rules = ai_rule_engine.process_attack_and_generate_rules(attack_text, sophistication)
+        
+        return {
+            "status": "success",
+            "generated_rules": generated_rules,
+            "engine_stats": ai_rule_engine.get_performance_metrics(),
+            "timestamp": datetime.now(timezone.utc).isoformat()
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"AI rule generation failed: {str(e)}")
+
+@app.get("/v1/ai/rules/stats")
+async def get_ai_rule_stats():
+    """Get AI rule generation engine statistics"""
+    
+    if not ai_rule_engine:
+        raise HTTPException(status_code=503, detail="AI Rule Generation Engine not available")
+    
+    return {
+        "status": "operational",
+        "stats": ai_rule_engine.get_performance_metrics(),
+        "learning_effectiveness": ai_rule_engine.calculate_learning_effectiveness(),
+        "total_patterns": len(ai_rule_engine.attack_patterns)
+    }
+
+# ========================================
+# 🌍 Multi-Language Obfuscation API
+# ========================================
+
+@app.post("/v1/ai/obfuscation/detect")
+async def detect_obfuscation(request: Dict[str, Any] = Body(...)):
+    """Detect obfuscation using multi-language detection engine"""
+    
+    if not multilang_engine:
+        raise HTTPException(status_code=503, detail="Multi-Language Obfuscation Engine not available")
+    
+    try:
+        text = request.get("text", "")
+        
+        if not text:
+            raise HTTPException(status_code=400, detail="text is required")
+        
+        # Analyze with multi-language engine
+        analysis_results = multilang_engine.analyze_multilingual_text(text)
+        
+        return {
+            "status": "success", 
+            "analysis": analysis_results,
+            "supported_languages": len(multilang_engine.supported_languages),
+            "detection_techniques": len(multilang_engine.obfuscation_techniques),
+            "timestamp": datetime.now(timezone.utc).isoformat()
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Obfuscation detection failed: {str(e)}")
+
+@app.get("/v1/ai/obfuscation/capabilities")
+async def get_obfuscation_capabilities():
+    """Get multi-language obfuscation detection capabilities"""
+    
+    if not multilang_engine:
+        raise HTTPException(status_code=503, detail="Multi-Language Obfuscation Engine not available")
+    
+    return {
+        "status": "operational",
+        "supported_languages": multilang_engine.supported_languages,
+        "obfuscation_techniques": multilang_engine.obfuscation_techniques,
+        "detection_methods": multilang_engine.detection_methods
+    }
+
+# ========================================
+# 🔮 Zero-Day Attack Prediction API
+# ========================================
+
+@app.post("/v1/ai/prediction/analyze")
+async def predict_zero_day_attacks(request: Dict[str, Any] = Body(...)):
+    """Generate zero-day attack predictions"""
+    
+    if not prediction_engine:
+        raise HTTPException(status_code=503, detail="Zero-Day Prediction Engine not available")
+    
+    try:
+        horizon = request.get("prediction_horizon", "6_months")
+        
+        # Generate predictions
+        predictions = prediction_engine.predict_zero_day_attacks(horizon)
+        
+        # Generate comprehensive report
+        report = prediction_engine.generate_prediction_report(predictions)
+        
+        return {
+            "status": "success",
+            "predictions": [pred.__dict__ for pred in predictions[:10]],  # Top 10
+            "prediction_report": report,
+            "horizon": horizon,
+            "timestamp": datetime.now(timezone.utc).isoformat()
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Zero-day prediction failed: {str(e)}")
+
+@app.get("/v1/ai/prediction/trends")
+async def get_threat_trends():
+    """Get current threat landscape and evolution trends"""
+    
+    if not prediction_engine:
+        raise HTTPException(status_code=503, detail="Zero-Day Prediction Engine not available")
+    
+    return {
+        "status": "operational",
+        "technology_trends": prediction_engine.technology_trends,
+        "social_factors": prediction_engine.social_factors,
+        "threat_vectors": [vector.value for vector in prediction_engine.threat_trends.keys()],
+        "prediction_models": list(prediction_engine.prediction_models.keys())
+    }
+
+# ========================================
+# 🤖 Enterprise AI Security Copilot API
+# ========================================
+
+@app.post("/v1/ai/copilot/query")
+async def security_copilot_query(request: Dict[str, Any] = Body(...)):
+    """Query the Enterprise AI Security Copilot"""
+    
+    if not ai_copilot:
+        raise HTTPException(status_code=503, detail="Enterprise AI Security Copilot not available")
+    
+    try:
+        # Extract query parameters
+        user_input = request.get("query", "")
+        domain = request.get("domain", "policy_management")
+        mode = request.get("mode", "assistant")
+        urgency = request.get("urgency", "medium")
+        
+        # Extract context
+        context_data = request.get("context", {})
+        context = SecurityContext(
+            organization_size=context_data.get("organization_size", "medium"),
+            industry=context_data.get("industry", "technology"),
+            compliance_requirements=context_data.get("compliance_requirements", ["SOC2"]),
+            current_security_posture=context_data.get("current_security_posture", 7),
+            risk_tolerance=context_data.get("risk_tolerance", "medium"),
+            existing_tools=context_data.get("existing_tools", ["SIEM", "Firewall"]),
+            security_team_size=context_data.get("security_team_size", 5),
+            budget_level=context_data.get("budget_level", "moderate")
+        )
+        
+        # Create copilot query
+        copilot_query = CopilotQuery(
+            query_id=gen_request_id(),
+            user_input=user_input,
+            domain=SecurityDomain(domain),
+            mode=CopilotMode(mode),
+            context=context,
+            urgency=SeverityLevel(urgency),
+            timestamp=datetime.now(timezone.utc).isoformat(),
+            session_id=request.get("session_id", gen_request_id())
+        )
+        
+        # Process query
+        response = ai_copilot.process_security_query(copilot_query)
+        
+        return {
+            "status": "success",
+            "response": response.__dict__,
+            "copilot_version": "1.0",
+            "timestamp": datetime.now(timezone.utc).isoformat()
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"AI Copilot query failed: {str(e)}")
+
+@app.post("/v1/ai/copilot/investigate")
+async def security_incident_investigation(request: Dict[str, Any] = Body(...)):
+    """Investigate security incident with AI Copilot"""
+    
+    if not ai_copilot:
+        raise HTTPException(status_code=503, detail="Enterprise AI Security Copilot not available")
+    
+    try:
+        # Create SecurityIncident from request
+        from enterprise_ai_security_copilot import SecurityIncident, SeverityLevel
+        
+        incident = SecurityIncident(
+            incident_id=request.get("incident_id", gen_request_id()),
+            title=request.get("title", "Security Incident"),
+            description=request.get("description", ""),
+            severity=SeverityLevel(request.get("severity", "medium")),
+            affected_systems=request.get("affected_systems", []),
+            attack_vectors=request.get("attack_vectors", []),
+            indicators=request.get("indicators", []),
+            timeline=request.get("timeline", []),
+            status=request.get("status", "active")
+        )
+        
+        # Investigate with AI Copilot
+        investigation = ai_copilot.investigate_security_incident(incident)
+        
+        return {
+            "status": "success",
+            "investigation_results": investigation,
+            "timestamp": datetime.now(timezone.utc).isoformat()
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Security investigation failed: {str(e)}")
+
+@app.get("/v1/ai/copilot/capabilities")
+async def get_copilot_capabilities():
+    """Get AI Security Copilot capabilities and status"""
+    
+    if not ai_copilot:
+        raise HTTPException(status_code=503, detail="Enterprise AI Security Copilot not available")
+    
+    return {
+        "status": "operational",
+        "security_domains": [domain.value for domain in SecurityDomain],
+        "copilot_modes": [mode.value for mode in CopilotMode],
+        "knowledge_base_size": len(ai_copilot.knowledge_base),
+        "compliance_frameworks": list(ai_copilot.compliance_frameworks.keys()),
+        "best_practices_count": sum(len(practices) for practices in ai_copilot.best_practices.values())
+    }
+
+# ========================================
+# 🌟 AI Marketplace Platform API
+# ========================================
+
+@app.get("/v1/ai/marketplace/status")
+async def get_marketplace_status():
+    """Get AI Security Marketplace status and available innovations"""
+    
+    return {
+        "status": "operational",
+        "marketplace_version": "1.0",
+        "available_innovations": [
+            {
+                "id": "ai_rule_generation",
+                "name": "AI-Powered Dynamic Rule Generation", 
+                "status": "available" if ai_rule_engine else "unavailable",
+                "description": "ML-based system that learns from attacks and auto-generates security rules",
+                "endpoints": ["/v1/ai/rules/generate", "/v1/ai/rules/stats"]
+            },
+            {
+                "id": "multilang_obfuscation",
+                "name": "Multi-Language Obfuscation Detection",
+                "status": "available" if multilang_engine else "unavailable", 
+                "description": "Global security engine supporting 50+ languages with advanced obfuscation detection",
+                "endpoints": ["/v1/ai/obfuscation/detect", "/v1/ai/obfuscation/capabilities"]
+            },
+            {
+                "id": "zeroday_prediction",
+                "name": "Zero-Day Attack Prediction Engine",
+                "status": "available" if prediction_engine else "unavailable",
+                "description": "Predictive AI system that identifies attack vectors before they're used in the wild",
+                "endpoints": ["/v1/ai/prediction/analyze", "/v1/ai/prediction/trends"]
+            },
+            {
+                "id": "enterprise_copilot",
+                "name": "Enterprise AI Security Copilot",
+                "status": "available" if ai_copilot else "unavailable",
+                "description": "AI-powered security assistant for enterprise teams with expert-level guidance",
+                "endpoints": ["/v1/ai/copilot/query", "/v1/ai/copilot/investigate", "/v1/ai/copilot/capabilities"]
+            }
+        ],
+        "total_innovations": 4,
+        "active_innovations": sum(1 for engine in [ai_rule_engine, multilang_engine, prediction_engine, ai_copilot] if engine),
+        "marketplace_features": [
+            "Revolutionary AI security innovations",
+            "Enterprise-grade API access", 
+            "Real-time threat intelligence",
+            "Predictive security capabilities",
+            "Global language support",
+            "Expert AI assistance"
+        ]
+    }
+
 # Phase 5F - Continuous Improvement
 
 @app.post("/admin/load-test")
@@ -1861,16 +2264,20 @@ def run_server():
         port = int(os.environ["JIMINI_PORT"])
         
     print(f"🌐 Server starting on http://{host}:{port}")
-    print("📋 API endpoints:")
+    print("📋 Core API endpoints:")
     print("  • POST /v1/evaluate - Policy evaluation")
     print("  • GET /v1/metrics - System metrics")
-    print("  • GET /v1/metrics/prom - Prometheus metrics")  
     print("  • GET /health - Health check")
-    print("  • POST /v1/data/export/{user_id} - GDPR data export")
-    print("  • DELETE /v1/data/delete/{user_id} - GDPR data deletion")
     print("  • GET /admin/* - Admin endpoints (RBAC protected)")
-    print("  • POST /admin/load-test - Performance testing")
-    print("  • POST /admin/benchmark - Benchmark suite")
+    print("🚀 AI Innovation endpoints:")
+    print("  • POST /v1/ai/rules/generate - AI-powered rule generation")
+    print("  • POST /v1/ai/obfuscation/detect - Multi-language obfuscation detection")  
+    print("  • POST /v1/ai/prediction/analyze - Zero-day attack prediction")
+    print("  • POST /v1/ai/copilot/query - Enterprise AI security assistant")
+    print("  • GET /v1/ai/marketplace/status - AI marketplace platform")
+    print("🎯 Dashboard integration:")
+    print("  • Your React/Flask dashboard can now access all AI innovations!")
+    print("  • Example: curl -X POST http://localhost:9000/v1/ai/copilot/query")
     
     # Setup Phase 5 instrumentation
     setup_fastapi_instrumentation(app)

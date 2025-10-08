@@ -1,0 +1,427 @@
+# 🚀 IMMEDIATE RULE ADDITIONS FOR JIMINI
+# Add these rules to policy_rules.yaml to close critical security gaps
+
+# =============================================================================
+# MODERN AI SERVICE API KEYS (CRITICAL - Deploy immediately)
+# =============================================================================
+
+- id: ANTHROPIC-KEY-1.0
+  title: 'Secret: Anthropic Claude API Key'
+  pattern: \bsk-ant-[a-zA-Z0-9_-]{95,100}\b
+  severity: error
+  action: block
+  tags:
+    - secret
+    - anthropic
+    - claude
+  shadow_override: enforce
+  applies_to:
+    - user_input
+    - prompt
+  endpoints:
+    - /*
+  description: 'Secret: Anthropic Claude API Key'
+
+- id: GROQ-KEY-1.0
+  title: 'Secret: Groq API Key'
+  pattern: \bgsk_[a-zA-Z0-9]{56}\b
+  severity: error
+  action: block
+  tags:
+    - secret
+    - groq
+  shadow_override: enforce
+  applies_to:
+    - user_input
+    - prompt
+  endpoints:
+    - /*
+  description: 'Secret: Groq API Key'
+
+- id: HUGGINGFACE-TOKEN-1.0
+  title: 'Secret: HuggingFace Access Token'
+  pattern: \bhf_[A-Za-z0-9]{37,40}\b
+  severity: error
+  action: block
+  tags:
+    - secret
+    - huggingface
+  shadow_override: enforce
+  applies_to:
+    - user_input
+    - prompt
+  endpoints:
+    - /*
+  description: 'Secret: HuggingFace Access Token'
+
+- id: COHERE-KEY-1.0
+  title: 'Secret: Cohere API Key'
+  pattern: \b[a-zA-Z0-9]{40,50}-co\b
+  severity: error
+  action: block
+  tags:
+    - secret
+    - cohere
+  shadow_override: enforce
+  applies_to:
+    - user_input
+    - prompt
+  endpoints:
+    - /*
+  description: 'Secret: Cohere API Key'
+
+- id: REPLICATE-TOKEN-1.0
+  title: 'Secret: Replicate API Token'
+  pattern: \br8_[A-Za-z0-9]{40,50}\b
+  severity: error
+  action: block
+  tags:
+    - secret
+    - replicate
+  shadow_override: enforce
+  applies_to:
+    - user_input
+    - prompt
+  endpoints:
+    - /*
+  description: 'Secret: Replicate API Token'
+
+- id: MISTRAL-KEY-1.0
+  title: 'Secret: Mistral AI API Key'
+  pattern: \bmist_[a-zA-Z0-9]{32,48}\b
+  severity: error
+  action: block
+  tags:
+    - secret
+    - mistral
+  shadow_override: enforce
+  applies_to:
+    - user_input
+    - prompt
+  endpoints:
+    - /*
+  description: 'Secret: Mistral AI API Key'
+
+- id: PERPLEXITY-KEY-1.0
+  title: 'Secret: Perplexity API Key'
+  pattern: \bpplx-[a-zA-Z0-9]{32,64}\b
+  severity: error
+  action: block
+  tags:
+    - secret
+    - perplexity
+  shadow_override: enforce
+  applies_to:
+    - user_input
+    - prompt
+  endpoints:
+    - /*
+  description: 'Secret: Perplexity API Key'
+
+- id: GOOGLE-AI-KEY-1.0
+  title: 'Secret: Google AI API Key'
+  pattern: \bAI[a-zA-Z0-9]{35,39}\b
+  severity: error
+  action: block
+  tags:
+    - secret
+    - google
+    - gemini
+  shadow_override: enforce
+  applies_to:
+    - user_input
+    - prompt
+  endpoints:
+    - /*
+  description: 'Secret: Google AI/Gemini API Key'
+
+# =============================================================================
+# DEEPFAKE & SYNTHETIC MEDIA THREATS (HIGH PRIORITY)
+# =============================================================================
+
+- id: DEEPFAKE-REQUEST-1.0
+  title: 'Threat: Deepfake Generation Request'
+  pattern: (?i)\b(?:create|generate|make|produce|build)\s+(?:a\s+)?(?:deepfake|deep\s*fake|face\s*swap|fake\s*video|synthetic\s*video)\b
+  severity: error
+  action: block
+  tags:
+    - deepfake
+    - synthetic_media
+    - misinformation
+    - fraud
+  applies_to:
+    - user_input
+    - prompt
+  endpoints:
+    - /*
+  description: 'Threat: Deepfake Generation Request'
+
+- id: VOICE-CLONING-1.0
+  title: 'Threat: Voice Cloning Request'
+  pattern: (?i)\b(?:clone|mimic|replicate|synthesize|fake|copy)\s+(?:my\s+|his\s+|her\s+|their\s+|this\s+|the\s+)?(?:voice|speech|audio|sound|accent)\b
+  severity: warning
+  action: flag
+  tags:
+    - voice_cloning
+    - synthetic_media
+    - impersonation
+  applies_to:
+    - user_input
+    - prompt
+  endpoints:
+    - /*
+  description: 'Threat: Voice Cloning Request'
+
+- id: FACE-SWAP-REQUEST-1.0
+  title: 'Threat: Face Swap Request'
+  pattern: (?i)\b(?:swap|replace|change|put)\s+(?:my\s+|his\s+|her\s+|this\s+|the\s+)?face\s+(?:with|onto|on|into)\b
+  severity: warning
+  action: flag
+  tags:
+    - face_swap
+    - synthetic_media
+    - deepfake
+  applies_to:
+    - user_input
+    - prompt
+  endpoints:
+    - /*
+  description: 'Threat: Face Swap Request'
+
+# =============================================================================
+# CRYPTOCURRENCY & WEB3 EXPLOITS (HIGH PRIORITY)  
+# =============================================================================
+
+- id: CRYPTO-EXPLOIT-1.0
+  title: 'Threat: Cryptocurrency Exploit Request'
+  pattern: (?i)\b(?:create|build|generate|write)\s+(?:a\s+)?(?:malicious\s+)?(?:smart\s*contract|defi\s*exploit|crypto\s*scam|rug\s*pull|pump\s*and\s*dump|exit\s*scam)\b
+  severity: error
+  action: block
+  tags:
+    - cryptocurrency
+    - defi
+    - fraud
+    - exploit
+  applies_to:
+    - user_input
+    - prompt
+  endpoints:
+    - /*
+  description: 'Threat: Cryptocurrency Exploit Request'
+
+- id: PRIVATE-KEY-CRYPTO-1.0
+  title: 'Secret: Cryptocurrency Private Key'
+  pattern: \b(?:[5KL][1-9A-HJ-NP-Za-km-z]{50,51}|0x[a-fA-F0-9]{64}|[a-fA-F0-9]{64})\b
+  severity: error
+  action: block
+  tags:
+    - cryptocurrency
+    - private_key
+    - wallet
+    - secret
+  shadow_override: enforce
+  applies_to:
+    - user_input
+    - prompt
+  endpoints:
+    - /*
+  description: 'Secret: Cryptocurrency Private Key'
+
+- id: SEED-PHRASE-1.0
+  title: 'Secret: Cryptocurrency Seed Phrase'
+  pattern: (?i)\b(?:seed\s+phrase|mnemonic|recovery\s+phrase|backup\s+phrase|wallet\s+words)\s*:?\s*(?:[a-z]+\s+){11,23}[a-z]+\b
+  severity: error
+  action: block
+  tags:
+    - cryptocurrency
+    - seed_phrase
+    - wallet
+    - secret
+  shadow_override: enforce
+  applies_to:
+    - user_input
+    - prompt
+  endpoints:
+    - /*
+  description: 'Secret: Cryptocurrency Seed Phrase'
+
+# =============================================================================
+# ADVANCED SOCIAL ENGINEERING (2025 TACTICS)
+# =============================================================================
+
+- id: AI-IMPERSONATION-1.0
+  title: 'Threat: AI Impersonation Attack'
+  pattern: (?i)\b(?:pretend|act\s+as|roleplay\s+as|impersonate|pose\s+as|be\s+like|become)\s+(?:a\s+|an\s+|the\s+)?(?:ceo|cto|cfo|executive|manager|director|president|authority|official|celebrity|influencer|government\s+agent)\b
+  severity: warning
+  action: flag
+  tags:
+    - social_engineering
+    - impersonation
+    - roleplay
+  applies_to:
+    - user_input
+    - prompt
+  endpoints:
+    - /*
+  description: 'Threat: AI Impersonation Attack'
+
+- id: TRUST-EXPLOIT-1.0
+  title: 'Threat: Trust Exploitation Pattern'
+  pattern: (?i)\b(?:urgent|emergency|asap|immediately|time\s*sensitive|deadline|crisis)\b.*\b(?:transfer|send|provide|share|disclose|reveal|give\s+me|tell\s+me)\b
+  severity: warning
+  action: flag
+  tags:
+    - social_engineering
+    - urgency_exploitation
+    - manipulation
+  applies_to:
+    - user_input
+    - prompt
+  endpoints:
+    - /*
+  description: 'Threat: Trust Exploitation Pattern'
+
+- id: AUTHORITY-BYPASS-1.0
+  title: 'Threat: Authority Bypass Request'
+  pattern: (?i)\b(?:ignore|override|bypass|skip|disable)\s+(?:your\s+)?(?:safety|security|rules|guidelines|restrictions|limitations|policies|protocols)\b
+  severity: error
+  action: block
+  tags:
+    - authority_bypass
+    - jailbreak
+    - security_override
+  applies_to:
+    - user_input
+    - prompt
+  endpoints:
+    - /*
+  description: 'Threat: Authority Bypass Request'
+
+# =============================================================================
+# ENHANCED PII PATTERNS (MEDIUM PRIORITY)
+# =============================================================================
+
+- id: SSN-1.0
+  title: 'PII: US Social Security Number'
+  pattern: \b(?:\d{3}[-\s]?\d{2}[-\s]?\d{4})\b
+  severity: error
+  action: flag
+  tags:
+    - pii
+    - ssn
+    - sensitive
+    - government_id
+  applies_to:
+    - user_input
+    - prompt
+  endpoints:
+    - /*
+  description: 'PII: US Social Security Number'
+
+- id: CREDIT-CARD-1.0
+  title: 'PII: Credit Card Number'
+  pattern: \b(?:4\d{12}(?:\d{3})?|5[1-5]\d{14}|3[47]\d{13}|3[0-9]\d{11}|6(?:011|5\d{2})\d{12})\b
+  severity: error
+  action: block
+  tags:
+    - pii
+    - financial
+    - payment
+    - credit_card
+  shadow_override: enforce
+  applies_to:
+    - user_input
+    - prompt
+  endpoints:
+    - /*
+  description: 'PII: Credit Card Number'
+
+- id: PHONE-NUMBER-1.0
+  title: 'PII: Phone Number'
+  pattern: \b(?:\+?1[-.\s]?)?\(?(?:[2-9][0-8][0-9])\)?[-.\s]?[2-9][0-9]{2}[-.\s]?\d{4}\b
+  severity: warning
+  action: flag
+  tags:
+    - pii
+    - phone
+    - contact
+  applies_to:
+    - user_input
+    - prompt
+  endpoints:
+    - /*
+  description: 'PII: Phone Number'
+
+# =============================================================================
+# MISINFORMATION & DISINFORMATION (MEDIUM PRIORITY)
+# =============================================================================
+
+- id: FAKE-NEWS-GENERATION-1.0
+  title: 'Threat: Fake News Generation Request'
+  pattern: (?i)\b(?:create|write|generate|produce)\s+(?:fake|false|misleading|fabricated)\s+(?:news|article|story|report|headline)\b
+  severity: warning
+  action: flag
+  tags:
+    - misinformation
+    - fake_news
+    - disinformation
+  applies_to:
+    - user_input
+    - prompt
+  endpoints:
+    - /*
+  description: 'Threat: Fake News Generation Request'
+
+- id: PROPAGANDA-REQUEST-1.0
+  title: 'Threat: Propaganda Content Request'
+  pattern: (?i)\b(?:create|write|generate)\s+(?:propaganda|biased|one-sided|slanted)\s+(?:content|material|article|post)\b
+  severity: warning
+  action: flag
+  tags:
+    - propaganda
+    - bias
+    - manipulation
+  applies_to:
+    - user_input
+    - prompt
+  endpoints:
+    - /*
+  description: 'Threat: Propaganda Content Request'
+
+# =============================================================================
+# COMPLIANCE FRAMEWORK VIOLATIONS (MEDIUM PRIORITY)
+# =============================================================================
+
+- id: GDPR-VIOLATION-1.0
+  title: 'Compliance: GDPR Data Rights Violation'
+  pattern: (?i)\b(?:ignore|bypass|skip|avoid)\s+(?:gdpr|data\s+subject\s+rights|right\s+to\s+be\s+forgotten|data\s+erasure|consent\s+requirements)\b
+  severity: error
+  action: block
+  tags:
+    - gdpr
+    - privacy
+    - data_rights
+    - compliance
+  applies_to:
+    - user_input
+    - prompt
+  endpoints:
+    - /*
+  description: 'Compliance: GDPR Data Rights Violation'
+
+- id: CCPA-VIOLATION-1.0
+  title: 'Compliance: CCPA Privacy Violation'
+  pattern: (?i)\b(?:sell|share|disclose)\s+(?:personal\s+information|consumer\s+data|private\s+data)\s+(?:without\s+consent|to\s+third\s+parties|for\s+profit)\b
+  severity: warning
+  action: flag
+  tags:
+    - ccpa
+    - privacy
+    - personal_information
+    - compliance
+  applies_to:
+    - user_input
+    - prompt
+  endpoints:
+    - /*
+  description: 'Compliance: CCPA Privacy Violation'
