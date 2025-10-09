@@ -12,7 +12,7 @@
   severity: warning
   shadow_override: null
   title: 'PII: Email Address'
-- action: block
+- action: flag
   applies_to:
   - user_input
   - prompt

@@ -915,7 +915,7 @@ async def create_rule(rule_request: "RuleCreateRequest", request: Request):
     description="Update an existing policy rule",
     tags=["Rule Management"]
 )
-async def update_rule(rule_id: str, rule_update: "RuleUpdateRequest", request: Request):
+async def update_rule(rule_id: str, rule_update: dict, request: Request):
     """Update an existing policy rule."""
     from app.rbac import get_rbac, Role
     from app.rule_management import get_rule_manager, RuleNotFoundError, RuleValidationError
@@ -932,7 +932,9 @@ async def update_rule(rule_id: str, rule_update: "RuleUpdateRequest", request: R
     
     try:
         rule_manager = get_rule_manager()
-        updated_rule = rule_manager.update_rule(rule_id, rule_update)
+        # Convert dict to RuleUpdateRequest
+        rule_update_obj = RuleUpdateRequest(**rule_update)
+        updated_rule = rule_manager.update_rule(rule_id, rule_update_obj)
         return updated_rule
     except RuleNotFoundError as e:
         raise HTTPException(status_code=404, detail=str(e))
