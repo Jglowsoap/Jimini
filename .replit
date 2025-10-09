@@ -16,6 +16,10 @@ externalPort = 80
 localPort = 9000
 externalPort = 9000
 
+[[ports]]
+localPort = 35351
+externalPort = 3000
+
 [env]
 PYTHONPATH = "$REPL_HOME"
 JIMINI_API_KEY = "jimini-api-key-10062025"
