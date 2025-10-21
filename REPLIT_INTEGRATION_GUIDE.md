@@ -69,15 +69,16 @@ def send_to_dashboard(data_string):
 
 ## 🎨 **Full GUI Dashboard Setup**
 
-### **1. Install Requirements in Replit**
+### **1. Install Requirements in Replit (lightweight)**
 
-Add to your `requirements.txt`:
+Use the provided `requirements_deploy.txt` for Replit deployments which omits heavy ML/CUDA packages:
+
 ```
-streamlit
-plotly
-pandas
-requests
+# Use this file for small deployments (Replit)
+requirements_deploy.txt
 ```
+
+Note: `streamlit` and other heavy UI/ML packages are optional. Install them only if you explicitly need the dashboard UI and have sufficient storage (they increase deployment size).
 
 ### **2. Run Jimini Service**
 

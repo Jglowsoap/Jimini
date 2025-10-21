@@ -210,19 +210,19 @@ def validate_intelligence_setup() -> Dict[str, bool]:
     try:
         import spacy
         status["spacy_available"] = True
-        
         try:
+            # Loading model may be optional in lightweight deployments
             nlp = spacy.load("en_core_web_sm")
             status["spacy_model_available"] = True
-        except OSError:
+        except Exception:
             pass
-    except ImportError:
+    except Exception:
         pass
-    
+
     try:
         import transformers
         status["transformers_available"] = True
-    except ImportError:
+    except Exception:
         pass
     
     try:
@@ -251,7 +251,8 @@ def get_installation_instructions() -> Dict[str, str]:
     return {
         "spacy": "pip install spacy",
         "spacy_model": "python -m spacy download en_core_web_sm",
-        "transformers": "pip install transformers torch",
+    # transformers may require torch; install torch only if you intend to run local models
+    "transformers": "pip install transformers",
         "openai": "pip install openai",
         "pdf_processing": "pip install PyPDF2",
         "html_processing": "pip install beautifulsoup4",

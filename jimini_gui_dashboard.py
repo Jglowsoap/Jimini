@@ -7,7 +7,12 @@ Simple web interface for monitoring PII protection in your government dashboard.
 This provides real-time monitoring and control of Jimini's PII protection.
 """
 
-import streamlit as st
+try:
+    import streamlit as st
+    HAS_STREAMLIT = True
+except Exception:
+    st = None
+    HAS_STREAMLIT = False
 import requests
 import json
 import pandas as pd
@@ -95,6 +100,9 @@ class JiminiGUI:
         }
 
 def main():
+    if not HAS_STREAMLIT:
+        print("Streamlit is not installed in this environment. To run the dashboard install streamlit or run the core FastAPI server instead.")
+        return
     st.set_page_config(
         page_title="Jimini PII Protection Dashboard",
         page_icon="🛡️",

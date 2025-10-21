@@ -7,7 +7,12 @@ This is your complete government dashboard with built-in PII protection.
 Copy this to your Replit project and you'll have instant citizen data protection!
 """
 
-import streamlit as st
+try:
+    import streamlit as st
+    HAS_STREAMLIT = True
+except Exception:
+    st = None
+    HAS_STREAMLIT = False
 import pandas as pd
 import plotly.express as px
 import json
@@ -127,6 +132,9 @@ def get_pii_protector():
 
 # 🎨 STREAMLIT DASHBOARD
 def main():
+    if not HAS_STREAMLIT:
+        print("Streamlit is not installed in this environment. To run the dashboard install streamlit or use the lightweight CLI tools.")
+        return
     st.set_page_config(
         page_title="🏛️ Government Dashboard with PII Protection",
         page_icon="🛡️",

@@ -11,7 +11,12 @@ This module demonstrates the intelligence expansion capability by:
 
 import re
 import json
-import spacy
+try:
+    import spacy
+    HAS_SPACY = True
+except Exception:  # ImportError or other failures
+    spacy = None
+    HAS_SPACY = False
 from typing import List, Dict, Any, Optional, Tuple
 from dataclasses import dataclass
 from enum import Enum
@@ -22,11 +27,12 @@ import PyPDF2
 from bs4 import BeautifulSoup
 import requests
 
-# Import transformers for advanced NLP
+# Import transformers for advanced NLP when available
 try:
     from transformers import pipeline, AutoTokenizer, AutoModelForSequenceClassification
     HAS_TRANSFORMERS = True
-except ImportError:
+except Exception:
+    # transformers (and torch) may be intentionally omitted in lightweight deployments
     HAS_TRANSFORMERS = False
 
 
@@ -108,6 +114,9 @@ class RegulatoryTextParser:
         
     def _load_spacy_model(self):
         """Load spaCy NLP model."""
+        if not HAS_SPACY or spacy is None:
+            # spaCy is not installed in this environment; intelligence features will be degraded
+            return None
         try:
             return spacy.load("en_core_web_sm")
         except OSError:
@@ -117,11 +126,12 @@ class RegulatoryTextParser:
     def _load_classification_model(self):
         """Load transformer model for requirement classification."""
         if not HAS_TRANSFORMERS:
-            print("Warning: transformers not available. Install with: pip install transformers")
+            # Transformers not available in this environment; skip heavy model loads
             return None
-            
+
         try:
             # Use a pre-trained model for text classification
+            # This may still fail if torch/cuda are missing; caller should handle None
             return pipeline(
                 "text-classification",
                 model="microsoft/DialoGPT-medium",

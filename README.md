@@ -34,7 +34,19 @@ Jimini is a lightweight, production-ready AI governance gateway that provides po
 - **Multiple Integrations**: Splunk, Elasticsearch, Slack webhooks
 - **Comprehensive APIs**: REST endpoints with OpenAPI documentation
 
-## 📝 **Policy Rules Guide**
+## � Quick Deploy to Replit
+
+**1-Click Deployment - Storage Optimized (Under 100MB)**
+
+[![Deploy to Replit](https://replit.com/badge/github/Jglowsoap/Jimini)](https://replit.com/new/github/Jglowsoap/Jimini)
+
+1. Fork this repo to Replit
+2. Click "Run" 
+3. Your API is live at: `https://your-repl.your-username.repl.co/v1/evaluate`
+
+**📋 [Complete Deployment Guide](DEPLOYMENT.md)** - Replit, Docker, Cloud options
+
+## �📝 **Policy Rules Guide**
 
 ### **Rule Creation Workflow**
 

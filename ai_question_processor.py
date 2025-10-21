@@ -180,9 +180,13 @@ class JiminiAIQuestionProcessor:
 # Integration with Streamlit Dashboard
 def add_ai_chat_to_dashboard():
     """Add AI chat functionality to your existing Streamlit dashboard"""
-    
-    import streamlit as st
-    
+
+    try:
+        import streamlit as st
+    except Exception:
+        print("Streamlit not installed - add_ai_chat_to_dashboard requires streamlit to run.")
+        return
+
     # Initialize AI processor
     if 'ai_processor' not in st.session_state:
         st.session_state.ai_processor = JiminiAIQuestionProcessor()
