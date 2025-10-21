@@ -1,9 +1,29 @@
-modules = ["python-3.11"]
-[agent]
-expertMode = true
+run = "python replit_main.py"
+modules = ["python-3.11", "nodejs-20"]
 
 [nix]
 channel = "stable-25_05"
+
+[deployment]
+run = ["python", "replit_main.py"]
+deploymentTarget = "autoscale"
+
+[[ports]]
+localPort = 5000
+externalPort = 80
+
+[env]
+PYTHONPATH = "$REPL_HOME"
+JIMINI_API_KEY = "jimini-api-key-10062025"
+JIMINI_RULES_PATH = "policy_rules.yaml"
+JIMINI_SHADOW = "0"
+AUDIT_LOG_PATH = "logs/audit.jsonl"
+
+[gitHubImport]
+requiredFiles = [".replit", "replit.nix", "replit_main.py"]
+
+[agent]
+expertMode = true
 
 [workflows]
 runButton = "Project"
@@ -28,7 +48,3 @@ waitForPort = 5000
 
 [workflows.workflow.metadata]
 outputType = "webview"
-
-[[ports]]
-localPort = 5000
-externalPort = 80
