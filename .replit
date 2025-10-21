@@ -11,6 +11,7 @@ deploymentTarget = "autoscale"
 [[ports]]
 localPort = 5000
 externalPort = 80
+
 [env]
 PYTHONPATH = "$REPL_HOME"
 JIMINI_API_KEY = "jimini-api-key-10062025"
