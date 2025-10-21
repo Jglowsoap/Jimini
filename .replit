@@ -5,7 +5,11 @@ modules = ["python-3.11", "nodejs-20"]
 channel = "stable-25_05"
 
 [deployment]
+<<<<<<< HEAD
 run = ["python", "replit_main.py"]
+=======
+run = ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "5000"]
+>>>>>>> d3d61a08 (Reduce deployment size by using lightweight dependencies)
 deploymentTarget = "autoscale"
 
 [[ports]]
