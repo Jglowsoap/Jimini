@@ -176,8 +176,9 @@ app = FastAPI(
         "url": "https://opensource.org/licenses/MIT"
     },
     servers=[
-        {"url": "https://api.jimini.ai", "description": "Production server"},
-        {"url": "http://localhost:9000", "description": "Local development server"}
+        {"url": f"https://{os.environ.get('REPLIT_DEV_DOMAIN', 'localhost:5000')}", "description": "Current Replit instance"},
+        {"url": "http://localhost:5000", "description": "Local development server"},
+        {"url": "https://api.jimini.ai", "description": "Production server"}
     ],
     lifespan=lifespan
 )
