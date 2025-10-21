@@ -252,8 +252,8 @@ async def root():
                 "application/json": {
                     "example": {
                         "status": "ok",
-                        "shadow_mode": True,
-                        "loaded_rules": 26,
+                        "shadow_mode": False,
+                        "loaded_rules": 415,
                         "version": "0.2.0"
                     }
                 }
