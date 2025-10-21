@@ -1,0 +1,52 @@
+Rule ID,Title,Severity,Action,Category,Description,Pattern,Min Count,Max Chars,LLM Prompt,Applies To,Endpoints,Shadow Override
+EMAIL-1.0,PII: Email Address,warning,flag,,,"\b[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}\b",1,,,"user_input, prompt",/*,
+GITHUB-TOKEN-1.0,Secret: GitHub Personal Access Token,error,block,,,\bghp_[A-Za-z0-9]{36}\b,1,,,"user_input, prompt",/*,enforce
+OPENAI-KEY-1.0,Secret: OpenAI API Key (all formats),error,block,,,"\bsk-(?:proj-|[A-Za-z0-9]{20,}|[A-Za-z0-9]{32,})\b",1,,,"user_input, prompt",/*,enforce
+API-1.0,Security: Generic long alphanumeric sequence,error,block,,,"\b[A-Za-z0-9_\-]{20,}\b",1,,,"user_input, prompt",/*,enforce
+INJ-1.0,Injection: Prompt-Injection Keywords (basic),warning,flag,,,\b(system prompt|assistant prompt)\b,1,,,"user_input, prompt",/*,
+INJ-2.0,Injection: Override/Ignore Directives,warning,flag,,,\b(ignore previous|as system|developer message|tool output)\b,1,,,"user_input, prompt",/*,
+CJIS-BIOMETRIC-1.0,CJIS: Biometric data exposure,error,block,,,(?i)\b(fingerprint|mugshot|iris scan|retina scan|palm print|dna profile|voiceprint|biometric record),1,,,"user_input, prompt",/*,enforce
+HIPAA-PHI-EMAIL-1.0,HIPAA: Email addresses (PHI risk),warning,flag,,,"(?i)\b[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-ZaZ]{2,}\b",1,,,"user_input, prompt",/*,
+MAX-DUMP-5K,"Bulk output: >5,000 characters",error,block,,,.*,1,5000,,"user_input, prompt",/*,enforce
+BULK-EMAIL-3,Bulk email leakage,error,block,,,"(?i)[A-ZaZ0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-ZaZ]{2,}",3,,,outbound,/*,
+AWS-ACCESS-KEY-1.0,Secret: AWS Access Key ID,error,block,,,\bAKIA[0-9A-Z]{16}\b,1,,,"user_input, prompt",/*,enforce
+AWS-SECRET-KEY-1.0,Secret: AWS Secret Access Key pattern,error,block,,,\b[A-Za-z0-9/+=]{40}\b,1,,,"user_input, prompt",/*,enforce
+JWT-1.0,Secret: JSON Web Token (JWT) structure,error,block,,,"\beyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\b",1,,,"user_input, prompt",/*,enforce
+HALLUC-1.0,AI Hallucination Check,warning,flag,,,.*,1,,"You are a strict compliance checker. The user provided an AI output.
+Determine if it is likely hallu","user_input, prompt",/*,
+MS-COPILOT-1.0,Microsoft Copilot: Block data sharing prompts,error,block,,,"(?i)\b(?:copilot|github copilot|microsoft copilot)[^.]{0,50}(?:save|store|remember|share|upload|send",1,,,"user_input, prompt",/*,enforce
+MS-COPILOT-2.0,Microsoft Copilot: Block telemetry requests,error,block,,,"(?i)\b(?:analyze|generate|create|produce)[^.]{0,30}(?:report|analytics|statistics|metrics|usage|patt",1,,,"user_input, prompt",/*,enforce
+MS-COPILOT-3.0,Microsoft Copilot: Block training data requests,error,block,,,"(?i)\b(?:use|train|improve|enhance|update|feed|add)[^.]{0,30}(?:this|my|our)[^.]{0,30}(?:data|inform",1,,,"user_input, prompt",/*,enforce
+MS-COPILOT-4.0,Microsoft Copilot: Block code repository scanning,error,block,,,"(?i)\b(?:scan|analyze|review|examine|audit|check)[^.]{0,30}(?:entire|whole|all|my|our)[^.]{0,30}(?:r",1,,,"user_input, prompt",/*,enforce
+MS-COPILOT-5.0,Microsoft Copilot: Block credential extraction attempts,error,block,,,"(?i)\b(?:find|extract|identify|locate|get|show|list)[^.]{0,30}(?:credentials|passwords|keys|tokens|s",1,,,"user_input, prompt",/*,enforce
+MS-COPILOT-6.0,Microsoft Copilot: Block infrastructure disclosure,error,block,,,"(?i)\b(?:describe|explain|show|tell me about|what is)[^.]{0,30}(?:our|my|this|the)[^.]{0,30}(?:infra",1,,,"user_input, prompt",/*,enforce
+MS-COPILOT-7.0,Microsoft Copilot: Block PII combination requests,error,block,,,"(?i)\b(?:combine|merge|correlate|join|match|link|connect)[^.]{0,50}(?:citizen|resident|employee|pers",1,,,"user_input, prompt",/*,enforce
+MS-COPILOT-8.0,Microsoft Copilot: Block database query generation,error,block,,,"(?i)\b(?:generate|create|write|build)[^.]{0,30}(?:sql|query|database)[^.]{0,50}(?:select|from|where|",1,,,"user_input, prompt",/*,enforce
+MS-COPILOT-9.0,Microsoft Copilot: Block citizen data profiling,error,block,,,"(?i)\b(?:profile|categorize|classify|segment|group|analyze|identify)[^.]{0,30}(?:citizens|residents|",1,,,"user_input, prompt",/*,enforce
+MS-COPILOT-10.0,Microsoft Copilot: Block compliance bypass attempts,error,block,,,"(?i)\b(?:bypass|circumvent|avoid|skip|ignore|disable|override|turn off)[^.]{0,30}(?:security|complia",1,,,"user_input, prompt",/*,enforce
+MS-COPILOT-11.0,Microsoft Copilot: Government entity identification,warning,flag,,,(?i)\b(?:illinois|state of illinois|il gov|department of|secretary of state|dmv|revenue|healthcare|h,1,,,"user_input, prompt",/*,
+MS-COPILOT-12.0,Microsoft Copilot: Bulk data export attempts,error,block,,,"(?i)\b(?:export|download|generate|create|extract)[^.]{0,30}(?:all|bulk|entire|complete|full)[^.]{0,3",1,,,"user_input, prompt",/*,enforce
+MS-COPILOT-MICROSOFT-REFS,Microsoft Copilot: Microsoft service integration references,warning,flag,,,(?i)\b(?:azure|office 365|o365|sharepoint|onedrive|teams|outlook|exchange|power bi|dynamics|microsof,1,,,"user_input, prompt",/*,
+MS-COPILOT-CODE-SUGGESTIONS,Microsoft Copilot: Code suggestions with embedded secrets,error,block,,,"(?i)(?:const|var|let|string|password|key|token|secret)\s*[=:]\s*[""'](?:[A-Za-z0-9+/=_\-]{16,}|[a-f0-",1,,,"user_input, prompt",/*,enforce
+PII-DL-AL-1.0,Alabama Driver's License Detection,medium,flag,,,"\b\d{1,8}\b",1,,,"request, response",*,
+PII-DL-AK-1.0,Alaska Driver's License Detection,medium,flag,,,"\b\d{1,7}\b",1,,,"request, response",*,
+PII-DL-AZ-1.0,Arizona Driver's License Detection,medium,flag,,,"\b[A-Z]\d{8}\b|\b[A-Z]{2}\d{2,5}\b|\b\d{9}\b",1,,,"request, response",*,
+PII-DL-AR-1.0,Arkansas Driver's License Detection,medium,flag,,,"\b\d{4,9}\b",1,,,"request, response",*,
+PII-DL-CA-1.0,California Driver's License Detection,medium,flag,,,\b[A-Z]\d{7}\b,1,,,"request, response",*,
+PII-DL-CO-1.0,Colorado Driver's License Detection,medium,flag,,,"\b\d{9}\b|\b[A-Z]{1,2}\d{1,6}\b",1,,,"request, response",*,
+PII-DL-CT-1.0,Connecticut Driver's License Detection,medium,flag,,,\b\d{9}\b,1,,,"request, response",*,
+PII-DL-DE-1.0,Delaware Driver's License Detection,medium,flag,,,"\b\d{1,7}\b",1,,,"request, response",*,
+PII-DL-DC-1.0,District of Columbia Driver's License Detection,medium,flag,,,"\b\d{7}\b|\b[A-Z]{1,3}\d{3,7}\b",1,,,"request, response",*,
+PII-DL-FL-1.0,Florida Driver's License Detection,medium,flag,,,\b[A-Z]\d{12}\b,1,,,"request, response",*,
+PII-DL-GA-1.0,Georgia Driver's License Detection,medium,flag,,,"\b\d{7,9}\b",1,,,"request, response",*,
+PII-DL-HI-1.0,Hawaii Driver's License Detection,medium,flag,,,\b[A-Z]\d{8}\b|\b\d{9}\b,1,,,"request, response",*,
+PII-DL-ID-1.0,Idaho Driver's License Detection,medium,flag,,,\b[A-Z]{2}\d{6}[A-Z]\b|\b\d{9}\b,1,,,"request, response",*,
+PII-DL-IL-1.0,Illinois Driver's License Detection,medium,flag,,,\b[A-Z]\d{11}\b|\b\d{11}[A-Z]\b,1,,,"request, response",*,
+PII-DL-IN-1.0,Indiana Driver's License Detection,medium,flag,,,\b[A-Z]\d{9}\b|\b\d{10}\b,1,,,"request, response",*,
+PII-DL-IA-1.0,Iowa Driver's License Detection,medium,flag,,,\b\d{9}\b|\b\d{3}[A-Z]{2}\d{4}\b,1,,,"request, response",*,
+PII-DL-KS-1.0,Kansas Driver's License Detection,medium,flag,,,\b[A-Z]\d{8}\b|\b\d{9}\b,1,,,"request, response",*,
+PII-DL-KY-1.0,Kentucky Driver's License Detection,medium,flag,,,\b[A-Z]\d{8}\b|\b\d{9}\b,1,,,"request, response",*,
+PII-DL-LA-1.0,Louisiana Driver's License Detection,medium,flag,,,"\b\d{1,9}\b",1,,,"request, response",*,
+PII-DL-ME-1.0,Maine Driver's License Detection,medium,flag,,,\b\d{7}[A-Z]?\b,1,,,"request, response",*,
+PII-DL-MD-1.0,Maryland Driver's License Detection,medium,flag,,,\b[A-Z]\d{12}\b,1,,,"request, response",*,
+PII-DL-MA-1.0,Massachusetts Driver's License Detection,medium,flag,,,\b[A-Z]\d{8}\b|\b\d{9}\b,1,,,"request, response",*,
