@@ -1,32 +1,9 @@
-run = "python replit_main.py"
-modules = ["python-3.11", "nodejs-20"]
+modules = ["python-3.11"]
+[agent]
+expertMode = true
 
 [nix]
 channel = "stable-25_05"
-
-[deployment]
-<<<<<<< HEAD
-run = ["python", "replit_main.py"]
-=======
-run = ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "5000"]
->>>>>>> d3d61a08 (Reduce deployment size by using lightweight dependencies)
-deploymentTarget = "autoscale"
-
-[[ports]]
-localPort = 5000
-externalPort = 80
-[env]
-PYTHONPATH = "$REPL_HOME"
-JIMINI_API_KEY = "jimini-api-key-10062025"
-JIMINI_RULES_PATH = "policy_rules.yaml"
-JIMINI_SHADOW = "0"
-AUDIT_LOG_PATH = "logs/audit.jsonl"
-
-[gitHubImport]
-requiredFiles = [".replit", "replit.nix", "replit_main.py"]
-
-[agent]
-expertMode = true
 
 [workflows]
 runButton = "Project"
@@ -51,3 +28,7 @@ waitForPort = 5000
 
 [workflows.workflow.metadata]
 outputType = "webview"
+
+[[ports]]
+localPort = 5000
+externalPort = 80
