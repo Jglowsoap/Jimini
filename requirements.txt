@@ -37,3 +37,12 @@ opentelemetry-instrumentation-fastapi>=0.40b0
 # pytest>=8.0.0
 # pytest-asyncio>=0.23.0
 # ruff>=0.1.0
+email-validator
+flask
+flask-cors
+numpy
+pandas
+plotly
+psutil
+pytest
+websocket

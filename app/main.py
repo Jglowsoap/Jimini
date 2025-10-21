@@ -14,7 +14,8 @@ import json
 from app.models import (
     EvaluateRequest, EvaluateResponse, 
     ApprovalRequest, ApprovalResponse,
-    RuleValidationRequest, RuleTestRequest
+    RuleValidationRequest, RuleTestRequest,
+    RuleCreateRequest, RuleUpdateRequest
 )
 from app.rules_loader import load_rules, rules_store
 from app.enforcement import evaluate, apply_shadow_logic
@@ -225,6 +226,18 @@ METRICS_SHADOW: Dict[str, int] = defaultdict(int)
 METRICS_ENDPOINTS: Dict[str, int] = defaultdict(int)
 METRICS_DIRECTIONS: Dict[str, int] = defaultdict(int)
 RECENT_DECISIONS: Deque[Dict[str, Any]] = deque(maxlen=100)
+
+
+@app.get(
+    "/",
+    summary="Welcome to Jimini AI Policy Gateway",
+    description="Redirects to interactive API documentation",
+    include_in_schema=False
+)
+async def root():
+    """Redirect root to API documentation"""
+    from fastapi.responses import RedirectResponse
+    return RedirectResponse(url="/docs")
 
 
 @app.get(
@@ -881,11 +894,10 @@ async def get_rule_by_id(rule_id: str, request: Request):
     },
     tags=["Rule Management"]
 )
-async def create_rule(rule_request: "RuleCreateRequest", request: Request):
+async def create_rule(rule_request: RuleCreateRequest, request: Request):
     """Create a new policy rule."""
     from app.rbac import get_rbac, Role
     from app.rule_management import get_rule_manager, RuleValidationError
-    from app.models import RuleCreateRequest
     
     # Check ADMIN role access
     rbac = get_rbac()
