@@ -1,18 +1,15 @@
-run = "python replit_run.py"
-modules = ["python-3.11"]
+run = "python replit_main.py"
+modules = ["python-3.11", "nodejs-20"]
 
 [nix]
 channel = "stable-25_05"
 
-[packager]
-ignoredPackages = ["torch", "transformers", "spacy", "streamlit", "tensorflow", "pytorch"]
-
 [deployment]
-run = ["python", "replit_run.py"]
+run = ["python", "replit_main.py"]
 deploymentTarget = "autoscale"
 
 [[ports]]
-localPort = 8080
+localPort = 5000
 externalPort = 80
 [env]
 PYTHONPATH = "$REPL_HOME"
@@ -22,7 +19,7 @@ JIMINI_SHADOW = "0"
 AUDIT_LOG_PATH = "logs/audit.jsonl"
 
 [gitHubImport]
-requiredFiles = [".replit", "replit_run.py", "requirements_deploy.txt"]
+requiredFiles = [".replit", "replit.nix", "replit_main.py"]
 
 [agent]
 expertMode = true
@@ -45,8 +42,8 @@ author = "agent"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "python replit_run.py"
-waitForPort = 8080
+args = "python replit_main.py"
+waitForPort = 5000
 
 [workflows.workflow.metadata]
 outputType = "webview"
