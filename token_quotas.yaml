@@ -29,6 +29,13 @@ tiers:
     tokens_per_minute: 1000     # 1K TPM
     tokens_per_hour: 50000      # 50K per hour
     tokens_per_day: 500000      # 500K per day
+    
+  # Development tier - for internal testing
+  dev:
+    tokens_per_minute: 100000   # 100K TPM (no limits)
+    tokens_per_hour: 5000000    # 5M per hour
+    tokens_per_day: 100000000   # 100M per day
+    tokens_per_day: 500000      # 500K per day
 
 # Map API keys to tiers
 # In production, load these from environment variables or secrets manager

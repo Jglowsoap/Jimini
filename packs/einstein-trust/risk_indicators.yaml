@@ -1,0 +1,95 @@
+# Risk Indicator Rules - Triggers for Adaptive Risk Scoring
+# These rules flag suspicious patterns that feed the risk scoring engine
+
+- id: RISK-VELOCITY-1.0
+  title: 'Risk: High Request Velocity'
+  description: Detects unusual request patterns (multiple similar prompts)
+  severity: medium
+  category: anomaly
+  pattern: (?i)\b(repeat|again|one more time|retry|resend)\b.*\b(repeat|again|one more time|retry|resend)\b
+  min_count: 2
+  endpoints:
+  - '*'
+  action: flag
+  shadow_override: null
+
+- id: RISK-OFF-HOURS-1.0
+  title: 'Risk: Off-Hours Access Pattern'
+  description: Flag access during unusual hours (detected by risk engine)
+  severity: low
+  category: anomaly
+  llm_prompt: 'Does this request contain timestamps or references to unusual access times (late night, early morning)? Reply BLOCK if suspicious, ALLOW otherwise.'
+  endpoints:
+  - '*'
+  action: flag
+  shadow_override: null
+
+- id: RISK-ENDPOINT-DEVIATION-1.0
+  title: 'Risk: Endpoint Switching'
+  description: Detects rapid endpoint changes (anomalous behavior)
+  severity: medium
+  category: anomaly
+  applies_to:
+  - request
+  - response
+  pattern: (?i)\b(switch|change|try|test)\s+(endpoint|api|service|system)\b
+  endpoints:
+  - '*'
+  action: flag
+  shadow_override: null
+
+- id: RISK-DATA-EXFIL-1.0
+  title: 'Risk: Data Exfiltration Pattern'
+  description: Detects requests trying to extract large amounts of data
+  severity: high
+  category: injection
+  pattern: (?i)\b(dump|export|download|extract|retrieve)\s+(all|entire|complete|full)\s+(data|database|records|users|customers|table)\b
+  endpoints:
+  - '*'
+  action: flag
+  shadow_override: enforce
+
+- id: RISK-PRIVILEGE-ESCALATION-1.0
+  title: 'Risk: Privilege Escalation Attempt'
+  description: Detects attempts to gain elevated permissions
+  severity: critical
+  category: injection
+  pattern: (?i)\b(give|grant|make|set|change)\s+me\s+(admin|root|superuser|elevated|full)\s+(access|rights|privileges|permissions)\b
+  endpoints:
+  - '*'
+  action: block
+  shadow_override: enforce
+
+- id: RISK-ENUMERATION-1.0
+  title: 'Risk: System Enumeration'
+  description: Detects attempts to probe system information
+  severity: medium
+  category: injection
+  pattern: (?i)\b(list|show|enumerate|discover|find)\s+(all|available)\s+(users|endpoints|systems|services|databases|tables)\b
+  endpoints:
+  - '*'
+  action: flag
+  shadow_override: null
+
+- id: RISK-OBFUSCATION-1.0
+  title: 'Risk: Obfuscated Content'
+  description: Detects base64, hex, or encoded payloads
+  severity: high
+  category: injection
+  pattern: (?:[A-Za-z0-9+/]{40,}={0,2})|(?:0x[0-9A-Fa-f]{20,})|(?:\\x[0-9A-Fa-f]{2}){10,}
+  endpoints:
+  - '*'
+  action: flag
+  shadow_override: null
+
+- id: RISK-REPETITIVE-FAILURE-1.0
+  title: 'Risk: Repetitive Failed Attempts'
+  description: Multiple similar requests that keep getting blocked
+  severity: high
+  category: anomaly
+  pattern: (?i)\b(sorry|blocked|denied|rejected)\b.*\b(try|attempt|retry|again)\b
+  min_count: 2
+  endpoints:
+  - '*'
+  action: flag
+  shadow_override: null

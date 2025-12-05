@@ -526,6 +526,141 @@ async def resilience_health() -> Dict[str, Any]:
     return resilience_manager.get_health_status()
 
 
+@app.get(
+    "/v1/dashboard",
+    summary="Quick Enterprise Dashboard",
+    description="Single-endpoint summary for monitoring dashboards (Grafana, Datadog, etc.)",
+    responses={
+        200: {
+            "description": "Aggregated metrics for dashboard visualization",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "status": "healthy",
+                        "uptime_seconds": 3600,
+                        "requests": {
+                            "total": 1500,
+                            "allow": 1200,
+                            "block": 50,
+                            "flag": 250
+                        },
+                        "risk_scoring": {
+                            "enabled": True,
+                            "high_risk_users": 3,
+                            "suspicious_patterns": 12
+                        },
+                        "semantic_cache": {
+                            "enabled": True,
+                            "hit_rate": 0.45,
+                            "cost_savings": 2.40
+                        },
+                        "token_quotas": {
+                            "enabled": True,
+                            "rate_limited_keys": 2
+                        },
+                        "top_rules": [
+                            {"id": "PII-EMAIL-1.0", "hits": 89},
+                            {"id": "INJECT-JAILBREAK-1.0", "hits": 34}
+                        ]
+                    }
+                }
+            }
+        }
+    },
+    tags=["Monitoring"]
+)
+async def dashboard_metrics() -> Dict[str, Any]:
+    """
+    Lightweight dashboard endpoint aggregating all key metrics.
+    Perfect for Grafana, Datadog, or custom monitoring dashboards.
+    """
+    from app.__version__ import __version__
+    import time
+    
+    # Calculate uptime
+    try:
+        from app.observability import metrics_collector
+        uptime = time.time() - metrics_collector.start_time
+    except:
+        uptime = 0
+    
+    # Risk scoring status
+    risk_status = {"enabled": False}
+    try:
+        from app.intelligence.risk_scoring import RiskScoringEngine
+        engine = RiskScoringEngine()
+        profiles = engine.get_all_profiles(limit=1000)
+        high_risk = sum(1 for p in profiles if p.get("risk_level") in ["high", "very_high", "critical"])
+        suspicious = sum(1 for p in profiles if p.get("behavior_pattern") == "suspicious")
+        risk_status = {
+            "enabled": True,
+            "total_profiles": len(profiles),
+            "high_risk_users": high_risk,
+            "suspicious_patterns": suspicious
+        }
+    except:
+        pass
+    
+    # Semantic cache metrics
+    cache_status = {"enabled": False}
+    try:
+        cache_metrics = get_semantic_cache_metrics()
+        if cache_metrics.get("enabled"):
+            cache_status = {
+                "enabled": True,
+                "available": cache_metrics.get("available", False),
+                "hit_rate": cache_metrics.get("hit_rate", 0.0),
+                "cost_savings": cache_metrics.get("estimated_savings_usd", 0.0),
+                "total_hits": cache_metrics.get("total_hits", 0)
+            }
+    except:
+        pass
+    
+    # Token quota status
+    quota_status = {"enabled": False}
+    try:
+        from app.token_limiter import get_token_limiter
+        limiter = get_token_limiter()
+        if limiter and limiter.enabled:
+            quota_status = {
+                "enabled": True,
+                "total_keys": len(limiter.quotas),
+                "rate_limited_keys": 0  # Could track this in limiter
+            }
+    except:
+        pass
+    
+    # Top rules by hits
+    top_rules = sorted(
+        [{"id": rule_id, "hits": count} for rule_id, count in METRICS_RULES.items()],
+        key=lambda x: x["hits"],
+        reverse=True
+    )[:10]
+    
+    # Aggregate response
+    return {
+        "status": "healthy" if len(rules_store) > 0 else "degraded",
+        "version": __version__,
+        "uptime_seconds": int(uptime),
+        "shadow_mode": SHADOW_MODE,
+        "requests": {
+            "total": METRICS_TOTALS.get("total", 0),
+            "allow": METRICS_TOTALS.get("allow", 0),
+            "block": METRICS_TOTALS.get("block", 0),
+            "flag": METRICS_TOTALS.get("flag", 0)
+        },
+        "rules": {
+            "loaded": len(rules_store),
+            "top_hits": top_rules
+        },
+        "risk_scoring": risk_status,
+        "semantic_cache": cache_status,
+        "token_quotas": quota_status,
+        "endpoints": dict(list(METRICS_ENDPOINTS.items())[:5]),  # Top 5 endpoints
+        "recent_decisions": len(RECENT_DECISIONS)
+    }
+
+
 @app.get("/admin/metrics")
 async def admin_metrics(request: Request) -> Dict[str, Any]:
     """Admin endpoint for comprehensive metrics dump (RBAC protected)"""

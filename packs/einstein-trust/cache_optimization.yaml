@@ -1,0 +1,36 @@
+# Semantic Cache Optimization Rules
+# These rules trigger semantic caching for expensive LLM calls
+
+- id: CACHE-COMMON-QUERY-1.0
+  title: 'Cache: Common Information Query'
+  description: Cache responses to frequently asked questions
+  severity: low
+  category: hallucination
+  pattern: (?i)\b(what is|how does|explain|describe|tell me about)\b
+  endpoints:
+  - '*'
+  action: allow
+  shadow_override: null
+  # Note: Semantic cache automatically handles similar queries
+
+- id: CACHE-FACTUAL-CHECK-1.0
+  title: 'Cache: Factual Verification'
+  description: Cache factual verification responses
+  severity: low
+  category: hallucination
+  llm_prompt: 'Is this a factual verification request? Reply YES or NO.'
+  endpoints:
+  - '*'
+  action: allow
+  shadow_override: null
+
+- id: CACHE-SUMMARY-REQUEST-1.0
+  title: 'Cache: Summary Generation'
+  description: Cache summary generation for similar content
+  severity: low
+  category: hallucination
+  pattern: (?i)\b(summar(y|ize)|tldr|brief|overview)\b
+  endpoints:
+  - '*'
+  action: allow
+  shadow_override: null
