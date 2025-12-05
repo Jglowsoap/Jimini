@@ -1,12 +1,21 @@
-# Jimini Trust Layer
+# Jimini Security Layer
 
-Lightweight, self-hosted AI governance inspired by enterprise solutions like Salesforce Einstein Trust Layer, AWS Bedrock Guardrails, and Azure AI Content Safety.
+Lightweight, self-hosted AI governance with zero data retention. Jimini provides policy-as-code enforcement for AI systems, protecting against data leaks, prompt injection, toxic content, and hallucinations.
 
 ## Overview
 
-Jimini provides policy-as-code enforcement for AI systems, protecting against data leaks, prompt injection, toxic content, and hallucinations. Unlike vendor-locked solutions, Jimini is open-source and runs entirely within your infrastructure.
+Jimini runs entirely within your infrastructure with no data sent to external vendors. All prompt and response content is evaluated in real-time and discarded immediately after policy decisions are made, ensuring zero retention of sensitive customer data.
 
-## Core Trust Capabilities
+## Core Security Capabilities
+
+### Zero Data Retention
+
+Jimini operates with a zero-retention architecture:
+- Prompts and responses are evaluated in-memory only
+- No LLM content is persisted to disk or databases
+- Only policy decisions and metadata are logged (configurable)
+- Audit logs contain rule matches and decisions, not user content
+- Full control over what metadata is retained and for how long
 
 ### Data Protection
 
@@ -27,18 +36,29 @@ Custom Redaction
 
 ### Prompt Defense
 
+Jimini provides comprehensive guardrails to protect against prompt injection attacks and model manipulation:
+
 Jailbreak Detection
-- Pattern matching for common exploit phrases
-- LLM-based sophisticated attack detection
-- Block instruction override attempts
+- Pattern matching for common exploit phrases ("ignore previous instructions", "pretend you are")
+- LLM-based sophisticated attack detection using GPT-4
+- Block instruction override attempts automatically
+- Detect role-playing exploits ("you are now a hacker AI")
+- Prevent attempts to bypass restrictions
 
 Injection Blocking
-- Detect "ignore previous instructions" patterns
-- Prevent role-playing exploits
+- Detect classic injection patterns
+- Prevent role-playing exploits that attempt to change model behavior
 - Block context escape sequences
+- Identify attempts to extract system prompts or internal instructions
 
 System Protection
 - Enforce boundaries around system prompts
+- Prevent extraction of model configurations
+- Guard against attempts to manipulate model output
+- Protect against data exfiltration through prompt engineering
+- Block attempts to enumerate system resources or users
+
+The prompt defense layer acts as additional guardrails instructing the system how to behave in certain situations, decreasing the likelihood of unintended or harmful outputs. This is critical protection against both malicious actors and inadvertent employee actions that could compromise data.
 - Prevent extraction of configurations
 - Rate limiting (roadmap)
 
@@ -84,34 +104,26 @@ Hot Reload
 - Zero-downtime policy changes
 - File-based configuration
 
-## Architecture Comparison
+## Architecture Highlights
 
-| Feature | Salesforce Einstein | AWS Bedrock | Azure Content Safety | Jimini |
-|---------|---------------------|-------------|----------------------|--------|
-| PII Masking |  Dynamic |  Built-in |  Detection |  Regex + Redact |
-| Toxicity Detection |  ML models |  Content filters |  Severity scores |  LLM prompts |
-| Prompt Injection |  Defense |  Prompt shields |  Protected material |  Patterns + LLM |
-| Hallucination Check |  Grounding |  Citation check |  |  LLM validation |
-| Zero Retention |  Contractual |  AWS-managed |  Azure-managed |  Self-hosted |
-| Audit Trail |  Salesforce logs |  CloudTrail |  Azure Monitor |  Tamper-evident JSONL |
-| Shadow Mode |  Gradual rollout |  |  |  Native |
-| Rules-as-Code |  UI-based |  API-based |  API-based |  YAML |
-| Open Source |  |  |  |  MIT License |
-| Self-Hosted |  |  |  |  Fully on-prem |
-| Cost | $$$ Platform | $$$ Per-request | $$$ Per-request | $ Hosting only |
+Jimini's architecture is designed for security-first organizations requiring complete control over AI governance:
 
----
+- **Zero Retention**: Unlike cloud-based solutions that may retain data for model training or analysis, Jimini evaluates all content in-memory and discards it immediately
+- **Self-Hosted**: Deploy entirely within your infrastructure with no external dependencies
+- **Rules-as-Code**: YAML-based policy definitions that can be version controlled and audited
+- **Open Source**: MIT licensed for complete transparency and customization
+- **Shadow Mode**: Test policies in production without impacting users, with granular enforcement overrides
+- **Tamper-Evident Audit**: SHA3-256 linked audit chain provides cryptographic proof of policy decisions
 
-## Quick Start: Einstein Trust Pack
+## Quick Start
 
 ### Install the Pre-Built Pack
 
 ```bash
-# Use the Einstein-inspired rule pack
+export JIMINI_RULES_PATH=packs/security-core/v1.yaml
 export JIMINI_RULES_PATH=packs/einstein-trust/v1.yaml
 export JIMINI_SHADOW=1  # Test without blocking first
 
-# Run API server
 uvicorn app.main:app --host 0.0.0.0 --port 9000 --reload
 ```
 
@@ -128,7 +140,7 @@ curl -X POST http://localhost:9000/v1/evaluate \
   }'
 ```
 
-**Response:**
+Response:
 ```json
 {
   "decision": "block",

@@ -2,13 +2,15 @@
 
 Jimini is a FastAPI gateway that evaluates unstructured text against policy rules before the content leaves or enters an AI system. It provides deterministic blocking and flagging based on regex patterns and optional LLM checks, keeps a tamper-evident audit trail, and exposes metrics for observability.
 
-**🆕 Enterprise Trust Layer**: Jimini now includes Einstein Trust-inspired features for PII protection, prompt injection defense, and content moderation. See [TRUST_LAYER.md](TRUST_LAYER.md) for the full comparison with Salesforce Einstein, AWS Bedrock, and Azure AI Content Safety.
+**Zero Data Retention**: Jimini evaluates prompts and responses in-memory only, with no persistence of customer content. All policy decisions are made in real-time within your infrastructure.
 
 ## Project Highlights
 
 - **Policy engine** with precedence ordering (block > redact > flag > allow) and shadow-mode downgrades
-- **Einstein Trust Pack**: Pre-built rules for PII detection, prompt injection, toxicity filtering, and hallucination checking
+- **Security Core Pack**: Pre-built rules for PII detection, prompt injection defense, toxicity filtering, and hallucination checking
 - **PII Redaction**: New `action: redact` automatically masks sensitive data with `[REDACTED]`
+- **Prompt Defense**: Comprehensive guardrails against jailbreak attempts and model manipulation
+- **Zero Retention**: No customer prompts or LLM responses stored; in-memory evaluation only
 - **Rule Categories**: Organize rules by type (pii, secrets, injection, toxicity, hallucination) for better management
 - **Rules-as-code** stored in YAML (`policy_rules.yaml` and packs under `packs/`)
 - **Hot-reloading** rules loader and optional semantic cache for repeated evaluations
@@ -18,8 +20,8 @@ Jimini is a FastAPI gateway that evaluates unstructured text against policy rule
 
 ## Quick Links
 
-- **[Trust Layer Documentation](TRUST_LAYER.md)** - Einstein-style AI governance features
-- **[Einstein Trust Rule Pack](packs/einstein-trust/v1.yaml)** - Pre-built PII, injection, and toxicity rules
+- **[Security Layer Documentation](TRUST_LAYER.md)** - Zero-retention AI governance features
+- **[Security Core Rule Pack](packs/security-core/v1.yaml)** - Pre-built PII, injection, and toxicity rules
 - **[Architecture Guide](ARCHITECTURE.md)** - Technical deep-dive
 - **[Deployment Guide](DEPLOYMENT.md)** - Production deployment patterns
 
@@ -33,7 +35,7 @@ Jimini is a FastAPI gateway that evaluates unstructured text against policy rule
 - `app/telemetry.py`: Simple telemetry bus with optional OTEL export and webhook alerts for block or high-risk events.
 - `app/semantic_cache.py`: Optional Redis-based semantic cache for LLM results (disabled when dependencies are missing).
 - `jimini_cli/`: Command line entry points for linting/testing rules and operating the audit chain.
-- `packs/`: Pre-built rule collections (CJIS, HIPAA, PCI-DSS, Einstein Trust, etc.)
+- `packs/`: Pre-built rule collections (CJIS, HIPAA, PCI-DSS, Security Core, etc.)
 
 ## Getting Started
 

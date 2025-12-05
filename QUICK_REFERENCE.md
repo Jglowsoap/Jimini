@@ -5,7 +5,7 @@ Last Updated: December 5, 2025
 
 ## Overview
 
-Jimini is a lightweight AI policy gateway providing PII detection, risk scoring, semantic caching, and token quotas. It offers comparable capabilities to Salesforce Einstein Trust Layer and Azure APIM at significantly lower cost.
+Jimini is a lightweight AI policy gateway providing PII detection, risk scoring, semantic caching, and token quotas. Built for security-first organizations requiring self-hosted AI governance with zero data retention.
 
 ## Quick Start
 
@@ -13,8 +13,8 @@ Jimini is a lightweight AI policy gateway providing PII detection, risk scoring,
 # 1. Install
 pip install -e .
 
-# 2. Run with Trust Layer
-jimini run-local --rules packs/einstein-trust/v1.yaml --port 9000
+# 2. Run with Security Core rules
+jimini run-local --rules packs/security-core/v1.yaml --port 9000
 
 # 3. Test PII detection
 curl -X POST http://localhost:9000/v1/evaluate \
@@ -25,9 +25,9 @@ curl -X POST http://localhost:9000/v1/evaluate \
 
 ## Enterprise Features
 
-### Trust Layer
+### Security Core
 
-30+ pre-built rules in `packs/einstein-trust/v1.yaml`
+30+ pre-built rules in `packs/security-core/v1.yaml`
 
 | Category | Coverage | Example Rules |
 |----------|----------|---------------|
@@ -37,7 +37,7 @@ curl -X POST http://localhost:9000/v1/evaluate \
 | Toxicity | Hate speech, violence, NSFW | TOXIC-HATE-1.0, TOXIC-VIOLENCE-1.0 |
 | Hallucination | Missing citations, overconfidence | HALLUC-1.0, HALLUC-OVERCONFIDENT-1.0 |
 
-Additional risk indicator rules available in `packs/einstein-trust/risk_indicators.yaml` for velocity detection, off-hours access, privilege escalation, and obfuscation attempts.
+Additional risk indicator rules available in `packs/security-core/risk_indicators.yaml` for velocity detection, off-hours access, privilege escalation, and obfuscation attempts.
 
 ### Adaptive Risk Scoring
 
@@ -140,37 +140,35 @@ export JIMINI_TOKEN_QUOTA_TIER=basic  # 5K TPM
 ## CLI Tools
 
 ```bash
-jimini lint --rules packs/einstein-trust/v1.yaml
-jimini test --rule-pack einstein-trust --text "My email is test@example.com"
+jimini lint --rules packs/security-core/v1.yaml
+jimini test --rule-pack security-core --text "My email is test@example.com"
 jimini verify-audit
 jimini run-local --rules policy_rules.yaml --port 9000 --shadow
 ```
 
 ## Documentation
 
-- TRUST_LAYER.md - Einstein Trust Layer guide
+- TRUST_LAYER.md - Security capabilities guide
 - PLATFORM_COMPARISON.md - Azure APIM competitive analysis
 - IMPROVEMENT_ROADMAP.md - Future priorities
 - ADMIN_RUNBOOK.md - Operations playbook
 
-## Platform Comparison
+## Key Features
 
-| Feature | Jimini | Azure APIM | Salesforce Einstein | AWS Bedrock |
-|---------|--------|-----------|---------------------|-------------|
-| PII Detection | 30+ rules | Basic | Advanced | Advanced |
-| Risk Scoring | Adaptive | None | Advanced | Basic |
-| Semantic Cache | Vector-based | Basic | None | None |
-| Token Quotas | TPM/hour/day | TPM only | None | TPM only |
-| Cost (1M requests) | $100 | $700 | $2,500+ | $1,200 |
-| License | MIT | Proprietary | Proprietary | Proprietary |
-
-Cost reduction: 76-87% vs Azure, 90%+ vs Salesforce.
+- **Zero Data Retention**: Prompts and responses evaluated in-memory only
+- **PII Detection**: 30+ pre-built rules for SSN, credit cards, emails, phones
+- **Prompt Defense**: Comprehensive jailbreak and injection protection
+- **Risk Scoring**: Adaptive behavioral profiling with 6 risk levels
+- **Semantic Cache**: Vector-based LLM response caching
+- **Token Quotas**: Configurable TPM/hour/day limits per API key
+- **Open Source**: MIT licensed, fully self-hosted
+- **Shadow Mode**: Test policies without blocking production traffic
 
 ## Troubleshooting
 
 Rules not loading:
 ```bash
-export JIMINI_RULES_PATH=packs/einstein-trust/v1.yaml
+export JIMINI_RULES_PATH=packs/security-core/v1.yaml
 ```
 
 Semantic cache unavailable:
@@ -191,7 +189,7 @@ ls -la logs/risk_history.db
 ## Recommended Learning Path
 
 1. Basic rule evaluation (policy_rules.yaml)
-2. Trust Layer rules (packs/einstein-trust/v1.yaml)
+2. Security Core rules (packs/security-core/v1.yaml)
 3. Risk scoring (automatic behavioral profiling)
 4. Semantic caching (cost optimization)
 5. Token quotas and monitoring dashboard
