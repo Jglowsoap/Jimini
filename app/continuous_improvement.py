@@ -54,7 +54,7 @@ class PerformanceBudget:
 class SyntheticTrafficGenerator:
     """Generates synthetic traffic for load testing and monitoring."""
     
-    def __init__(self, base_url: str = "http://localhost:9000"):
+    def __init__(self, base_url: str = "http://localhost:5000"):
         self.base_url = base_url
         self.test_scenarios = self._load_test_scenarios()
         
@@ -234,7 +234,7 @@ class SyntheticTrafficGenerator:
 class ChaosTestingFramework:
     """Framework for chaos engineering tests."""
     
-    def __init__(self, base_url: str = "http://localhost:9000"):
+    def __init__(self, base_url: str = "http://localhost:5000"):
         self.base_url = base_url
         self.traffic_generator = SyntheticTrafficGenerator(base_url)
         

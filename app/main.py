@@ -16,7 +16,8 @@ import json
 from app.models import (
     EvaluateRequest, EvaluateResponse, 
     ApprovalRequest, ApprovalResponse,
-    RuleValidationRequest, RuleTestRequest
+    RuleValidationRequest, RuleTestRequest,
+    RuleCreateRequest, RuleUpdateRequest
 )
 from app.rules_loader import load_rules, rules_store
 from app.enforcement import evaluate, apply_shadow_logic
@@ -190,8 +191,9 @@ app = FastAPI(
         "url": "https://opensource.org/licenses/MIT"
     },
     servers=[
-        {"url": "https://api.jimini.ai", "description": "Production server"},
-        {"url": "http://localhost:9000", "description": "Local development server"}
+        {"url": f"https://{os.environ.get('REPLIT_DEV_DOMAIN', 'localhost:5000')}", "description": "Current Replit instance"},
+        {"url": "http://localhost:5000", "description": "Local development server"},
+        {"url": "https://api.jimini.ai", "description": "Production server"}
     ],
     lifespan=lifespan
 )
@@ -280,6 +282,18 @@ RECENT_DECISIONS: Deque[Dict[str, Any]] = deque(maxlen=100)
 
 
 @app.get(
+    "/",
+    summary="Welcome to Jimini AI Policy Gateway",
+    description="Redirects to interactive API documentation",
+    include_in_schema=False
+)
+async def root():
+    """Redirect root to API documentation"""
+    from fastapi.responses import RedirectResponse
+    return RedirectResponse(url="/docs")
+
+
+@app.get(
     "/health",
     summary="System Health Check",
     description="Basic health check endpoint for load balancers and monitoring systems.",
@@ -290,8 +304,8 @@ RECENT_DECISIONS: Deque[Dict[str, Any]] = deque(maxlen=100)
                 "application/json": {
                     "example": {
                         "status": "ok",
-                        "shadow_mode": True,
-                        "loaded_rules": 26,
+                        "shadow_mode": False,
+                        "loaded_rules": 415,
                         "version": "0.2.0"
                     }
                 }
@@ -1207,11 +1221,10 @@ async def get_rule_by_id(rule_id: str, request: Request):
     },
     tags=["Rule Management"]
 )
-async def create_rule(rule_request: "RuleCreateRequest", request: Request):
+async def create_rule(rule_request: RuleCreateRequest, request: Request):
     """Create a new policy rule."""
     from app.rbac import get_rbac, Role
     from app.rule_management import get_rule_manager, RuleValidationError
-    from app.models import RuleCreateRequest
     
     # Check ADMIN role access
     rbac = get_rbac()

@@ -3,6 +3,7 @@ modules = ["python-3.11", "nodejs-20"]
 
 [nix]
 channel = "stable-25_05"
+packages = ["cargo", "libiconv", "libxcrypt", "libyaml", "openssl", "pkg-config", "rustc"]
 
 [deployment]
 run = ["python", "replit_main.py"]
@@ -11,6 +12,10 @@ deploymentTarget = "autoscale"
 [[ports]]
 localPort = 5000
 externalPort = 80
+
+[[ports]]
+localPort = 43133
+externalPort = 3000
 
 [env]
 PYTHONPATH = "$REPL_HOME"
