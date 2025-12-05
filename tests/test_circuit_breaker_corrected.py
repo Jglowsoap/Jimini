@@ -200,7 +200,7 @@ class TestCircuitBreakerManager:
 class TestCircuitBreakerIntegration:
     """Test circuit breaker integration with other components."""
 
-    @patch('app.forwarders.splunk_forwarder.SplunkForwarder.send_many')
+    @patch('app.forwarders.splunk_forwarder.SplunkHECForwarder.send_many')
     def test_circuit_breaker_with_forwarder(self, mock_send):
         """Test circuit breaker integration with forwarders."""
         cb = circuit_manager.get_breaker("splunk_forwarder", failure_threshold=2)

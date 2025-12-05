@@ -94,14 +94,35 @@ class RBACManager:
             return True
         
         if not user:
+            effective_role = self.get_user_role(user)
+            if effective_role:
+                return required_role in self.role_hierarchy.get(effective_role, [])
             return False
         
-        # Check if any of user's roles include the required role
+        # Check if any of user's roles satisfy the required role
+        # A role satisfies the requirement if the required role is in its hierarchy
         for user_role in user.roles:
             if required_role in self.role_hierarchy.get(user_role, []):
                 return True
         
         return False
+
+    def get_user_role(self, user: Optional[User]) -> Optional[Role]:
+        """Return the highest privilege role for backwards compatibility consumers."""
+
+        if not user or not user.roles:
+            # Legacy behavior treated missing users as admin when RBAC disabled
+            return Role.ADMIN if not self.enabled else None
+
+        if not self.enabled:
+            return Role.ADMIN
+
+        # Preserve the original enum ordering as precedence (ADMIN > ... > USER)
+        for candidate in (Role.ADMIN, Role.REVIEWER, Role.SUPPORT, Role.USER):
+            if candidate in user.roles:
+                return candidate
+
+        return user.roles[0]
     
     def require_role(self, required_role: Role):
         """

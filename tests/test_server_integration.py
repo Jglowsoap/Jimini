@@ -109,12 +109,14 @@ def test_evaluate_writes_jsonl(
             assert len(events) > 0
 
 
-@patch("app.main.evaluate")
-@patch("app.main.cfg")
-def test_shadow_mode_behavior(mock_cfg, mock_evaluate, test_client):
+@patch("app.enforcement.evaluate")
+@patch("app.main.get_current_config")
+def test_shadow_mode_behavior(mock_get_config, mock_evaluate, test_client):
     # Set shadow mode on
+    mock_cfg = MagicMock()
     mock_cfg.app.shadow_mode = True
     mock_cfg.app.shadow_overrides = ["SECRETS-EXFIL"]
+    mock_get_config.return_value = mock_cfg
 
     # Test case 1: Rule that should be enforced even in shadow mode
     mock_evaluate.return_value = ("block", ["SECRETS-EXFIL"], True)

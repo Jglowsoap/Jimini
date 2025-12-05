@@ -10,8 +10,12 @@ def test_client():
     return TestClient(app)
 
 
-@patch("app.main.cfg")
-def test_apply_shadow_logic(mock_cfg):
+@patch("app.main.get_current_config")
+def test_apply_shadow_logic(mock_get_config):
+    mock_cfg = type('MockConfig', (), {})()
+    mock_cfg.app = type('MockApp', (), {})()
+    mock_get_config.return_value = mock_cfg
+    
     # Test case 1: Not in shadow mode
     mock_cfg.app.shadow_mode = False
     mock_cfg.app.shadow_overrides = []
@@ -34,12 +38,15 @@ def test_apply_shadow_logic(mock_cfg):
     assert effective3 == "ALLOW"  # Should not enforce in shadow mode
 
 
-@patch("app.main.evaluate")
-@patch("app.main.cfg")
-def test_shadow_override_blocks_when_rule_listed(mock_cfg, mock_evaluate, test_client):
+@patch("app.enforcement.evaluate")
+@patch("app.main.get_current_config")
+def test_shadow_override_blocks_when_rule_listed(mock_get_config, mock_evaluate, test_client):
     # Configure shadow mode with override
+    mock_cfg = type('MockConfig', (), {})()
+    mock_cfg.app = type('MockApp', (), {})()
     mock_cfg.app.shadow_mode = True
     mock_cfg.app.shadow_overrides = ["SECRETS-EXFIL"]
+    mock_get_config.return_value = mock_cfg
 
     # Mock evaluation to return BLOCK with the override rule
     mock_evaluate.return_value = ("block", ["SECRETS-EXFIL"], True)

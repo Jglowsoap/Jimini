@@ -1,0 +1,53 @@
+# Token Quota Configuration for Jimini
+# Inspired by Azure APIM AI Gateway's token limit policies
+#
+# This file configures token-per-minute (TPM), hourly, and daily quotas
+# for LLM API calls to prevent runaway costs and enable fair resource allocation.
+
+# Default quota for all API keys (unless overridden)
+default:
+  tokens_per_minute: 10000      # 10K TPM
+  tokens_per_hour: 500000       # 500K per hour  
+  tokens_per_day: 10000000      # 10M per day
+
+# Quota tiers for different customer segments
+tiers:
+  # Premium tier - for enterprise customers
+  premium:
+    tokens_per_minute: 50000    # 50K TPM
+    tokens_per_hour: 2000000    # 2M per hour
+    tokens_per_day: 50000000    # 50M per day
+    
+  # Basic tier - for small teams
+  basic:
+    tokens_per_minute: 5000     # 5K TPM
+    tokens_per_hour: 200000     # 200K per hour
+    tokens_per_day: 5000000     # 5M per day
+    
+  # Free tier - for testing
+  free:
+    tokens_per_minute: 1000     # 1K TPM
+    tokens_per_hour: 50000      # 50K per hour
+    tokens_per_day: 500000      # 500K per day
+
+# Map API keys to tiers
+# In production, load these from environment variables or secrets manager
+api_keys:
+  changeme: default              # Default test key
+  # premium-customer-key: premium
+  # basic-team-key: basic
+  # test-key: free
+
+# Advanced settings
+settings:
+  # Use tiktoken for accurate token counting (requires tiktoken package)
+  use_tiktoken: true
+  
+  # Encoding to use for token counting
+  encoding: cl100k_base          # GPT-4, GPT-4o, GPT-3.5-turbo
+  
+  # Cleanup interval for old usage records (seconds)
+  cleanup_interval: 3600         # 1 hour
+  
+  # Retention period for usage records (hours)
+  retention_hours: 24            # Keep 24 hours of history

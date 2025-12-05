@@ -11,19 +11,35 @@ This module demonstrates the intelligence expansion capability by:
 
 import re
 import json
+import sys
+import types
 try:
     import spacy
     HAS_SPACY = True
 except Exception:  # ImportError or other failures
-    spacy = None
     HAS_SPACY = False
+    spacy = None
+    if "spacy" not in sys.modules:
+        spacy_stub = types.ModuleType("spacy")
+
+        def _missing_spacy_load(*_args, **_kwargs):
+            raise OSError("spaCy is not installed")
+
+        spacy_stub.load = _missing_spacy_load
+        sys.modules["spacy"] = spacy_stub
+        spacy = spacy_stub
 from typing import List, Dict, Any, Optional, Tuple
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
 import yaml
 from datetime import datetime
-import PyPDF2
+try:
+    import PyPDF2
+    HAS_PYPDF2 = True
+except Exception:  # ModuleNotFoundError or other runtime import errors
+    PyPDF2 = None
+    HAS_PYPDF2 = False
 from bs4 import BeautifulSoup
 import requests
 
@@ -204,6 +220,8 @@ class RegulatoryTextParser:
     
     def _parse_pdf(self, file_path: Path) -> str:
         """Extract text from PDF document."""
+        if not HAS_PYPDF2 or PyPDF2 is None:
+            raise ValueError("PDF parsing requires the optional PyPDF2 dependency. Install PyPDF2 to enable PDF support.")
         try:
             with open(file_path, 'rb') as file:
                 reader = PyPDF2.PdfReader(file)
@@ -327,6 +345,37 @@ class RegulatoryTextParser:
                     applicable_contexts=["text", "content"]
                 )
                 requirements.append(requirement)
+
+        keyword_rules: List[Tuple[str, RequirementType]] = [
+            ("consent", RequirementType.CONSENT),
+            ("minimum necessary", RequirementType.PII_HANDLING),
+            ("lawfulness of processing", RequirementType.DATA_PROTECTION),
+            ("protected health information", RequirementType.PII_HANDLING)
+        ]
+
+        sentences = re.split(r"(?<=[.!?])\s+", section_text.strip())
+        for sentence in sentences:
+            sentence_clean = sentence.strip()
+            if len(sentence_clean) < 20:
+                continue
+            lower_sentence = sentence_clean.lower()
+            for keyword, req_type in keyword_rules:
+                if keyword in lower_sentence:
+                    requirement = PolicyRequirement(
+                        id=f"req_{regulation_type.value}_{section_num}_{len(requirements)}_kw",
+                        regulation_type=regulation_type,
+                        requirement_type=req_type,
+                        title=sentence_clean[:100] + "..." if len(sentence_clean) > 100 else sentence_clean,
+                        description=sentence_clean,
+                        regulatory_section=f"Section {section_num}",
+                        severity="high" if keyword == "minimum necessary" else "medium",
+                        confidence_score=0.65,
+                        extracted_text=sentence_clean,
+                        suggested_action=self._suggest_action(sentence_clean),
+                        data_types=self._extract_data_types(sentence_clean, regulation_type),
+                        applicable_contexts=self._determine_contexts(sentence_clean, req_type)
+                    )
+                    requirements.append(requirement)
         
         return requirements
     
@@ -370,13 +419,22 @@ class RegulatoryTextParser:
         """Classify the type of policy requirement."""
         text_lower = text.lower()
         
-        if any(term in text_lower for term in ["personal data", "pii", "sensitive data"]):
+        pii_terms = [
+            "personal data",
+            "pii",
+            "sensitive data",
+            "minimum necessary",
+            "protected health information",
+            "phi"
+        ]
+        audit_terms = ["log", "audit", "record", "monitor", "monitoring", "tracking"]
+        access_terms = ["access", "authentication", "authorization", "credential"]
+
+        if any(term in text_lower for term in pii_terms):
             return RequirementType.PII_HANDLING
-        elif any(term in text_lower for term in ["access", "authentication", "authorization"]):
-            return RequirementType.ACCESS_CONTROL
-        elif any(term in text_lower for term in ["log", "audit", "record", "monitoring"]):
+        elif any(term in text_lower for term in audit_terms):
             return RequirementType.AUDIT_LOGGING
-        elif any(term in text_lower for term in ["encrypt", "cryptograph", "secure transmission"]):
+        elif any(term in text_lower for term in ["encrypt", "cryptograph", "secure transmission", "encryption"]):
             return RequirementType.ENCRYPTION
         elif any(term in text_lower for term in ["retention", "delete", "storage", "archival"]):
             return RequirementType.RETENTION
@@ -384,6 +442,8 @@ class RegulatoryTextParser:
             return RequirementType.DISCLOSURE
         elif any(term in text_lower for term in ["consent", "permission", "opt-in"]):
             return RequirementType.CONSENT
+        elif any(term in text_lower for term in access_terms):
+            return RequirementType.ACCESS_CONTROL
         else:
             return RequirementType.DATA_PROTECTION
     
@@ -430,16 +490,17 @@ class RegulatoryTextParser:
         
         # Generic data type patterns
         generic_patterns = [
-            r"\b(?:social security number|ssn)\b",
-            r"\b(?:credit card number|payment card)\b",
-            r"\b(?:email address|email)\b",
-            r"\b(?:phone number|telephone)\b",
-            r"\b(?:ip address|ip)\b"
+            (r"\b(?:social security number(?:s)?|ssn(?:s)?)\b", "social security number"),
+            (r"\b(?:credit card number(?:s)?|payment card(?:s)?)\b", "credit card number"),
+            (r"\b(?:email address(?:es)?|email)\b", "email address"),
+            (r"\b(?:phone number(?:s)?|telephone(?:s)?)\b", "phone number"),
+            (r"\b(?:ip address(?:es)?|ip)\b", "ip address"),
+            (r"\bprotected health information\b", "protected health information")
         ]
-        
-        for pattern in generic_patterns:
-            matches = re.findall(pattern, text_lower)
-            found_types.extend(matches)
+
+        for pattern, label in generic_patterns:
+            if re.search(pattern, text_lower, re.IGNORECASE):
+                found_types.append(label)
         
         return list(set(found_types))  # Remove duplicates
     

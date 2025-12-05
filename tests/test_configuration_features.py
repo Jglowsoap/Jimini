@@ -278,12 +278,17 @@ class TestConfigurationValidation:
             config = AppConfig(api_key=key)
             assert config.validate() is True, f"Failed for valid key: {key}"
         
-        # Invalid API keys
-        invalid_keys = ["", "   ", None]
+        # Invalid API keys - empty strings pass Pydantic but fail validate()
+        invalid_keys = ["", "   "]
         
         for key in invalid_keys:
             config = AppConfig(api_key=key)
             assert config.validate() is False, f"Should fail for invalid key: {key}"
+        
+        # None is rejected by Pydantic at construction time
+        from pydantic import ValidationError
+        with pytest.raises(ValidationError):
+            AppConfig(api_key=None)
 
     def test_validate_rules_path(self):
         """Test rules path validation."""
@@ -294,12 +299,17 @@ class TestConfigurationValidation:
             config = AppConfig(rules_path=path)
             assert config.validate() is True, f"Failed for valid path: {path}"
         
-        # Invalid paths
-        invalid_paths = ["", "   ", None]
+        # Invalid paths - empty strings pass Pydantic but fail validate()
+        invalid_paths = ["", "   "]
         
         for path in invalid_paths:
             config = AppConfig(rules_path=path)
             assert config.validate() is False, f"Should fail for invalid path: {path}"
+        
+        # None is rejected by Pydantic at construction time
+        from pydantic import ValidationError
+        with pytest.raises(ValidationError):
+            AppConfig(rules_path=None)
 
     def test_validate_url_formats(self):
         """Test URL format validation."""
@@ -393,6 +403,8 @@ class TestConfigurationIntegration:
             "rules": [
                 {
                     "id": "TEST-1.0",
+                    "title": "Test Rule",
+                    "severity": "high",
                     "pattern": "test-pattern",
                     "action": "block",
                     "applies_to": ["request"]
@@ -411,16 +423,17 @@ class TestConfigurationIntegration:
             assert config.rules_path == rules_file
             
             # Integration test: rules loader should be able to use this path
-            from app.rules_loader import load_rules
-            rules = load_rules(config.rules_path)
-            
+            from app.rules_loader import load_rules, rules_store
+            load_rules(config.rules_path)
+            rules = rules_store
+
             assert len(rules) == 1
             assert rules[0].id == "TEST-1.0"
         finally:
             os.unlink(rules_file)
 
-    @patch('app.otel.setup_telemetry')
-    def test_config_with_telemetry_setup(self, mock_setup_telemetry):
+    @patch('app.otel.init_otel')
+    def test_config_with_telemetry_setup(self, mock_init_otel):
         """Test configuration integration with telemetry setup."""
         config = AppConfig(
             otel_endpoint="http://otel.example.com",
@@ -429,10 +442,11 @@ class TestConfigurationIntegration:
         
         # Simulate telemetry setup with config
         if config.otel_endpoint:
-            mock_setup_telemetry(config.otel_endpoint)
+            # In real code, init_otel() is called without args and reads from env
+            mock_init_otel()
         
-        # Verify telemetry was configured
-        mock_setup_telemetry.assert_called_once_with("http://otel.example.com")
+        # Verify telemetry was initialized
+        mock_init_otel.assert_called_once()
 
     @patch('requests.post')
     def test_config_with_webhook_integration(self, mock_post):

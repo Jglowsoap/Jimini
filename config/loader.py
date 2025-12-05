@@ -119,6 +119,7 @@ class AppConfig(BaseModel):
     shadow_mode: bool = True
     shadow_overrides: List[str] = []
     api_key: str = Field(default="changeme")
+    rules_path: str = Field(default="policy_rules.yaml")
     host: str = "0.0.0.0"
     port: int = Field(default=9000, ge=1, le=65535)
     use_pii: bool = Field(default=False, description="Allow PII in outbound payloads")
@@ -138,6 +139,15 @@ class SecurityConfig(BaseModel):
     support_roles: List[str] = ["ADMIN", "REVIEWER", "SUPPORT"]
 
 
+class SemanticCacheSettings(BaseModel):
+    """Semantic caching configuration"""
+
+    enabled: bool = False
+    redis_url: str = "redis://localhost:6379"
+    similarity_threshold: float = Field(default=0.95, ge=0.0, le=1.0)
+    ttl_seconds: int = Field(default=3600, ge=60, le=86400)
+
+
 class Config(BaseModel):
     """Complete Jimini configuration"""
     app: AppConfig = AppConfig()
@@ -145,6 +155,7 @@ class Config(BaseModel):
     siem: SiemConfig = SiemConfig()
     otel: OtelConfig = OtelConfig()
     security: SecurityConfig = SecurityConfig()
+    semantic_cache: SemanticCacheSettings = SemanticCacheSettings()
     
     class Config:
         extra = "forbid"  # Disallow unknown keys
@@ -171,6 +182,7 @@ def merge_env_vars(config_dict: Dict[str, Any]) -> Dict[str, Any]:
         'JIMINI_HOST': 'app.host',
         'JIMINI_PORT': 'app.port',
         'JIMINI_USE_PII': 'app.use_pii',
+    'JIMINI_RULES_PATH': 'app.rules_path',
         
         'SLACK_WEBHOOK_URL': 'notifiers.slack.webhook_url',
         'TEAMS_WEBHOOK_URL': 'notifiers.teams.webhook_url',
@@ -191,6 +203,11 @@ def merge_env_vars(config_dict: Dict[str, Any]) -> Dict[str, Any]:
         
         'JSONL_FILE_PATH': 'siem.jsonl.file_path',
         'JSONL_RETENTION_DAYS': 'siem.jsonl.retention_days',
+        'SEMANTIC_CACHE_ENABLED': 'semantic_cache.enabled',
+        'SEMANTIC_CACHE_REDIS_URL': 'semantic_cache.redis_url',
+        'SEMANTIC_CACHE_THRESHOLD': 'semantic_cache.similarity_threshold',
+        'SEMANTIC_CACHE_TTL': 'semantic_cache.ttl_seconds',
+        'REDIS_URL': 'semantic_cache.redis_url',
     }
     
     def set_nested_key(d: Dict, key_path: str, value: Any):

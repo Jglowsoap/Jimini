@@ -14,7 +14,7 @@ class TestTelemetryCounters(unittest.TestCase):
         # Reset the singleton
         Telemetry._instance = None
 
-    @patch("app.telemetry.get_config")
+    @patch("config.loader.get_current_config")
     def test_counters_update(self, mock_get_config):
         # Mock config to avoid loading from file
         mock_config = MagicMock()

@@ -231,7 +231,7 @@ async def evaluate_policy(request: EvaluateRequest, http_request: Request) -> Ev
         from app.rules_loader import rules_store as current_rules_store
         # Convert list to dict format expected by evaluate function
         rules_dict = {rule.id: rule for rule in current_rules_store}
-        decision, rule_ids, enforce_in_shadow = evaluate(
+        decision, rule_ids, enforce_in_shadow, redacted_text = evaluate(
             text=request.text,
             agent_id=request.agent_id or "default",
             rules_store=rules_dict,  # Pass rules as dict with rule.id as key
@@ -520,7 +520,7 @@ async def evaluate_with_ecosystem(tenant_id: str, request: EvaluateRequest):
         # Core static evaluation first
         from app.rules_loader import rules_store as current_rules_store
         rules_dict = {rule.id: rule for rule in current_rules_store}
-        decision, rule_ids, enforce_in_shadow = evaluate(
+        decision, rule_ids, enforce_in_shadow, redacted_text = evaluate(
             text=request.text,
             agent_id=request.agent_id or "default",
             rules_store=rules_dict,

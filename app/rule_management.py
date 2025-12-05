@@ -268,7 +268,7 @@ class RuleManager:
         
         # Run evaluation
         try:
-            decision, rule_ids, enforce_even_in_shadow = evaluate(
+            decision, rule_ids, enforce_even_in_shadow, redacted_text = evaluate(
                 text=rule_test.test_text,
                 agent_id="test",
                 rules_store=test_rules_dict,

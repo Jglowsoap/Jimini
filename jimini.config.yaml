@@ -12,6 +12,12 @@ app:
   port: 9000
   use_pii: false  # Set to true only if PII in outbound payloads is allowed
 
+semantic_cache:
+  enabled: false
+  redis_url: "redis://localhost:6379"
+  similarity_threshold: 0.95  # Require 95% similarity for cache hits
+  ttl_seconds: 3600  # Cache entries expire after 1 hour
+
 notifiers:
   slack:
     enabled: false  # Auto-enabled if SLACK_WEBHOOK_URL is set

@@ -117,6 +117,12 @@ class CircuitBreaker:
     def get_state(self) -> str:
         """Get current circuit state"""
         return self.metrics.state.value
+
+    @property
+    def state(self) -> str:
+        """Return the circuit state name for legacy callers."""
+
+        return self.metrics.state.name
     
     def is_closed(self) -> bool:
         """Check if circuit is closed (healthy)"""
@@ -131,6 +137,25 @@ class CircuitBreaker:
         """Manually close circuit (for testing)"""
         with self.lock:
             self._close_circuit()
+
+    def __enter__(self):
+        """Support ``with CircuitBreaker()`` usage expected by legacy tests."""
+
+        with self.lock:
+            if self._should_reject():
+                raise CircuitOpenError("Circuit breaker is OPEN")
+        return self
+
+    def __exit__(self, exc_type, exc, tb):
+        """Record execution outcome and propagate exceptions."""
+
+        with self.lock:
+            if exc_type is None:
+                self._record_success()
+            else:
+                self._record_failure()
+        # Propagate original exception (if any)
+        return False
 
 
 class CircuitOpenError(Exception):

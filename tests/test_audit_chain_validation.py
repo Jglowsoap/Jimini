@@ -303,7 +303,34 @@ class TestAuditChainValidation:
         assert result["total_records"] == 2
 
 
-def test_audit_integration():
+@pytest.fixture
+def clean_audit_log():
+    """Clean up the audit log before and after integration tests"""
+    from app.audit_logger import get_audit_logger
+    
+    # Initialize the logger and get its audit file
+    logger = get_audit_logger()
+    audit_file = Path(logger.audit_file)
+    backup_file = None
+    
+    # Back up and clear existing audit log
+    if audit_file.exists():
+        backup_file = audit_file.with_suffix('.jsonl.backup')
+        if backup_file.exists():
+            backup_file.unlink()
+        audit_file.rename(backup_file)
+    
+    yield
+    
+    # Restore backup
+    if audit_file.exists():
+        audit_file.unlink()
+    if backup_file and backup_file.exists():
+        backup_file.rename(audit_file)
+
+
+
+def test_audit_integration(clean_audit_log):
     """Integration test for audit system"""
     # Test the global audit logger functions
     from app.audit_logger import log_policy_decision, verify_audit_chain, get_audit_stats

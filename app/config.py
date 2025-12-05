@@ -1,157 +1,127 @@
+from __future__ import annotations
+
 import os
-from dotenv import load_dotenv
-import yaml
-from typing import Dict, Any, List, Optional
 from pathlib import Path
-from pydantic import BaseModel, Field
+from typing import Any, Dict, Optional
 
-load_dotenv()
-
-API_KEY = os.getenv("JIMINI_API_KEY", "changeme")
-RULES_PATH = os.getenv("JIMINI_RULES_PATH", "policy_rules.yaml")
-WEBHOOK_URL = os.getenv("WEBHOOK_URL", None)
-
-
-class NotifierConfig(BaseModel):
-    enabled: bool = False
-    webhook_url: Optional[str] = None
-    channel: Optional[str] = None
-    username: Optional[str] = None
-    icon_emoji: Optional[str] = None
-
-
-class JsonlConfig(BaseModel):
-    enabled: bool = True
-    path: str = "logs/jimini_events.jsonl"
-
-
-class SplunkHECConfig(BaseModel):
-    enabled: bool = False
-    url: Optional[str] = None
-    token: Optional[str] = None
-    sourcetype: str = "jimini:event"
-    verify_tls: bool = True
-
-
-class ElasticConfig(BaseModel):
-    enabled: bool = False
-    url: Optional[str] = None
-    basic_auth_user: Optional[str] = None
-    basic_auth_pass: Optional[str] = None
-    verify_tls: bool = True
-
-
-class OtelConfig(BaseModel):
-    enabled: bool = False
-    endpoint: Optional[str] = None
-    service_name: str = "jimini"
-    resource: Dict[str, str] = Field(default_factory=lambda: {"environment": "dev"})
-
-
-class SiemConfig(BaseModel):
-    jsonl: JsonlConfig = Field(default_factory=JsonlConfig)
-    splunk_hec: SplunkHECConfig = Field(default_factory=SplunkHECConfig)
-    elastic: ElasticConfig = Field(default_factory=ElasticConfig)
-
-
-class NotifiersConfig(BaseModel):
-    slack: NotifierConfig = Field(default_factory=NotifierConfig)
-    teams: NotifierConfig = Field(default_factory=NotifierConfig)
+import yaml
+from pydantic import BaseModel
 
 
 class AppConfig(BaseModel):
-    env: str = "dev"
+    """Lightweight application configuration used by tests and legacy callers."""
+
+    api_key: str = "changeme"
     shadow_mode: bool = False
-    shadow_overrides: List[str] = Field(default_factory=list)
+    webhook_url: Optional[str] = None
+    otel_endpoint: Optional[str] = None
+    rules_path: str = "policy_rules.yaml"
     audit_log_path: str = "logs/audit.jsonl"
 
+    @classmethod
+    def from_env(cls, base: Optional["AppConfig"] = None) -> "AppConfig":
+        """Create configuration populated from environment variables."""
 
-class PrivacySettings(BaseModel):
-    retention_days: int = 365
-    auto_purge: bool = True
-    anonymize_pii: bool = True
+        data = base.to_dict() if base else {}
+        env_map = {
+            "JIMINI_API_KEY": "api_key",
+            "JIMINI_SHADOW": "shadow_mode",
+            "WEBHOOK_URL": "webhook_url",
+            "OTEL_EXPORTER_OTLP_ENDPOINT": "otel_endpoint",
+            "JIMINI_RULES_PATH": "rules_path",
+            "AUDIT_LOG_PATH": "audit_log_path",
+        }
 
+        for env_name, attr in env_map.items():
+            value = os.getenv(env_name)
+            if value is None:
+                continue
 
-class JiminiConfig(BaseModel):
-    app: AppConfig = Field(default_factory=AppConfig)
-    notifiers: NotifiersConfig = Field(default_factory=NotifiersConfig)
-    siem: SiemConfig = Field(default_factory=SiemConfig)
-    otel: OtelConfig = Field(default_factory=OtelConfig)
-    privacy_settings: PrivacySettings = Field(default_factory=PrivacySettings)
-    
-    @property
-    def audit_log_path(self) -> str:
-        """Get audit log path from app config"""
-        return self.app.audit_log_path
+            if attr == "shadow_mode":
+                data[attr] = value.lower() in {"1", "true", "yes", "on"}
+            else:
+                data[attr] = value
 
+        return cls(**data)
 
-_config_instance = None
+    def validate(self) -> bool:
+        """Return True when required fields are populated."""
 
+        if not self.api_key or not self.api_key.strip():
+            return False
+        if not self.rules_path or not self.rules_path.strip():
+            return False
+        return True
 
-def _resolve_env_vars(value: str) -> str:
-    """Resolve environment variables in string values like ${VAR_NAME}"""
-    if not isinstance(value, str) or "${" not in value:
-        return value
+    def to_dict(self) -> Dict[str, Any]:
+        return self.model_dump()
 
-    import re
+    def update_from_dict(self, updates: Dict[str, Any]) -> None:
+        """Update configuration in place with basic type coercion."""
 
-    pattern = r"\${([A-Za-z0-9_]+)}"
-
-    def replace_var(match):
-        var_name = match.group(1)
-        return os.environ.get(var_name, f"${{{var_name}}}")
-
-    return re.sub(pattern, replace_var, value)
-
-
-def _process_dict_env_vars(data: Dict[str, Any]) -> Dict[str, Any]:
-    """Recursively process all string values in dict for env var substitution"""
-    result = {}
-    for key, value in data.items():
-        if isinstance(value, dict):
-            result[key] = _process_dict_env_vars(value)
-        elif isinstance(value, list):
-            result[key] = [
-                _resolve_env_vars(v) if isinstance(v, str) else v for v in value
-            ]
-        elif isinstance(value, str):
-            result[key] = _resolve_env_vars(value)
-        else:
-            result[key] = value
-    return result
+        current_keys = set(self.model_dump().keys())
+        for key, value in updates.items():
+            if key not in current_keys:
+                continue
+            if key == "shadow_mode" and isinstance(value, str):
+                coerced = value.lower() in {"1", "true", "yes", "on"}
+            else:
+                coerced = value
+            setattr(self, key, coerced)
 
 
-def get_config() -> JiminiConfig:
-    """Get the application configuration, loading it if necessary"""
-    global _config_instance
-
-    if _config_instance is not None:
-        return _config_instance
-
-    # Look for jimini.config.yaml in the current directory or parent directories
-    config_data = {}
-    config_paths = [
-        Path("jimini.config.yaml"),
-        Path("config/jimini.config.yaml"),
-        Path.home() / ".jimini/config.yaml",
-    ]
-
-    for path in config_paths:
-        if path.exists():
-            with open(path, "r") as f:
-                config_data = yaml.safe_load(f)
-            break
-
-    # Process any environment variables in the config
-    config_data = _process_dict_env_vars(config_data or {})
-
-    # Create and return the config instance
-    _config_instance = JiminiConfig(**config_data)
-    return _config_instance
+def _load_yaml(path: Path) -> Dict[str, Any]:
+    if not path.exists():
+        return {}
+    try:
+        with path.open("r", encoding="utf-8") as handle:
+            data = yaml.safe_load(handle) or {}
+            if not isinstance(data, dict):
+                return {}
+            return data
+    except yaml.YAMLError:
+        return {}
 
 
-def reload_config() -> JiminiConfig:
-    """Force reload of the configuration"""
-    global _config_instance
-    _config_instance = None
-    return get_config()
+def load_config(path: Optional[str] = None) -> AppConfig:
+    """Load configuration from YAML and environment variables."""
+
+    config_path = Path(path) if path else Path("jimini.config.yaml")
+    base_data = _load_yaml(config_path)
+    base_config = AppConfig(**base_data)
+    return AppConfig.from_env(base_config)
+
+
+_config_cache: Optional[AppConfig] = None
+
+
+def get_config(path: Optional[str] = None, force_reload: bool = False) -> AppConfig:
+    """Return a cached configuration instance, reloading when requested."""
+
+    global _config_cache
+    if force_reload or _config_cache is None:
+        _config_cache = load_config(path)
+    return _config_cache
+
+
+def set_config(config: AppConfig) -> None:
+    """Override the cached configuration, primarily used in tests."""
+
+    global _config_cache
+    _config_cache = config
+
+
+def update_config(config: AppConfig, updates: Dict[str, Any]) -> AppConfig:
+    """Return a new AppConfig with updates applied."""
+
+    new_values = config.to_dict()
+    new_values.update(updates)
+    updated = AppConfig(**new_values)
+    set_config(updated)
+    return updated
+
+
+def get_config_value(config: AppConfig, key: str, default: Any = None) -> Any:
+    """Helper for safely reading configuration attributes."""
+
+    return getattr(config, key, default)

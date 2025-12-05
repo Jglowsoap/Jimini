@@ -6,6 +6,7 @@ import re
 
 from app.models import AuditRecord, Rule
 from app.audit import append_audit
+from app.semantic_cache import get_semantic_cache
 
 # Phase 6B - Risk Scoring Integration
 try:
@@ -30,11 +31,32 @@ def _ensure_openai():
             _openai_client = False  # mark unavailable (no warning spam)
 
 
-def llm_policy_check(text: str, prompt: str, model: str = "gpt-4o-mini") -> bool:
+def llm_policy_check(
+    text: str,
+    prompt: str,
+    rule_id: str,
+    model: str = "gpt-4o-mini",
+) -> bool:
     """
     Returns True when the LLM indicates the text violates the policy (e.g., answers 'Yes').
     Fail-safe: returns False if the client isn't available or the call errors.
     """
+    cache = get_semantic_cache()
+    if cache:
+        try:
+            cached_response = cache.lookup(text, rule_id)
+        except Exception as cache_err:  # pragma: no cover - defensive logging
+            print(f"[SemanticCache] Lookup error for rule {rule_id}: {cache_err}")
+            cached_response = None
+
+        if cached_response:
+            answer = str(cached_response["response"]).strip().lower()
+            print(
+                "[SemanticCache] Hit for rule"
+                f" {rule_id} (similarity {cached_response['similarity']:.3f})"
+            )
+            return answer.startswith("yes")
+
     _ensure_openai()
     if _openai_client is False:
         return False
@@ -62,6 +84,12 @@ def llm_policy_check(text: str, prompt: str, model: str = "gpt-4o-mini") -> bool
         message = getattr(choices[0], "message", None)
         content = getattr(message, "content", "")
         answer = (content or "").strip().lower()
+
+        if cache:
+            try:
+                cache.store(text, rule_id, answer)
+            except Exception as cache_err:  # pragma: no cover - defensive logging
+                print(f"[SemanticCache] Store error for rule {rule_id}: {cache_err}")
         return answer.startswith("yes")
     except Exception:
         return False
@@ -181,7 +209,7 @@ def evaluate(
 
         # LLM policy check (only if still no hit and rule has llm_prompt)
         if not hit and rule.llm_prompt:
-            if llm_policy_check(text, rule.llm_prompt):
+            if llm_policy_check(text, rule.llm_prompt, rid):
                 hit = True
 
         if hit:
@@ -202,9 +230,25 @@ def evaluate(
     if "API-1.0" in matched_ids and (matched_ids & SPECIFIC_SECRET_IDS):
         matched = [(r, r_id) for (r, r_id) in matched if r_id != "API-1.0"]
 
-    # 3) Decision precedence (block > flag > allow)
+    # 3) Apply redaction for redact-action rules
+    redacted_text = text
+    redaction_applied = False
+    for rule, rule_id in matched:
+        if rule.action == "redact":
+            # Try to get compiled pattern
+            regex_arg: Optional[re.Pattern[str]] = None
+            if hasattr(rule, 'compiled_pattern') and rule.compiled_pattern:
+                regex_arg = rule.compiled_pattern
+            
+            if regex_arg:
+                redacted_text = regex_arg.sub('[REDACTED]', redacted_text)
+                redaction_applied = True
+
+    # 4) Decision precedence (block > redact > flag > allow)
     if any(r.action == "block" for r, _ in matched):
         decision = "block"
+    elif any(r.action == "redact" for r, _ in matched):
+        decision = "redact"
     elif any(r.action == "flag" for r, _ in matched):
         decision = "flag"
     else:
@@ -212,12 +256,12 @@ def evaluate(
 
     rule_ids = [r_id for _, r_id in matched]
 
-    # 4) Per-rule shadow override: enforce even when global shadow mode is on
+    # 5) Per-rule shadow override: enforce even when global shadow mode is on
     enforce_even_in_shadow = any(
         getattr(r, "shadow_override", None) == "enforce" for r, _ in matched
     )
 
-    # 5) Audit - provide default values for CLI usage
+    # 6) Audit - provide default values for CLI usage
     from app.util import gen_request_id
 
     record = AuditRecord(
@@ -233,7 +277,8 @@ def evaluate(
     )
     append_audit(record)
 
-    return decision, rule_ids, enforce_even_in_shadow
+    # Return redacted text only if redaction was applied
+    return decision, rule_ids, enforce_even_in_shadow, (redacted_text if redaction_applied else None)
 
 
 def apply_shadow_logic(decision: str, rule_ids: List[str]) -> Tuple[str, str]:
@@ -274,12 +319,12 @@ def evaluate_with_risk_assessment(
     """
     Enhanced evaluation with Phase 6B risk assessment integration.
     
-    Returns: (decision, rule_ids, enforce_even_in_shadow, risk_assessment)
+    Returns: (decision, rule_ids, enforce_even_in_shadow, redacted_text, risk_assessment)
     """
     start_time = datetime.now()
     
     # Perform standard policy evaluation
-    decision, rule_ids, enforce_even_in_shadow = evaluate(
+    decision, rule_ids, enforce_even_in_shadow, redacted_text = evaluate(
         text, agent_id, rules_store, direction, endpoint
     )
     
@@ -340,4 +385,4 @@ def evaluate_with_risk_assessment(
             # Risk assessment failed, continue with standard evaluation
             print(f"[Jimini] Risk assessment failed: {e}")
     
-    return decision, rule_ids, enforce_even_in_shadow, risk_assessment
+    return decision, rule_ids, enforce_even_in_shadow, redacted_text, risk_assessment

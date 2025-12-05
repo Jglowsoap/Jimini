@@ -2,12 +2,14 @@
 from collections import defaultdict, deque
 import time
 import os
+import uuid
 from typing import Any, Dict, Deque, Optional, List
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 
 from fastapi import FastAPI, HTTPException, Request, Body
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 import urllib.request
 import json
 
@@ -22,8 +24,16 @@ from app import audit
 from app.audit_logger import log_policy_decision, verify_audit_chain, get_audit_stats
 from app.config import get_config
 from app.telemetry import Telemetry, TelemetryEvent
+from app.semantic_cache import get_semantic_cache_metrics
 from app.util import now_iso, gen_request_id
-from config.loader import get_current_config, mask_secrets, Config
+import config.loader as config_loader
+from config.loader import mask_secrets, Config
+
+
+def get_current_config(*args, **kwargs) -> Config:  # type: ignore[override]
+    """Compatibility shim that forwards to config.loader.get_current_config."""
+
+    return config_loader.get_current_config(*args, **kwargs)
 from app.resilience import (
     resilience_manager, 
     graceful_error_handler,
@@ -134,6 +144,11 @@ async def lifespan(app: FastAPI):
     # Startup: Load rules
     rules_path = os.environ.get("JIMINI_RULES_PATH", "policy_rules.yaml")
     load_rules(rules_path)
+    
+    # Load token quotas
+    from app.rules_loader import load_token_quotas
+    quota_path = os.environ.get("JIMINI_TOKEN_QUOTAS_PATH", "token_quotas.yaml")
+    load_token_quotas(quota_path)
 
     yield  # Application is running
 
@@ -183,10 +198,21 @@ app = FastAPI(
 
 # Load configuration with fail-fast validation first
 try:
-    config = get_current_config()
+    config = config_loader.get_current_config()
 except SystemExit as e:
     print(f"Configuration validation failed: {e}")
     raise
+
+# Backwards compatibility: legacy modules and tests import app.main.cfg
+cfg: Config = config
+
+
+def refresh_runtime_config() -> Config:
+    """Reload the runtime configuration and update the legacy cfg alias."""
+
+    global cfg
+    cfg = config_loader.get_current_config()
+    return cfg
 
 # Add security middleware stack
 from app.security_middleware import SecurityMiddlewareManager
@@ -199,6 +225,32 @@ SecurityMiddlewareManager.create_middleware_stack(app, {
 
 # Add resilience middleware
 app.middleware("http")(graceful_error_handler)
+
+# Request ID tracing middleware
+@app.middleware("http")
+async def add_request_id(request: Request, call_next):
+    request_id = str(uuid.uuid4())
+    request.state.request_id = request_id
+    response = await call_next(request)
+    response.headers["X-Request-ID"] = request_id
+    return response
+
+# Request size limiting middleware (10MB max)
+@app.middleware("http")
+async def check_request_size(request: Request, call_next):
+    max_size = 10 * 1024 * 1024  # 10MB
+    content_length = request.headers.get("content-length")
+    if content_length:
+        try:
+            if int(content_length) > max_size:
+                return JSONResponse(
+                    status_code=413,
+                    content={"error": "Request body too large", "max_size_mb": 10}
+                )
+        except ValueError:  # pragma: no cover - defensive, header invalid
+            pass
+    response = await call_next(request)
+    return response
 
 # Add CORS middleware for production deployments
 app.add_middleware(
@@ -257,6 +309,113 @@ async def health() -> Dict[str, Any]:
         "loaded_rules": int(len(rules_store)),
         "version": __version__
     }
+
+
+@app.get(
+    "/health/detailed",
+    summary="Detailed System Diagnostics",
+    description="Expanded health diagnostics including telemetry, audit chain, and token quota status.",
+    tags=["System Health"],
+)
+async def detailed_health(request: Request) -> Dict[str, Any]:
+    """Provide deep diagnostics for operators and SREs."""
+    from app.__version__ import __version__
+
+    issues: List[str] = []
+    response: Dict[str, Any] = {
+        "status": "ok",
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "version": __version__,
+        "environment": config.app.env,
+        "shadow_mode": SHADOW_MODE,
+        "rules_loaded": len(rules_store),
+        "request_id": getattr(request.state, "request_id", None),
+    }
+
+    if response["rules_loaded"] == 0:
+        issues.append("rules_not_loaded")
+
+    # Configuration snapshot (best effort)
+    try:
+        current_cfg: Config = get_current_config()
+        response["config"] = {
+            "rules_path": str(current_cfg.app.rules_path),
+            "shadow_mode": current_cfg.app.shadow_mode,
+            "api_keys_configured": len(getattr(current_cfg.app, "api_keys", [])),
+        }
+    except Exception as exc:  # pragma: no cover - defensive diagnostic
+        response["config_error"] = str(exc)
+        issues.append("config_unavailable")
+
+    # Audit chain verification (lightweight integrity check)
+    try:
+        audit_status = verify_audit_chain()
+        response["audit"] = audit_status
+        if not audit_status.get("valid", False):
+            issues.append("audit_chain_invalid")
+    except Exception as exc:  # pragma: no cover - defensive diagnostic
+        response["audit"] = {"valid": False, "error": str(exc)}
+        issues.append("audit_chain_error")
+
+    # Token quota and limiter status
+    try:
+        from app.token_limiter import token_limiter, TIKTOKEN_AVAILABLE
+
+        default_quota = token_limiter.default_quota
+        response["token_rate_limiter"] = {
+            "default_quota": {
+                "tokens_per_minute": default_quota.tokens_per_minute,
+                "tokens_per_hour": default_quota.tokens_per_hour,
+                "tokens_per_day": default_quota.tokens_per_day,
+            },
+            "tracked_api_keys": len(token_limiter.usage),
+            "tiktoken_available": bool(token_limiter.encoding),
+            "estimation_mode": "tiktoken" if TIKTOKEN_AVAILABLE and token_limiter.encoding else "character",
+        }
+    except Exception as exc:  # pragma: no cover - defensive diagnostic
+        response["token_rate_limiter"] = {"status": "error", "error": str(exc)}
+        issues.append("token_limiter_unavailable")
+
+    # Telemetry and alerts snapshot
+    try:
+        telemetry_snapshot = telemetry.snapshot_counters()
+        with telemetry.lock:
+            queued_events = len(telemetry.events)
+            forwarders = [type(f).__name__ for f in telemetry.forwarders]
+        response["telemetry"] = {
+            "queued_events": queued_events,
+            "forwarders": forwarders,
+            "counters": telemetry_snapshot,
+        }
+    except Exception as exc:  # pragma: no cover - defensive diagnostic
+        response["telemetry"] = {"status": "error", "error": str(exc)}
+        issues.append("telemetry_unavailable")
+
+    # Semantic cache status
+    try:
+        semantic_metrics = get_semantic_cache_metrics()
+        response["semantic_cache"] = semantic_metrics
+        if semantic_metrics.get("enabled") and not semantic_metrics.get("available"):
+            issues.append("semantic_cache_unavailable")
+    except Exception as exc:  # pragma: no cover - defensive diagnostic
+        response["semantic_cache"] = {"status": "error", "error": str(exc)}
+        issues.append("semantic_cache_error")
+
+    # Gateway metrics snapshot (convert defaultdicts for JSON)
+    response["metrics"] = {
+        "totals": dict(METRICS_TOTALS),
+        "rules": dict(METRICS_RULES),
+        "shadow": dict(METRICS_SHADOW),
+        "endpoints": dict(METRICS_ENDPOINTS),
+        "directions": dict(METRICS_DIRECTIONS),
+        "recent_decisions": list(RECENT_DECISIONS),
+    }
+
+    if issues:
+        response["status"] = "degraded"
+        response["issues"] = issues
+
+    return response
 
 
 @app.get("/ready")
@@ -465,12 +624,17 @@ async def admin_security_status(request: Request) -> Dict[str, Any]:
         redactor = get_redactor()
         current_config = get_current_config()
         
+        pii_flag = getattr(current_config.security, "pii_processing", None)
+        if pii_flag is None:
+            pii_flag = getattr(current_config.app, "use_pii", False)
+        pii_processing = pii_flag if isinstance(pii_flag, bool) else bool(pii_flag)
+
         return {
             "rbac_status": rbac.get_rbac_status(),
             "redaction_summary": redactor.get_redaction_summary(),
             "security_config": {
                 "rbac_enabled": current_config.security.rbac_enabled,
-                "pii_processing": current_config.app.use_pii,
+                "pii_processing": pii_processing,
                 "tls_verification": {
                     "splunk": current_config.siem.splunk.verify_tls,
                     "elastic": current_config.siem.elastic.verify_tls
@@ -506,6 +670,8 @@ def apply_shadow_logic(decision: str, rule_ids: list) -> tuple:
     Returns:
         tuple: (original_decision, effective_decision)
     """
+    config = get_current_config()
+    
     # Check if any rule is in shadow_overrides
     enforce_even_in_shadow = any(r in config.app.shadow_overrides for r in rule_ids)
 
@@ -647,6 +813,23 @@ async def evaluate_text(request: EvaluateRequest):
     if api_key != os.environ.get("JIMINI_API_KEY", "changeme"):
         raise HTTPException(status_code=401, detail="Invalid API key")
 
+    # Check token quota before expensive LLM operations
+    from app.token_limiter import token_limiter
+    estimated_tokens = token_limiter.estimate_prompt_tokens(request.text)
+    quota_allowed, quota_reason = token_limiter.check_quota(api_key, estimated_tokens)
+    
+    if not quota_allowed:
+        # Return 429 with quota information
+        raise HTTPException(
+            status_code=429,
+            detail={
+                "error": "token_quota_exceeded",
+                "message": quota_reason,
+                "estimated_tokens": estimated_tokens,
+                "usage": token_limiter.get_usage_stats(api_key)
+            }
+        )
+
     # Get current configuration
     cfg = get_current_config()
     
@@ -671,9 +854,12 @@ async def evaluate_text(request: EvaluateRequest):
         rules_dict[rule.id] = (rule, compiled_regex)
 
     # Phase 6B: Enhanced evaluation with risk assessment
+    redacted_text = None  # Initialize to None
+    risk_assessment = None  # Initialize to None
+    
     try:
         from app.enforcement import evaluate_with_risk_assessment
-        decision, rule_ids, enforce_even_in_shadow, risk_assessment = evaluate_with_risk_assessment(
+        decision, rule_ids, enforce_even_in_shadow, redacted_text, risk_assessment = evaluate_with_risk_assessment(
             text=request.text,
             agent_id=request.agent_id or "api",
             rules_store=rules_dict,
@@ -682,10 +868,10 @@ async def evaluate_text(request: EvaluateRequest):
             user_id=getattr(request, 'user_id', None),
             request_id=request_id
         )
-    except ImportError:
+    except (ImportError, ValueError):
         # Fallback to standard evaluation if risk scoring not available
         from app.enforcement import evaluate
-        decision, rule_ids, enforce_even_in_shadow = evaluate(
+        decision, rule_ids, enforce_even_in_shadow, redacted_text = evaluate(
             text=request.text,
             agent_id=request.agent_id or "api",
             rules_store=rules_dict,
@@ -751,10 +937,15 @@ async def evaluate_text(request: EvaluateRequest):
     # Make sure we call flush to ensure events are written
     telemetry.flush()
 
+    # Record token usage for this request (using estimated tokens for now)
+    # In production, this would record actual tokens from LLM response
+    token_limiter.record_usage(api_key, prompt_tokens=estimated_tokens, completion_tokens=0)
+
     # Construct response with shadow mode info and Phase 6B risk assessment
     response = EvaluateResponse(
         action=effective_decision.lower(),  # Convert back to lowercase for API consistency
         rule_ids=rule_ids,
+        redacted_text=redacted_text,  # Include redacted text if redaction was applied
         message=f"Evaluation completed. Decision: {effective_decision}",
     )
     
@@ -1074,6 +1265,81 @@ async def metrics() -> Dict[str, Any]:
         "directions": dict(METRICS_DIRECTIONS),
         "recent": list(RECENT_DECISIONS),
         "loaded_rules": len(rules_store),
+        "semantic_cache": get_semantic_cache_metrics(),
+    }
+
+
+@app.get(
+    "/v1/token-usage/{api_key}",
+    summary="Get Token Usage Statistics",
+    description="Get current token consumption and quota information for an API key. Includes TPM, hourly, and daily usage.",
+    responses={
+        200: {
+            "description": "Token usage statistics",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "api_key": "changeme",
+                        "current_usage": {
+                            "tokens_last_minute": 150,
+                            "tokens_last_hour": 5000,
+                            "tokens_last_day": 45000
+                        },
+                        "quota": {
+                            "tokens_per_minute": 10000,
+                            "tokens_per_hour": 500000,
+                            "tokens_per_day": 10000000
+                        },
+                        "remaining": {
+                            "minute": 9850,
+                            "hour": 495000,
+                            "day": 9955000
+                        },
+                        "utilization": {
+                            "minute_pct": 1.5,
+                            "hour_pct": 1.0,
+                            "day_pct": 0.45
+                        }
+                    }
+                }
+            }
+        },
+        404: {"description": "No usage data for this API key"}
+    },
+    tags=["Token Management"]
+)
+async def get_token_usage(api_key: str):
+    """Get token usage statistics for a specific API key."""
+    from app.token_limiter import token_limiter
+    
+    usage_stats = token_limiter.get_usage_stats(api_key)
+    
+    # Return 404 if no usage data
+    if usage_stats["total_requests"] == 0:
+        raise HTTPException(status_code=404, detail="No usage data for this API key")
+    
+    return usage_stats
+
+
+@app.get(
+    "/v1/token-usage",
+    summary="Get All Token Usage Statistics",
+    description="Get token usage for all API keys (admin endpoint)",
+    responses={
+        200: {
+            "description": "Token usage for all API keys",
+        }
+    },
+    tags=["Token Management"]
+)
+async def get_all_token_usage():
+    """Get token usage statistics for all API keys."""
+    from app.token_limiter import token_limiter
+    
+    return {
+        "total_api_keys": len(token_limiter.usage),
+        "usage_by_key": token_limiter.get_all_usage_stats(),
+        "timestamp": datetime.now(timezone.utc).isoformat()
     }
 
 

@@ -204,7 +204,7 @@ def cmd_lint(args):
 def cmd_test(args):
     try:
         store = _load_store(args)
-        decision, rule_ids, enforce_even_in_shadow = evaluate(
+        decision, rule_ids, enforce_even_in_shadow, redacted_text = evaluate(
             text=args.text,
             agent_id=args.agent_id,
             rules_store=store,
@@ -215,6 +215,7 @@ def cmd_test(args):
         payload = {
             "decision": decision,
             "rule_ids": rule_ids,
+            "redacted_text": redacted_text,
             "shadow": bool(args.shadow),
             "enforce_even_in_shadow": enforce_even_in_shadow,
         }

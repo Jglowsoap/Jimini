@@ -10,7 +10,10 @@ PACK_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "packs"
 def _load_yaml(path: str):
     with open(path, "r") as f:
         raw = yaml.safe_load(f) or {}
-    return raw.get("rules", raw if isinstance(raw, list) else [])
+    # Handle both dict with "rules" key and direct list
+    if isinstance(raw, list):
+        return raw
+    return raw.get("rules", [])
 
 
 def load_rules_from_file(path: str) -> Dict[str, Tuple[Rule, object]]:

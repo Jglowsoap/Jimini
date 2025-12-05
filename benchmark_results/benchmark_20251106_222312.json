@@ -1,0 +1,124 @@
+{
+  "suite_name": "jimini_performance_benchmark",
+  "start_time": "2025-11-06T22:20:12.539394",
+  "tests": {
+    "standard_load": {
+      "metrics": {
+        "total_requests": 25450,
+        "successful_requests": 0,
+        "failed_requests": 25450,
+        "avg_latency_ms": 7.044227502669239,
+        "p50_latency_ms": 5.901336669921875,
+        "p95_latency_ms": 15.900611877441406,
+        "p99_latency_ms": 26.886463165283203,
+        "throughput_rps": 423.809409461471,
+        "error_rate": 1.0,
+        "start_time": "2025-11-06 22:20:12.539536",
+        "end_time": "2025-11-06 22:21:12.590114"
+      },
+      "budget_validation": {
+        "passed": false,
+        "violations": [
+          {
+            "metric": "throughput_rps",
+            "actual": 423.809409461471,
+            "budget": 500.0,
+            "severity": "critical"
+          },
+          {
+            "metric": "error_rate",
+            "actual": 1.0,
+            "budget": 0.01,
+            "severity": "critical"
+          }
+        ],
+        "score": 0.0,
+        "timestamp": "2025-11-06T22:21:12.627953"
+      }
+    },
+    "burst_test": {
+      "metrics": {
+        "total_requests": 18369,
+        "successful_requests": 0,
+        "failed_requests": 18369,
+        "avg_latency_ms": 48.292456561527835,
+        "p50_latency_ms": 45.57657241821289,
+        "p95_latency_ms": 111.71293258666992,
+        "p99_latency_ms": 262.6309394836426,
+        "throughput_rps": 610.0199690297554,
+        "error_rate": 1.0,
+        "start_time": "2025-11-06 22:21:12.628344",
+        "end_time": "2025-11-06 22:21:42.740473"
+      }
+    },
+    "chaos_degradation": {
+      "test_name": "service_degradation",
+      "start_time": "2025-11-06T22:21:42.759706",
+      "scenarios": [
+        {
+          "name": "baseline",
+          "metrics": {
+            "total_requests": 2784,
+            "successful_requests": 0,
+            "failed_requests": 2784,
+            "avg_latency_ms": 6.054325692955104,
+            "p50_latency_ms": 5.412459373474121,
+            "p95_latency_ms": 11.038064956665039,
+            "p99_latency_ms": 15.522241592407227,
+            "throughput_rps": 92.65794301895953,
+            "error_rate": 1.0,
+            "start_time": "2025-11-06 22:21:42.759839",
+            "end_time": "2025-11-06 22:22:12.805833"
+          }
+        },
+        {
+          "name": "llm_failure",
+          "metrics": {
+            "total_requests": 2803,
+            "successful_requests": 0,
+            "failed_requests": 2803,
+            "avg_latency_ms": 5.644787306280337,
+            "p50_latency_ms": 5.173683166503906,
+            "p95_latency_ms": 8.771657943725586,
+            "p99_latency_ms": 15.003442764282227,
+            "throughput_rps": 93.2632584552144,
+            "error_rate": 1.0,
+            "start_time": "2025-11-06 22:22:12.808963",
+            "end_time": "2025-11-06 22:22:42.863671"
+          },
+          "degradation_analysis": {
+            "throughput_loss_percent": -0.6532795964734625,
+            "latency_increase_percent": -20.53264790375186,
+            "acceptable": true
+          }
+        },
+        {
+          "name": "siem_failure",
+          "metrics": {
+            "total_requests": 2775,
+            "successful_requests": 0,
+            "failed_requests": 2775,
+            "avg_latency_ms": 6.420842419873487,
+            "p50_latency_ms": 6.561756134033203,
+            "p95_latency_ms": 10.258197784423828,
+            "p99_latency_ms": 14.128446578979492,
+            "throughput_rps": 92.21039481301078,
+            "error_rate": 1.0,
+            "start_time": "2025-11-06 22:22:42.866859",
+            "end_time": "2025-11-06 22:23:12.961080"
+          },
+          "degradation_analysis": {
+            "throughput_loss_percent": 0.4830111605835804,
+            "latency_increase_percent": -7.065252608160357,
+            "acceptable": true
+          }
+        }
+      ],
+      "end_time": "2025-11-06T22:23:12.964129",
+      "status": "completed"
+    }
+  },
+  "end_time": "2025-11-06T22:23:12.964275",
+  "overall_passed": false,
+  "performance_score": 0.0
+}

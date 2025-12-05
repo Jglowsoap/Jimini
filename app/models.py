@@ -1,5 +1,5 @@
 from enum import Enum
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 from typing import List, Literal, Optional, Dict, Any, Pattern
 from datetime import datetime
 
@@ -8,19 +8,21 @@ class Action(str, Enum):
     BLOCK = "block"
     FLAG = "flag"
     ALLOW = "allow"
+    REDACT = "redact"
 
 
 class Rule(BaseModel):
     id: str
     title: str
     severity: str
+    category: Optional[str] = None  # e.g., pii, toxicity, injection, secrets, hallucination
     pattern: Optional[str] = None
     min_count: Optional[int] = 1
     max_chars: Optional[int] = None
     llm_prompt: Optional[str] = None
     applies_to: Optional[List[str]] = None
     endpoints: Optional[List[str]] = None
-    action: Literal["block", "flag", "allow"]
+    action: Literal["block", "flag", "allow", "redact"]
     shadow_override: Optional[Literal["enforce"]] = None
 
     # Runtime fields (not in YAML)
@@ -32,19 +34,49 @@ class Rule(BaseModel):
 
 
 class EvaluateRequest(BaseModel):
-    api_key: str
+    api_key: str = "changeme"
     text: str
     endpoint: str
     direction: str
     agent_id: Optional[str] = None
+    user_id: Optional[str] = None
     metadata: Optional[Dict[str, Any]] = None
     request_id: Optional[str] = None  # Added for unique request tracking
 
 
 class EvaluateResponse(BaseModel):
-    action: Literal["block", "flag", "allow"]
-    rule_ids: List[str] = []
+    success: bool = True
+    decision: Optional[Literal["block", "flag", "allow", "redact"]] = None
+    action: Optional[Literal["block", "flag", "allow", "redact"]] = None
+    rule_ids: List[str] = Field(default_factory=list)
+    redacted_text: Optional[str] = None  # Only set if redaction occurred
     message: str = ""
+    risk_score: Optional[float] = None
+    risk_level: Optional[str] = None
+    behavior_pattern: Optional[str] = None
+    confidence: Optional[float] = None
+    contributing_factors: Optional[List[str]] = None
+    recommended_action: Optional[str] = None
+    adaptive_threshold: Optional[float] = None
+
+    @model_validator(mode="after")
+    def _synchronise_decision_action(cls, values: "EvaluateResponse") -> "EvaluateResponse":
+        decision = values.decision
+        action = values.action
+
+        if decision is None and action is None:
+            values.decision = values.action = "allow"
+        elif decision is None:
+            values.decision = action
+        elif action is None:
+            values.action = decision
+
+        return values
+
+    @property
+    def outcome(self) -> str:
+        """Backwards compatible alias for the policy decision."""
+        return self.action  # type: ignore[return-value]
 
 
 class AuditRecord(BaseModel):
@@ -57,13 +89,14 @@ class RuleCreateRequest(BaseModel):
     id: str
     title: str
     severity: str
+    category: Optional[str] = None
     pattern: Optional[str] = None
     min_count: Optional[int] = 1
     max_chars: Optional[int] = None
     llm_prompt: Optional[str] = None
     applies_to: Optional[List[str]] = None
     endpoints: Optional[List[str]] = None
-    action: Literal["block", "flag", "allow"]
+    action: Literal["block", "flag", "allow", "redact"]
     shadow_override: Optional[Literal["enforce"]] = None
 
 
@@ -71,13 +104,14 @@ class RuleUpdateRequest(BaseModel):
     """Request model for updating an existing rule"""
     title: Optional[str] = None
     severity: Optional[str] = None
+    category: Optional[str] = None
     pattern: Optional[str] = None
     min_count: Optional[int] = None
     max_chars: Optional[int] = None
     llm_prompt: Optional[str] = None
     applies_to: Optional[List[str]] = None
     endpoints: Optional[List[str]] = None
-    action: Optional[Literal["block", "flag", "allow"]] = None
+    action: Optional[Literal["block", "flag", "allow", "redact"]] = None
     shadow_override: Optional[Literal["enforce"]] = None
 
 

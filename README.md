@@ -1,403 +1,163 @@
-# Jimini 🔒
+# Jimini
 
-[![CI](https://github.com/Jglowsoap/Jimini/actions/workflows/ci.yml/badge.svg)](https://github.com/Jglowsoap/Jimini/actions/workflows/ci.yml)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
+Jimini is a FastAPI gateway that evaluates unstructured text against policy rules before the content leaves or enters an AI system. It provides deterministic blocking and flagging based on regex patterns and optional LLM checks, keeps a tamper-evident audit trail, and exposes metrics for observability.
 
-**AI Policy Enforcement Gateway with Enterprise Security & Compliance**
+**🆕 Enterprise Trust Layer**: Jimini now includes Einstein Trust-inspired features for PII protection, prompt injection defense, and content moderation. See [TRUST_LAYER.md](TRUST_LAYER.md) for the full comparison with Salesforce Einstein, AWS Bedrock, and Azure AI Content Safety.
 
-Jimini is a lightweight, production-ready AI governance gateway that provides policy enforcement, security controls, and compliance features for AI applications. It acts as an intelligent firewall between your AI agents and external systems.
+## Project Highlights
 
-## 🚀 Key Features
+- **Policy engine** with precedence ordering (block > redact > flag > allow) and shadow-mode downgrades
+- **Einstein Trust Pack**: Pre-built rules for PII detection, prompt injection, toxicity filtering, and hallucination checking
+- **PII Redaction**: New `action: redact` automatically masks sensitive data with `[REDACTED]`
+- **Rule Categories**: Organize rules by type (pii, secrets, injection, toxicity, hallucination) for better management
+- **Rules-as-code** stored in YAML (`policy_rules.yaml` and packs under `packs/`)
+- **Hot-reloading** rules loader and optional semantic cache for repeated evaluations
+- **SHA3-256 linked audit log** with verification endpoint and CLI tooling
+- **Token quota manager** with tiktoken-backed estimations and usage endpoints
+- **CLI utilities** for linting rules, running local gateways, and verifying audit chains
 
-### 🔐 **Enterprise Security & Compliance**
-- **PII Redaction**: Automated detection and redaction of sensitive data (emails, tokens, SSNs, etc.)
-- **RBAC Authentication**: Role-based access control with JWT tokens  
-- **Audit Chain**: Tamper-evident SHA-3 256 hash-chained audit logging
-- **Compliance Ready**: GDPR, HIPAA, PCI, CJIS policy pack support
+## Quick Links
 
-### 🛡️ **Policy Enforcement Engine** 
-- **Rules-as-Code**: YAML-based policy definitions with regex, thresholds, and LLM checks
-- **Deterministic Decisions**: Clear precedence (block > flag > allow) with explainable outcomes
-- **Endpoint Scoping**: Direction-aware rules (request/response) with endpoint filtering
-- **Shadow Mode**: Safe deployment with override capabilities per rule
+- **[Trust Layer Documentation](TRUST_LAYER.md)** - Einstein-style AI governance features
+- **[Einstein Trust Rule Pack](packs/einstein-trust/v1.yaml)** - Pre-built PII, injection, and toxicity rules
+- **[Architecture Guide](ARCHITECTURE.md)** - Technical deep-dive
+- **[Deployment Guide](DEPLOYMENT.md)** - Production deployment patterns
 
-### 📊 **Observability & Monitoring**
-- **Real-time Metrics**: Request counters, decision tracking, performance monitoring
-- **OpenTelemetry Integration**: Distributed tracing and telemetry export
-- **SARIF Export**: SIEM-compatible audit logs for security tooling
-- **Circuit Breakers**: Resilient error handling with automatic recovery
+## Architecture At A Glance
 
-### 🔧 **Developer Experience**
-- **CLI Tools**: Rule linting, testing, and local gateway management
-- **Hot Reloading**: Dynamic rule updates without service restart
-- **Multiple Integrations**: Splunk, Elasticsearch, Slack webhooks
-- **Comprehensive APIs**: REST endpoints with OpenAPI documentation
+- `app/main.py`: FastAPI application exposing `/v1/evaluate`, metrics, audit, and health endpoints with middleware for request limits and tracing.
+- `app/enforcement.py`: Core evaluation logic that normalises direction, filters by endpoint, executes regex/threshold checks, calls optional LLM prompts, applies redaction, and records `AuditRecord`s.
+- `app/rules_loader.py`: Loads YAML rules, compiles regex patterns, hot-reloads on change, and manages shared `rules_store` plus token quota configuration.
+- `app/models.py`: Pydantic models for requests, responses, rules, and audit entries. Supports `redact` action and rule categories.
+- `app/audit.py`: JSONL audit writer that maintains a tamper-evident hash chain and exposes verification helpers.
+- `app/telemetry.py`: Simple telemetry bus with optional OTEL export and webhook alerts for block or high-risk events.
+- `app/semantic_cache.py`: Optional Redis-based semantic cache for LLM results (disabled when dependencies are missing).
+- `jimini_cli/`: Command line entry points for linting/testing rules and operating the audit chain.
+- `packs/`: Pre-built rule collections (CJIS, HIPAA, PCI-DSS, Einstein Trust, etc.)
 
-## � Quick Deploy to Replit
+## Getting Started
 
-**1-Click Deployment - Storage Optimized (Under 100MB)**
+### Prerequisites
 
-[![Deploy to Replit](https://replit.com/badge/github/Jglowsoap/Jimini)](https://replit.com/new/github/Jglowsoap/Jimini)
-
-1. Fork this repo to Replit
-2. Click "Run" 
-3. Your API is live at: `https://your-repl.your-username.repl.co/v1/evaluate`
-
-**📋 [Complete Deployment Guide](DEPLOYMENT.md)** - Replit, Docker, Cloud options
-
-## �📝 **Policy Rules Guide**
-
-### **Rule Creation Workflow**
-
-Jimini uses **GitHub-based rule management** for security, version control, and team collaboration:
-
-```mermaid
-graph LR
-    A[Edit policy_rules.yaml] --> B[Commit to GitHub]
-    B --> C[Auto-sync to Replit]  
-    C --> D[Restart Jimini]
-    D --> E[Rules Active]
-```
-
-**✅ Advantages:**
-- **Version Control**: Full history of rule changes
-- **Code Review**: Team approval before critical rules
-- **Rollback**: Easy revert of problematic rules
-- **Security**: No live editing reduces attack surface
-- **Audit**: Git log provides compliance trail
-
-### **Rule Syntax & Examples**
-
-#### **Basic Pattern Rule (Regex)**
-```yaml
-rules:
-  - id: "SSN-1.0"
-    title: "Social Security Number Detection"
-    text: "Block full SSN patterns"
-    pattern: '\b\d{3}-\d{2}-\d{4}\b'
-    severity: "error"
-    action: "block"
-    tags: ["PII", "personal_data"]
-```
-
-#### **LLM-Based Rule (OpenAI Integration)**
-```yaml
-  - id: "HALLUC-1.0" 
-    title: "AI Hallucination Check"
-    text: "Flag potential AI hallucinations"
-    llm_prompt: "Does this text contain factual errors or hallucinations? Answer yes/no and explain."
-    severity: "warning"
-    action: "flag"
-    tags: ["ai_safety", "content_quality"]
-```
-
-#### **Advanced Rule with Scoping**
-```yaml
-  - id: "GITHUB-TOKEN-1.0"
-    title: "GitHub API Token"
-    text: "Block GitHub personal access tokens"
-    pattern: '\bgh[pousr]_[A-Za-z0-9_]{36}\b'
-    applies_to: ["outbound"]
-    endpoints: ["/api/export/*", "/integrations/*"]
-    action: "block"
-    shadow_override: "enforce"  # Always enforce, even in shadow mode
-```
-
-#### **Threshold-Based Rule**  
-```yaml
-  - id: "BULK-EMAIL-1.0"
-    title: "Bulk Email Detection"
-    text: "Flag multiple email addresses"
-    pattern: '\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b'
-    min_count: 3  # Trigger only if 3+ matches
-    action: "flag"
-```
-
-### **Rule Properties Reference**
-
-| Property | Type | Required | Description |
-|----------|------|----------|-------------|
-| `id` | string | ✅ | Unique rule identifier |
-| `title` | string | ✅ | Human-readable rule name |
-| `text` | string | ✅ | Rule description |
-| `pattern` | regex | ⚪ | Regular expression pattern |
-| `llm_prompt` | string | ⚪ | OpenAI prompt for LLM checks |
-| `min_count` | int | ⚪ | Minimum matches to trigger |
-| `max_chars` | int | ⚪ | Character limit threshold |
-| `action` | enum | ✅ | `block`, `flag`, or `allow` |
-| `severity` | enum | ✅ | `error`, `warning`, `info` |
-| `applies_to` | array | ⚪ | `["inbound"]`, `["outbound"]`, or both |
-| `endpoints` | array | ⚪ | Endpoint patterns to match |
-| `tags` | array | ⚪ | Categorization tags |
-| `shadow_override` | string | ⚪ | `"enforce"` to bypass shadow mode |
-
-### **Testing Your Rules**
-
-#### **1. Rule Validation**
-```bash
-# Lint rule syntax
-jimini lint --rules policy_rules.yaml
-
-# Test against sample text
-jimini test --rules policy_rules.yaml --text "SSN: 123-45-6789"
-```
-
-#### **2. Live Testing (API)**
-```bash
-# Test SSN detection
-curl -X POST "http://localhost:5000/v1/evaluate" \
-  -H "Content-Type: application/json" \
-  -d '{"api_key": "changeme", "text": "Patient SSN: 987-65-4321"}'
-
-# Expected: {"action": "block", "rule_ids": ["SSN-1.0"]}
-```
-
-#### **3. LLM Rule Testing**
-```bash
-# Test hallucination detection (requires OPENAI_API_KEY)
-curl -X POST "http://localhost:5000/v1/evaluate" \
-  -H "Content-Type: application/json" \
-  -d '{"api_key": "changeme", "text": "The Eiffel Tower is in London"}'
-
-# Expected: {"action": "flag", "rule_ids": ["HALLUC-1.0"]}
-
-# Test multiple false statements
-curl -X POST "http://localhost:5000/v1/evaluate" \
-  -H "Content-Type: application/json" \
-  -d '{"api_key": "changeme", "text": "Abraham Lincoln was the first president of France"}'
-
-# Expected: {"action": "flag", "rule_ids": ["HALLUC-1.0"]}
-```
-
-#### **4. Real-World Test Results** ✅
-
-**Based on successful Replit deployment testing:**
-
-| Test Input | Expected Result | Rules Triggered | Status |
-|------------|----------------|-----------------|---------|
-| `"Patient appointment scheduled..."` | ✅ Allow | None | ✅ Pass |
-| `"Patient SSN: 987-65-4321"` | 🚫 Block | IL-AI-4.2, HALLUC-1.0 | ✅ Pass |
-| `"API key: sk-proj-..."` | ⚠️ Flag | API-1.0, HALLUC-1.0 | ✅ Pass |  
-| `"Eiffel Tower is in London"` | ⚠️ Flag | HALLUC-1.0 | ✅ Pass |
-| `"Paris is capital of France"` | ✅ Allow | None | ✅ Pass |
-
-**💡 Key Insights:**
-- **Multi-layer Detection**: Some content triggers both pattern AND LLM rules
-- **Smart LLM**: OpenAI correctly identifies factual vs. false statements
-- **Performance**: All tests complete in <200ms including LLM calls
-
-### **Built-in Rule Packs**
-
-Jimini includes **22 production-ready rules** in `policy_rules.yaml`:
-
-#### **🏛️ Government & Compliance**
-- **Illinois AI Act** (`IL-AI-4.2`) - SSN detection per state requirements
-- **CJIS** - Criminal Justice Information Services compliance
-- **HIPAA** - Healthcare data protection rules  
-- **PCI** - Payment Card Industry standards
-
-#### **🔐 Security & Secrets**
-- **API Keys** (`API-1.0`) - Generic API key patterns
-- **GitHub Tokens** (`GITHUB-TOKEN-1.0`) - Personal access tokens
-- **OpenAI Keys** (`OPENAI-KEY-1.0`) - OpenAI API keys
-- **JWT Tokens** (`JWT-1.0`) - JSON Web Token detection
-
-#### **👤 PII Protection**
-- **Email Addresses** (`EMAIL-1.0`) - Standard email patterns
-- **Phone Numbers** (`PHONE-1.0`) - US phone number formats  
-- **Credit Cards** (`CC-1.0`) - Credit card number patterns
-- **Fingerprint Data** (`FINGERPRINT-1.0`) - Biometric hash patterns
-
-#### **🤖 AI Safety**
-- **Hallucination Check** (`HALLUC-1.0`) - LLM-powered fact verification
-- **Prompt Injection** (`PROMPT-INJ-1.0`) - Malicious prompt detection
-
-### **Rule Development Best Practices**
-
-#### **1. Start with Shadow Mode**
-```yaml
-# Test new rules safely
-export JIMINI_SHADOW=1
-
-# Or override per-rule
-shadow_override: "enforce"  # Force enforcement for critical rules
-```
-
-#### **2. Use Specific Patterns**
-```yaml
-# ❌ Too broad
-pattern: '\b\d+\b'
-
-# ✅ Specific and targeted  
-pattern: '\b\d{3}-\d{2}-\d{4}\b'  # SSN format
-```
-
-#### **3. Scope Appropriately**
-```yaml
-# Limit rule scope to reduce false positives
-applies_to: ["outbound"]  # Only check outgoing data
-endpoints: ["/api/export/*"]  # Only specific endpoints
-```
-
-#### **4. Layer Security**
-```yaml
-# Combine regex + LLM for defense-in-depth
-rules:
-  - id: "SECRET-COMBO-1.0"
-    pattern: '\bapi[_-]?key\b.*[A-Za-z0-9]{20,}'  # Pattern match
-    llm_prompt: "Does this contain an API key or secret?"  # LLM verification
-```
-
-### **Production Deployment**
-
-#### **✅ Verified Working Configuration**
-
-**Current successful setup** (tested on Replit):
-
-```yaml
-# Environment Variables (Replit Secrets)
-API_KEY=changeme123  # Gateway authentication
-RULES_PATH=policy_rules.yaml  # 22 active rules
-JIMINI_SHADOW=1  # Shadow mode for safe testing
-OPENAI_API_KEY=sk-your-key  # Enables LLM-based rules
-
-# Server Configuration  
-Port: 5000  # Replit standard
-Entry: uvicorn app.main:app --host 0.0.0.0 --port 5000
-Rules: 22 loaded successfully
-LLM: OpenAI integration active
-```
-
-**✅ Confirmed Working Features:**
-- **Pattern Detection**: SSN, email, API keys, tokens
-- **LLM Analysis**: Hallucination detection via OpenAI
-- **Multi-layer Security**: Combined pattern + LLM rules
-- **Real-time Metrics**: Performance and rule trigger tracking  
-- **Audit Logging**: Tamper-evident decision records
-- **Shadow Mode**: Safe testing with selective enforcement
-
-#### **Rule Management Pipeline**
-```bash
-# 1. Development
-git checkout -b feature/new-pii-rule
-# Edit policy_rules.yaml
-jimini lint --rules policy_rules.yaml
-
-# 2. Testing  
-git commit -m "Add new PII detection rule"
-jimini test --rule-pack pii --text "test data"
-
-# 3. Review & Deploy
-git push origin feature/new-pii-rule
-# Create PR → Review → Merge to main
-# Auto-deploys to Replit → Restart Jimini
-```
-
-#### **Monitoring Rule Performance**
-```bash
-# View rule metrics
-curl -s http://localhost:5000/v1/metrics | jq '.rules'
-
-# Check audit logs  
-curl -s http://localhost:5000/v1/audit/verify
-
-# SARIF export for SIEM
-curl -s http://localhost:5000/v1/audit/sarif
-
-# Health status
-curl -s http://localhost:5000/health
-# → {"ok": true, "shadow": true, "loaded_rules": 22}
-```
-
-#### **Government PKI Integration**
-
-**Ready for your state PKI systems:**
-
-```python
-# Example: Connect from LDAP/UMS/ServiceNow
-JIMINI_GATEWAY_URL = "https://your-repl-name.username.repl.co"
-
-def check_citizen_data(data, source_system):
-    response = requests.post(
-        f"{JIMINI_GATEWAY_URL}/v1/evaluate",
-        headers={"Authorization": "Bearer your-secure-key"},
-        json={
-            "text": data, 
-            "endpoint": f"/pki/{source_system}",
-            "direction": "outbound"
-        }
-    )
-    
-    decision = response.json()
-    if decision["action"] == "block":
-        # PII detected - handle securely
-        return {"allowed": False, "reason": "PII protection"}
-    return {"allowed": True}
-```
-
-#### **Enterprise Compliance**
-
-**Built-in compliance frameworks:**
-- **Illinois AI Act**: SSN detection (`IL-AI-4.2`)
-- **CJIS**: Criminal Justice Information (`packs/cjis/v1.yaml`)  
-- **HIPAA**: Healthcare PII (`packs/hipaa/v1.yaml`)
-- **PCI DSS**: Payment data (`packs/pci/v1.yaml`)
-
-**Audit Trail**: SHA-3 256 hash-chained logs for compliance reporting
-
-## 🚀 Quick Start
+- Python 3.10 or newer
+- Redis (optional, required only when `semantic_cache.enabled` is set)
 
 ### Installation
 
 ```bash
-# Install core package
-pip install jimini
-
-# Or install with all features
-pip install jimini[server,security,monitoring]
-
-# Development installation
-git clone https://github.com/jimini-ai/jimini.git
-cd jimini
-pip install -e .[dev,security]
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+pip install -e .
 ```
 
-### Basic Setup
+Run the test suite to confirm dependencies and configuration:
 
-1. **Configure Environment**
 ```bash
-# Required: API authentication
-export JIMINI_API_KEY=your-secret-key
+PYTHONPATH=$PWD pytest -q
+```
 
-# Required: Policy rules
+### Running Locally
+
+```bash
+export JIMINI_API_KEY=changeme
 export JIMINI_RULES_PATH=policy_rules.yaml
-
-# Optional: Enable shadow mode for safe deployment
-export JIMINI_SHADOW=1
+uvicorn app.main:app --host 0.0.0.0 --port 9000 --reload
 ```
 
-2. **Start the Server**
+Sample evaluation:
+
 ```bash
-# Production server
-jimini-server
-
-# Development server with auto-reload
-jimini-uvicorn
-
-# Or use uvicorn directly
-uvicorn app.main:app --host 0.0.0.0 --port 9000
+curl -s http://localhost:9000/v1/evaluate \
+  -H "Content-Type: application/json" \
+  -d '{
+    "api_key": "changeme",
+    "text": "API key sk-test-123",
+    "direction": "outbound",
+    "endpoint": "/demo"
+  }' | jq
 ```
 
-3. **Verify Installation**
+Health and metrics endpoints:
+
+- `GET /health` – basic status and rule count.
+- `GET /health/detailed` – audit-chain, token-quota, and telemetry diagnostics.
+- `GET /v1/metrics` – counters for decisions, endpoints, and semantic cache status.
+
+## Configuration
+
+Jimini reads configuration from environment variables validated by `config/loader.py`.
+
+| Variable | Default | Notes |
+| --- | --- | --- |
+| `JIMINI_API_KEY` | `changeme` | Required for `/v1/evaluate` requests. |
+| `JIMINI_RULES_PATH` | `policy_rules.yaml` | Path to the active rules file. |
+| `JIMINI_SHADOW` | unset | When set to `1`, block/flag decisions become allow unless a rule has `shadow_override: enforce`. |
+| `JIMINI_TOKEN_QUOTAS_PATH` | `token_quotas.yaml` | Tiered quota definitions for the token limiter. |
+| `AUDIT_LOG_PATH` | `logs/audit.jsonl` | Location of the tamper-evident audit log. |
+| `OPENAI_API_KEY` | unset | Enables LLM-backed rules (`llm_prompt`). Rules still execute without it but skip LLM checks. |
+| `OTEL_EXPORTER_OTLP_ENDPOINT` | unset | Enables OpenTelemetry exporting when provided. |
+| `WEBHOOK_URL` | unset | Sends JSON alerts on `block` decisions and `HALLUC-1.0` flags. |
+
+Semantic cache configuration lives in `jimini.config.yaml` under `semantic_cache`. Set `enabled: true` and configure Redis connection fields to activate it.
+
+## Working With Rules
+
+Rules are defined using the `Rule` schema in `app/models.py`. Key properties:
+
+- `pattern`: compiled regex used for fast matching.
+- `min_count`, `max_chars`: threshold controls.
+- `llm_prompt`: optional OpenAI prompt executed when `OPENAI_API_KEY` is set.
+- `applies_to`, `endpoints`: scope requests by direction and path (supports exact, prefix with `/*`, or glob patterns).
+- `shadow_override`: set to `enforce` to bypass global shadow mode.
+
+Hot reload is enabled by default; updates to the YAML file propagate without restarting the server.
+
+### CLI Helpers
+
 ```bash
-# Health check
-curl -s http://localhost:9000/health | jq
-# → {"status": "ok", "shadow_mode": true, "loaded_rules": 26}
+# Validate rule syntax
+jimini lint --rules policy_rules.yaml
 
-# Version information
-jimini-admin version
+# Evaluate sample text against a rules file
+jimini test --rules policy_rules.yaml --text "SSN 123-45-6789" --format table
+
+# Launch the gateway with a custom ruleset
+jimini run-local --rules policy_rules.yaml --shadow
+
+# Verify audit hash chain integrity
+jimini verify-audit
 ```
+
+`jimini_cli/loader.py` also supports built-in packs located in `packs/` (for example `jimini test --rule-pack hipaa`).
+
+## Observability and Audit
+
+- Audit records are appended to `logs/audit.jsonl` with SHA3-256 chaining. The `/v1/audit/verify` endpoint and `jimini verify-audit` confirm integrity.
+- `/v1/audit/sarif` exports recent decisions as SARIF for ingestion into security tooling.
+- Telemetry counters and forwarders are available through `app/telemetry.py`; use `Telemetry.instance().snapshot_counters()` or the CLI telemetry commands for insight.
+- Token usage per API key is exposed via `/v1/token-usage` and `/v1/token-usage/{api_key}`.
+
+## Development Workflow
+
+Lint and tests should match CI:
+
+```bash
+ruff .
+PYTHONPATH=$PWD pytest -q
+```
+
+When adding dependencies, update `pyproject.toml` and run `pip install -e .` to refresh the editable install.
+
+## Additional Documentation
+
+- `ARCHITECTURE.md` – component overview and request flow.
+- `DEPLOYMENT.md` – local, Docker, and container runtime notes.
+- `ADMIN_RUNBOOK.md` – operational tasks for production support.
+
+## License
+
+Distributed under the MIT License. See `LICENSE` for details.
 
 ### First Policy Evaluation
 
