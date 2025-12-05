@@ -65,10 +65,10 @@ Replace `HOST:PORT` with your deployment endpoint (default `localhost:9000`).
 
 ## Operational Tasks
 
-- **Rotate API keys**: generate a new value, update `JIMINI_API_KEY`, and restart instances. Clients must present the new key immediately.
-- **Rule updates**: edit `policy_rules.yaml`, run `jimini lint --rules policy_rules.yaml`, commit changes, and let hot reload pick them up.
-- **Audit log backup**: copy `logs/audit.jsonl` to secure storage. Keep file ordering intact to preserve hash chains.
-- **Telemetry export**: configure `WEBHOOK_URL` or OTEL endpoint environment variables; verify events via `/health/detailed` (`telemetry.forwarders`).
+- Rotate API keys: generate a new value, update `JIMINI_API_KEY`, and restart instances. Clients must present the new key immediately.
+- Rule updates: edit `policy_rules.yaml`, run `jimini lint --rules policy_rules.yaml`, commit changes, and let hot reload pick them up.
+- Audit log backup: copy `logs/audit.jsonl` to secure storage. Keep file ordering intact to preserve hash chains.
+- Telemetry export: configure `WEBHOOK_URL` or OTEL endpoint environment variables; verify events via `/health/detailed` (`telemetry.forwarders`).
 
 ## Useful CLI Commands
 

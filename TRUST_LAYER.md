@@ -1,108 +1,104 @@
 # Jimini Trust Layer
 
-**Lightweight, self-hosted AI governance** inspired by enterprise solutions like Salesforce Einstein Trust Layer, AWS Bedrock Guardrails, and Azure AI Content Safety.
+Lightweight, self-hosted AI governance inspired by enterprise solutions like Salesforce Einstein Trust Layer, AWS Bedrock Guardrails, and Azure AI Content Safety.
 
 ## Overview
 
 Jimini provides policy-as-code enforcement for AI systems, protecting against data leaks, prompt injection, toxic content, and hallucinations. Unlike vendor-locked solutions, Jimini is open-source and runs entirely within your infrastructure.
 
----
-
 ## Core Trust Capabilities
 
-### 🔒 Data Protection
+### Data Protection
 
-**PII Detection & Redaction**
+PII Detection and Redaction
 - Block or redact SSNs, credit cards, phone numbers, emails
 - Pattern-based detection (regex) with zero ML dependencies
 - Support for custom PII types via YAML rules
 
-**Secret Scanning**
+Secret Scanning
 - Detect API keys (GitHub, OpenAI, AWS, Slack, Stripe)
 - Prevent credential leakage in prompts and responses
-- Always-enforced via `shadow_override: enforce`
+- Always-enforced via shadow_override: enforce
 
-**Custom Redaction**
+Custom Redaction
 - Define domain-specific sensitive patterns
-- Automatic `[REDACTED]` replacement in responses
+- Automatic [REDACTED] replacement in responses
 - Rule-based with no data retention
 
-### 🛡️ Prompt Defense
+### Prompt Defense
 
-**Jailbreak Detection**
+Jailbreak Detection
 - Pattern matching for common exploit phrases
 - LLM-based sophisticated attack detection
 - Block instruction override attempts
 
-**Injection Blocking**
+Injection Blocking
 - Detect "ignore previous instructions" patterns
 - Prevent role-playing exploits
 - Block context escape sequences
 
-**System Protection**
+System Protection
 - Enforce boundaries around system prompts
 - Prevent extraction of configurations
 - Rate limiting (roadmap)
 
-### ✅ Content Moderation
+### Content Moderation
 
-**Toxicity Filtering**
+Toxicity Filtering
 - Hate speech and discriminatory language detection
 - Violence and harm prevention
 - NSFW content blocking
 - Offensive language flagging
 
-**Topic Boundaries**
+Topic Boundaries
 - Enforce allowed conversation domains
 - Block prohibited subjects
 - Custom allowlists/blocklists
 
-### 📊 Audit & Compliance
+### Audit and Compliance
 
-**Tamper-Evident Logging**
+Tamper-Evident Logging
 - SHA3-256 blockchain-style audit chain
 - JSONL format for easy parsing
 - Verification CLI tools
 
-**SARIF Export**
+SARIF Export
 - Security findings in industry-standard format
 - Integration with DevSecOps pipelines
 - Categorized by rule type (PII, toxicity, injection)
 
-**Prometheus Metrics**
+Prometheus Metrics
 - Real-time decision counts (block/flag/redact/allow)
 - Latency tracking per endpoint
 - Rule-level granularity
 
-### 🧪 Safe Deployment
+### Safe Deployment
 
-**Shadow Mode**
+Shadow Mode
 - Test policies without blocking production
-- Granular `shadow_override: enforce` for critical rules
+- Granular shadow_override: enforce for critical rules
 - Audit-before-enforce workflow
 
-**Hot Reload**
+Hot Reload
 - Update rules without API restart
 - Zero-downtime policy changes
 - File-based configuration
-
----
 
 ## Architecture Comparison
 
 | Feature | Salesforce Einstein | AWS Bedrock | Azure Content Safety | Jimini |
 |---------|---------------------|-------------|----------------------|--------|
-| **PII Masking** | ✅ Dynamic | ✅ Built-in | ✅ Detection | ✅ Regex + Redact |
-| **Toxicity Detection** | ✅ ML models | ✅ Content filters | ✅ Severity scores | ✅ LLM prompts |
-| **Prompt Injection** | ✅ Defense | ✅ Prompt shields | ✅ Protected material | ✅ Patterns + LLM |
-| **Hallucination Check** | ✅ Grounding | ✅ Citation check | ❌ | ✅ LLM validation |
-| **Zero Retention** | ✅ Contractual | ✅ AWS-managed | ✅ Azure-managed | ✅ Self-hosted |
-| **Audit Trail** | ✅ Salesforce logs | ✅ CloudTrail | ✅ Azure Monitor | ✅ Tamper-evident JSONL |
-| **Shadow Mode** | ✅ Gradual rollout | ❌ | ❌ | ✅ Native |
-| **Rules-as-Code** | ❌ UI-based | ❌ API-based | ❌ API-based | ✅ YAML |
-| **Open Source** | ❌ | ❌ | ❌ | ✅ MIT License |
-| **Self-Hosted** | ❌ | ❌ | ❌ | ✅ Fully on-prem |
-| **Cost** | $$$ Platform | $$$ Per-request | $$$ Per-request | $ Hosting only |
+| PII Masking |  Dynamic |  Built-in |  Detection |  Regex + Redact |
+| Toxicity Detection |  ML models |  Content filters |  Severity scores |  LLM prompts |
+| Prompt Injection |  Defense |  Prompt shields |  Protected material |  Patterns + LLM |
+| Hallucination Check |  Grounding |  Citation check |  |  LLM validation |
+| Zero Retention |  Contractual |  AWS-managed |  Azure-managed |  Self-hosted |
+| Audit Trail |  Salesforce logs |  CloudTrail |  Azure Monitor |  Tamper-evident JSONL |
+| Shadow Mode |  Gradual rollout |  |  |  Native |
+| Rules-as-Code |  UI-based |  API-based |  API-based |  YAML |
+| Open Source |  |  |  |  MIT License |
+| Self-Hosted |  |  |  |  Fully on-prem |
+| Cost | $$$ Platform | $$$ Per-request | $$$ Per-request | $ Hosting only |
 
 ---
 
@@ -230,9 +226,9 @@ export AUDIT_LOG_PATH=logs/audit.jsonl
 
 ### Shadow Mode Behavior
 
-- **Global Shadow**: Set `JIMINI_SHADOW=1` to downgrade all block/flag to allow
-- **Per-Rule Override**: Add `shadow_override: enforce` to critical rules (e.g., PII, secrets)
-- **Testing Workflow**: Run in shadow mode → review audit logs → disable shadow for enforcement
+- Global Shadow: Set `JIMINI_SHADOW=1` to downgrade all block/flag to allow
+- Per-Rule Override: Add `shadow_override: enforce` to critical rules (e.g., PII, secrets)
+- Testing Workflow: Run in shadow mode → review audit logs → disable shadow for enforcement
 
 ```yaml
 - id: PII-SSN-1.0
@@ -483,7 +479,7 @@ end
 - CLI tools < 500 LOC
 - Test coverage > 80%
 
-**Sweet Spot**: Jimini should feel like **nginx for AI policies** — install, configure YAML, run. Not a platform.
+Sweet Spot: Jimini should feel like **nginx for AI policies** — install, configure YAML, run. Not a platform.
 
 ---
 
@@ -491,17 +487,17 @@ end
 
 | Feature | LLM Guard | NeMo Guardrails | Guardrails AI | Jimini |
 |---------|-----------|-----------------|---------------|--------|
-| **Language** | Python | Python | Python | Python |
-| **ML Models** | ✅ Included | ✅ Optional | ✅ Validators | ❌ LLM-based |
-| **Rules Format** | Python code | Colang DSL | Pydantic | YAML |
-| **Shadow Mode** | ❌ | ❌ | ❌ | ✅ Native |
-| **Audit Trail** | ❌ | ✅ Logs | ❌ | ✅ Tamper-evident |
-| **Hot Reload** | ❌ | ✅ Runtime | ❌ | ✅ File watch |
-| **PII Redaction** | ✅ Built-in | ❌ | ✅ Validators | ✅ Regex + LLM |
-| **Deployment** | Library | Server | Library | API Gateway |
-| **Setup Time** | ~30 min | ~45 min | ~15 min | **~5 min** |
+| Language | Python | Python | Python | Python |
+| ML Models |  Included |  Optional |  Validators |  LLM-based |
+| Rules Format | Python code | Colang DSL | Pydantic | YAML |
+| Shadow Mode |  |  |  |  Native |
+| Audit Trail |  |  Logs |  |  Tamper-evident |
+| Hot Reload |  |  Runtime |  |  File watch |
+| PII Redaction |  Built-in |  |  Validators |  Regex + LLM |
+| Deployment | Library | Server | Library | API Gateway |
+| Setup Time | ~30 min | ~45 min | ~15 min | ~5 min |
 
-**Jimini's Advantage**: Fastest time-to-value with production-grade features (audit, metrics, shadow mode) out of the box.
+Jimini's Advantage: Fastest time-to-value with production-grade features (audit, metrics, shadow mode) out of the box.
 
 ---
 
@@ -511,12 +507,12 @@ end
 
 | Solution | Cost Structure |
 |----------|----------------|
-| **Salesforce Einstein** | $50-200/user/month platform fee + compute |
-| **AWS Bedrock Guardrails** | $0.75-1.00 per 1000 text units |
-| **Azure Content Safety** | $1.00 per 1000 transactions |
-| **Jimini** | $0 software + hosting (~$50/month for 3 replicas) |
+| Salesforce Einstein | $50-200/user/month platform fee + compute |
+| AWS Bedrock Guardrails | $0.75-1.00 per 1000 text units |
+| Azure Content Safety | $1.00 per 1000 transactions |
+| Jimini | $0 software + hosting (~$50/month for 3 replicas) |
 
-**ROI**: Jimini pays for itself after ~5M API calls/month compared to cloud solutions.
+ROI: Jimini pays for itself after ~5M API calls/month compared to cloud solutions.
 
 ### Can I use Jimini without OpenAI?
 
@@ -541,10 +537,10 @@ export OPENAI_API_BASE=http://localhost:8000
 
 ### What's the latency impact?
 
-- **Regex rules**: < 1ms per rule
-- **LLM rules**: 200-500ms (OpenAI API call)
-- **Semantic cache**: < 10ms (Redis lookup)
-- **Total**: ~50ms for mixed ruleset with cache hits
+- Regex rules: < 1ms per rule
+- LLM rules: 200-500ms (OpenAI API call)
+- Semantic cache: < 10ms (Redis lookup)
+- Total: ~50ms for mixed ruleset with cache hits
 
 ---
 
@@ -567,11 +563,11 @@ MIT License. See [LICENSE](LICENSE) for details.
 
 ## Support
 
-- **Documentation**: [docs/](docs/)
-- **Issues**: [GitHub Issues](https://github.com/your-org/jimini/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/your-org/jimini/discussions)
-- **Security**: security@example.com (responsible disclosure)
+- Documentation: [docs/](docs/)
+- Issues: [GitHub Issues](https://github.com/your-org/jimini/issues)
+- Discussions: [GitHub Discussions](https://github.com/your-org/jimini/discussions)
+- Security: security@example.com (responsible disclosure)
 
 ---
 
-**Jimini: Trust at the speed of development.** 🚀
+**Jimini: Trust at the speed of development.** 

@@ -1,7 +1,7 @@
-# 🚀 Jimini Improvement Roadmap - Learning from Azure APIM & Competitors
+#  Jimini Improvement Roadmap - Learning from Azure APIM & Competitors
 
 **Based on Competitive Analysis of Azure API Management, Kong, AWS API Gateway**  
-**Date**: November 5, 2025
+Date: November 5, 2025
 
 ---
 
@@ -11,9 +11,9 @@ This document outlines **concrete, implementable improvements** for Jimini inspi
 
 ### Priority Framework
 
-**🔴 Critical**: Features blocking enterprise adoption  
-**🟡 Important**: Features improving competitive position  
-**🟢 Nice-to-Have**: Features for future differentiation
+🔴 Critical: Features blocking enterprise adoption  
+🟡 Important: Features improving competitive position  
+🟢 Nice-to-Have: Features for future differentiation
 
 ---
 
@@ -26,7 +26,7 @@ Azure APIM has sophisticated **tokens-per-minute (TPM)** quotas for LLM usage. J
 
 #### Implementation Plan
 
-**File**: `app/token_limiter.py`
+File: `app/token_limiter.py`
 
 ```python
 """
@@ -151,7 +151,7 @@ token_limiter = TokenRateLimiter()
 
 #### Integration with Evaluation Endpoint
 
-**File**: `app/main.py` (add to `/v1/evaluate` endpoint)
+File: `app/main.py` (add to `/v1/evaluate` endpoint)
 
 ```python
 from app.token_limiter import token_limiter, TokenQuota
@@ -182,7 +182,7 @@ if llm_rule_triggered:
 
 #### Configuration
 
-**File**: `policy_rules.yaml` (add quota config)
+File: `policy_rules.yaml` (add quota config)
 
 ```yaml
 token_quotas:
@@ -210,10 +210,10 @@ async def get_token_usage(api_key: str):
     return token_limiter.get_usage_stats(api_key)
 ```
 
-**Benefit**: Prevents runaway LLM costs, enables fair resource allocation across teams.
+Benefit: Prevents runaway LLM costs, enables fair resource allocation across teams.
 
-**Effort**: 2-3 days  
-**Impact**: HIGH - Critical for enterprise LLM deployments
+Effort: 2-3 days  
+Impact: HIGH - Critical for enterprise LLM deployments
 
 ---
 
@@ -226,7 +226,7 @@ Azure APIM uses Redis + embeddings to cache semantically similar LLM responses. 
 
 #### Implementation Plan
 
-**File**: `app/semantic_cache.py`
+File: `app/semantic_cache.py`
 
 ```python
 """
@@ -364,7 +364,7 @@ def get_semantic_cache() -> Optional[SemanticCache]:
 
 #### Integration with LLM Checks
 
-**File**: `app/enforcement.py` (modify `llm_policy_check`)
+File: `app/enforcement.py` (modify `llm_policy_check`)
 
 ```python
 from app.semantic_cache import get_semantic_cache
@@ -412,7 +412,7 @@ def llm_policy_check(text: str, prompt: str, rule_id: str, model: str = "gpt-4o-
 
 #### Configuration
 
-**File**: `jimini.config.yaml`
+File: `jimini.config.yaml`
 
 ```yaml
 semantic_cache:
@@ -439,10 +439,10 @@ Add to `/v1/metrics`:
 }
 ```
 
-**Benefit**: 50-80% reduction in LLM costs, <50ms responses for cached queries.
+Benefit: 50-80% reduction in LLM costs, <50ms responses for cached queries.
 
-**Effort**: 3-4 days (including Redis setup, testing)  
-**Impact**: HIGH - Major cost/performance improvement
+Effort: 3-4 days (including Redis setup, testing)  
+Impact: HIGH - Major cost/performance improvement
 
 ---
 
@@ -455,7 +455,7 @@ Azure APIM can distribute requests across multiple LLM endpoints with round-robi
 
 #### Implementation Plan
 
-**File**: `app/llm_backends.py`
+File: `app/llm_backends.py`
 
 ```python
 """
@@ -612,7 +612,7 @@ llm_load_balancer = LLMLoadBalancer()
 
 #### Configuration
 
-**File**: `policy_rules.yaml`
+File: `policy_rules.yaml`
 
 ```yaml
 llm_backends:
@@ -643,7 +643,7 @@ llm_backends:
 
 #### Integration
 
-**File**: `app/enforcement.py`
+File: `app/enforcement.py`
 
 ```python
 from app.llm_backends import llm_load_balancer
@@ -678,10 +678,10 @@ def llm_policy_check(text: str, prompt: str, model: str = "gpt-4o-mini") -> bool
         return False
 ```
 
-**Benefit**: Maximize PTU utilization, automatic failover, avoid rate limits.
+Benefit: Maximize PTU utilization, automatic failover, avoid rate limits.
 
-**Effort**: 4-5 days  
-**Impact**: MEDIUM - Important for enterprise deployments with multiple LLM endpoints
+Effort: 4-5 days  
+Impact: MEDIUM - Important for enterprise deployments with multiple LLM endpoints
 
 ---
 
@@ -694,7 +694,7 @@ Azure APIM has built-in analytics dashboards in the portal. Jimini has CLI metri
 
 #### Implementation Plan
 
-**File**: `app/dashboard.py` (new FastAPI HTML endpoint)
+File: `app/dashboard.py` (new FastAPI HTML endpoint)
 
 ```python
 """
@@ -752,7 +752,7 @@ async def dashboard_metrics():
     }
 ```
 
-**File**: `app/templates/dashboard.html`
+File: `app/templates/dashboard.html`
 
 ```html
 <!DOCTYPE html>
@@ -764,7 +764,7 @@ async def dashboard_metrics():
 </head>
 <body class="bg-gray-100">
     <div class="container mx-auto p-6">
-        <h1 class="text-3xl font-bold mb-6">🔒 Jimini Observability Dashboard</h1>
+        <h1 class="text-3xl font-bold mb-6"> Jimini Observability Dashboard</h1>
         
         <!-- KPI Cards -->
         <div class="grid grid-cols-4 gap-4 mb-6">
@@ -849,10 +849,10 @@ async def dashboard_metrics():
 </html>
 ```
 
-**Benefit**: Real-time visibility, executive reporting, operational insights.
+Benefit: Real-time visibility, executive reporting, operational insights.
 
-**Effort**: 3-4 days  
-**Impact**: MEDIUM - Nice for demos and operations teams
+Effort: 3-4 days  
+Impact: MEDIUM - Nice for demos and operations teams
 
 ---
 
@@ -865,7 +865,7 @@ Azure APIM has comprehensive testing tools. Jimini has basic CLI testing but no 
 
 #### Implementation Plan
 
-**File**: `tests/test_policies.py`
+File: `tests/test_policies.py`
 
 ```python
 """
@@ -971,7 +971,7 @@ def test_rule_coverage():
         f"Untested rules: {untested}"
 ```
 
-**File**: `tests/policy_test_cases.yaml`
+File: `tests/policy_test_cases.yaml`
 
 ```yaml
 # Policy test cases for automated validation
@@ -1012,7 +1012,7 @@ test_cases:
 
 #### CI/CD Integration
 
-**File**: `.github/workflows/policy-tests.yml`
+File: `.github/workflows/policy-tests.yml`
 
 ```yaml
 name: Policy Tests
@@ -1054,10 +1054,10 @@ jobs:
         run: echo "Policy tests failed! Review changes before merging."
 ```
 
-**Benefit**: Prevents policy regressions, enables safe rule updates, builds confidence.
+Benefit: Prevents policy regressions, enables safe rule updates, builds confidence.
 
-**Effort**: 2-3 days  
-**Impact**: HIGH - Critical for production deployments
+Effort: 2-3 days  
+Impact: HIGH - Critical for production deployments
 
 ---
 
@@ -1070,7 +1070,7 @@ Azure APIM supports multi-tenant deployments with per-tenant quotas, policies, a
 
 #### Implementation Plan
 
-**File**: `app/models.py` (add tenant field)
+File: `app/models.py` (add tenant field)
 
 ```python
 class EvaluateRequest(BaseModel):
@@ -1082,7 +1082,7 @@ class EvaluateRequest(BaseModel):
     metadata: Optional[Dict[str, Any]] = None
 ```
 
-**File**: `app/tenants.py`
+File: `app/tenants.py`
 
 ```python
 """
@@ -1138,7 +1138,7 @@ class TenantManager:
 tenant_manager = TenantManager()
 ```
 
-**File**: `tenants.yaml`
+File: `tenants.yaml`
 
 ```yaml
 tenants:
@@ -1176,7 +1176,7 @@ tenants:
 
 #### Integration
 
-**File**: `app/main.py`
+File: `app/main.py`
 
 ```python
 from app.tenants import tenant_manager
@@ -1203,26 +1203,26 @@ async def evaluate_policy(request: EvaluateRequest) -> EvaluateResponse:
     return EvaluateResponse(**result)
 ```
 
-**Benefit**: SaaS deployments, per-customer isolation, flexible pricing tiers.
+Benefit: SaaS deployments, per-customer isolation, flexible pricing tiers.
 
-**Effort**: 3-4 days  
-**Impact**: MEDIUM - Enables SaaS business model
+Effort: 3-4 days  
+Impact: MEDIUM - Enables SaaS business model
 
 ---
 
 ## Implementation Priority
 
 ### Phase 1: Foundation (Weeks 1-2)
-1. ✅ **Token Rate Limiting** - Critical for LLM cost control
-2. ✅ **Policy Testing Framework** - Required for safe deployments
+1.  **Token Rate Limiting** - Critical for LLM cost control
+2.  **Policy Testing Framework** - Required for safe deployments
 
 ### Phase 2: Performance (Weeks 3-4)
-3. ✅ **Semantic Caching** - Major cost/performance improvement
-4. ✅ **Backend Load Balancing** - Multi-endpoint reliability
+3.  **Semantic Caching** - Major cost/performance improvement
+4.  **Backend Load Balancing** - Multi-endpoint reliability
 
 ### Phase 3: Operations (Weeks 5-6)
-5. ✅ **Observability Dashboard** - Operational visibility
-6. ✅ **Multi-Tenancy** - SaaS enablement
+5.  **Observability Dashboard** - Operational visibility
+6.  **Multi-Tenancy** - SaaS enablement
 
 ---
 
@@ -1232,33 +1232,33 @@ async def evaluate_policy(request: EvaluateRequest) -> EvaluateResponse:
 
 | Metric | Current | Target | Feature Responsible |
 |--------|---------|--------|-------------------|
-| **LLM Cost per 1K Requests** | $1.50 | $0.30 | Semantic Caching |
-| **P95 Response Time (LLM)** | 800ms | <100ms | Semantic Caching |
-| **Max Throughput** | 1K req/s | 5K req/s | Load Balancing |
-| **Policy Test Coverage** | 0% | 95% | Testing Framework |
-| **Multi-Customer Support** | No | Yes | Multi-Tenancy |
-| **Competitive Gap vs Azure** | 40% | 80% | All Features |
+| LLM Cost per 1K Requests | $1.50 | $0.30 | Semantic Caching |
+| P95 Response Time (LLM) | 800ms | <100ms | Semantic Caching |
+| Max Throughput | 1K req/s | 5K req/s | Load Balancing |
+| Policy Test Coverage | 0% | 95% | Testing Framework |
+| Multi-Customer Support | No | Yes | Multi-Tenancy |
+| Competitive Gap vs Azure | 40% | 80% | All Features |
 
 ---
 
 ## Competitive Position After Implementation
 
 ### Before
-- ✅ Security & Compliance (OWASP, PII, audit)
-- ❌ Token management
-- ❌ Semantic caching
-- ❌ Load balancing
-- ⚠️ Basic observability
+-  Security & Compliance (OWASP, PII, audit)
+-  Token management
+-  Semantic caching
+-  Load balancing
+-  Basic observability
 
 ### After
-- ✅ Security & Compliance (OWASP, PII, audit)
-- ✅ Token management (TPM quotas)
-- ✅ Semantic caching (cost optimization)
-- ✅ Load balancing (multi-backend)
-- ✅ Enterprise observability
-- ✅ Multi-tenancy (SaaS ready)
+-  Security & Compliance (OWASP, PII, audit)
+-  Token management (TPM quotas)
+-  Semantic caching (cost optimization)
+-  Load balancing (multi-backend)
+-  Enterprise observability
+-  Multi-tenancy (SaaS ready)
 
-**Result**: Close 60% of feature gap with Azure APIM while maintaining security-first advantage.
+Result: Close 60% of feature gap with Azure APIM while maintaining security-first advantage.
 
 ---
 
@@ -1309,5 +1309,5 @@ async def limit_request_size(request: Request, call_next):
 
 ---
 
-**Next Steps**: Prioritize Phase 1 features (Token Limiting + Testing) for immediate implementation.
+Next Steps: Prioritize Phase 1 features (Token Limiting + Testing) for immediate implementation.
 
