@@ -700,7 +700,14 @@ async def soc_dashboard_ui():
     with open(template_path, 'r') as f:
         html_content = f.read()
     
-    return HTMLResponse(content=html_content)
+    return HTMLResponse(
+        content=html_content,
+        headers={
+            "Cache-Control": "no-cache, no-store, must-revalidate",
+            "Pragma": "no-cache",
+            "Expires": "0"
+        }
+    )
 
 
 @app.get("/admin/metrics")
