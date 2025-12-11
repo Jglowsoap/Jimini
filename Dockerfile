@@ -23,6 +23,7 @@ RUN pip install --no-cache-dir --upgrade pip && \
 # Copy the application code
 COPY app/ ./app/
 COPY jimini_cli/ ./jimini_cli/
+COPY config/ ./config/
 COPY packs/ ./packs/
 COPY templates/ ./templates/
 COPY policy_rules.yaml .
