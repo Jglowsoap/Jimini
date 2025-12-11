@@ -118,9 +118,10 @@
             border-radius: 6px;
             font-size: 0.9em;
         }
-        .blocked { background: rgba(34, 197, 94, 0.3); }
+        .blocked { background: rgba(239, 68, 68, 0.3); }
+        .redacted { background: rgba(59, 130, 246, 0.3); }
         .flagged { background: rgba(245, 158, 11, 0.3); }
-        .allowed { background: rgba(239, 68, 68, 0.3); }
+        .allowed { background: rgba(34, 197, 94, 0.3); }
         .status-indicator {
             display: inline-block;
             width: 12px;
@@ -296,14 +297,19 @@
                 
                 const result = await response.json();
                 const decision = result.decision || 'allow';
+                const action = result.action || decision;
                 const ruleIds = result.rule_ids || [];
+                const redactedText = result.redacted_text;
                 
-                // Display result
+                // Display result with different colors for block/redact/allow
                 let bgColor = 'rgba(34, 197, 94, 0.2)';
                 let emoji = '✅';
-                if (decision === 'block') {
+                if (decision === 'block' || action === 'block') {
                     bgColor = 'rgba(239, 68, 68, 0.2)';
                     emoji = '🚫';
+                } else if (decision === 'redact' || action === 'redact') {
+                    bgColor = 'rgba(59, 130, 246, 0.2)';
+                    emoji = '🔒';
                 } else if (decision === 'flag') {
                     bgColor = 'rgba(245, 158, 11, 0.2)';
                     emoji = '⚠️';
@@ -312,7 +318,9 @@
                 resultDiv.style.background = bgColor;
                 resultDiv.innerHTML = `
                     <h3>${emoji} Decision: ${decision.toUpperCase()}</h3>
+                    ${action !== decision ? `<p><strong>Action:</strong> ${action.toUpperCase()}</p>` : ''}
                     ${ruleIds.length > 0 ? `<p><strong>Matched Rules:</strong> ${ruleIds.map(id => `<code>${id}</code>`).join(', ')}</p>` : ''}
+                    ${redactedText ? `<p><strong>Redacted Text:</strong> <code>${redactedText}</code></p>` : ''}
                     ${result.message ? `<p>${result.message}</p>` : ''}
                 `;
                 
