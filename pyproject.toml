@@ -105,7 +105,7 @@ Changelog = "https://github.com/jimini-ai/jimini/blob/main/CHANGELOG.md"
 
 [tool.setuptools]
 # Include both CLI and server packages
-packages = ["app", "jimini_cli", "config"]
+packages = ["app", "jimini_cli"]
 package-dir = {"" = "."}
 
 [tool.setuptools.package-data]
@@ -114,7 +114,6 @@ package-dir = {"" = "."}
 # Include policy packs and configuration files
 [tool.setuptools.data-files]
 "jimini/packs" = ["packs/**/*.yaml"]
-"jimini/config" = ["*.yaml", "*.yml"]
 
 # Development tools configuration
 [tool.pytest.ini_options]
