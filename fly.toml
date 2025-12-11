@@ -1,26 +1,30 @@
-# Fly.io configuration for Jimini deployment
-app = "jimini-demo"
-primary_region = "iad"
+# fly.toml app configuration file generated for jimini-demo on 2025-12-11T17:52:49Z
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
+
+app = 'jimini-demo'
+primary_region = 'ord'
 
 [build]
+
+[env]
+  JIMINI_RULES_PATH = '/app/policy_rules.yaml'
+  JIMINI_SHADOW = '0'
+
+[[mounts]]
+  source = 'jimini_logs'
+  destination = '/app/logs'
 
 [http_service]
   internal_port = 9000
   force_https = true
-  auto_stop_machines = true
+  auto_stop_machines = 'stop'
   auto_start_machines = true
   min_machines_running = 0
-  processes = ["app"]
+  processes = ['app']
 
 [[vm]]
-  cpu_kind = "shared"
+  memory = '256mb'
   cpus = 1
   memory_mb = 256
-
-[env]
-  JIMINI_SHADOW = "1"
-  JIMINI_RULES_PATH = "/app/policy_rules.yaml"
-
-[mounts]
-  source = "jimini_logs"
-  destination = "/app/logs"
