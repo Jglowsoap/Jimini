@@ -6,10 +6,12 @@ import uuid
 from typing import Any, Dict, Deque, Optional, List
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
+from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, Request, Body
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, HTMLResponse, FileResponse
+from fastapi.staticfiles import StaticFiles
 import urllib.request
 import json
 
@@ -673,6 +675,32 @@ async def dashboard_metrics() -> Dict[str, Any]:
         "endpoints": dict(list(METRICS_ENDPOINTS.items())[:5]),  # Top 5 endpoints
         "recent_decisions": len(RECENT_DECISIONS)
     }
+
+
+@app.get(
+    "/ui/dashboard",
+    response_class=HTMLResponse,
+    summary="SOC Dashboard UI",
+    description="Interactive HTML dashboard for monitoring Jimini security operations",
+    tags=["UI"]
+)
+async def soc_dashboard_ui():
+    """
+    Serve the SOC Dashboard HTML interface.
+    Access at: http://localhost:9000/ui/dashboard
+    """
+    template_path = Path(__file__).parent.parent / "templates" / "soc_dashboard.html"
+    
+    if not template_path.exists():
+        raise HTTPException(
+            status_code=404,
+            detail="Dashboard template not found. Ensure templates/soc_dashboard.html exists."
+        )
+    
+    with open(template_path, 'r') as f:
+        html_content = f.read()
+    
+    return HTMLResponse(content=html_content)
 
 
 @app.get("/admin/metrics")

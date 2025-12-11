@@ -137,13 +137,234 @@
     </style>
 </head>
 <body>
-    <!-- Dashboard HTML content here -->
     <div class="container">
         <div class="header">
             <h1>🛡️ Jimini AI Security Operations Center</h1>
             <p>Enhanced OWASP LLM Top 10 Security • Real-time Monitoring</p>
-            <p>Current Status: <span id="status-text">Initializing...</span></p>
+            <p>
+                <span class="status-indicator online" id="status-indicator"></span>
+                <span id="status-text">Loading...</span>
+            </p>
+        </div>
+
+        <!-- Key Metrics -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <h3>Total Requests</h3>
+                <div class="value" id="total-requests">0</div>
+            </div>
+            <div class="stat-card">
+                <h3>✅ Allowed</h3>
+                <div class="value" id="allowed-count">0</div>
+            </div>
+            <div class="stat-card">
+                <h3>🚫 Blocked</h3>
+                <div class="value" style="color: #ef4444;" id="blocked-count">0</div>
+            </div>
+            <div class="stat-card">
+                <h3>⚠️ Flagged</h3>
+                <div class="value" style="color: #f59e0b;" id="flagged-count">0</div>
+            </div>
+        </div>
+
+        <!-- Dashboard Grid -->
+        <div class="dashboard-grid">
+            <!-- Top Rules -->
+            <div class="dashboard-section">
+                <h2 class="section-title">Top Triggered Rules</h2>
+                <div id="top-rules">
+                    <p style="opacity: 0.6;">Loading rules...</p>
+                </div>
+            </div>
+
+            <!-- System Status -->
+            <div class="dashboard-section">
+                <h2 class="section-title">System Status</h2>
+                <div id="system-status">
+                    <div style="display: flex; justify-content: space-between; margin: 10px 0; padding: 10px; background: rgba(255,255,255,0.1); border-radius: 8px;">
+                        <span>Rules Loaded:</span>
+                        <strong id="rules-count">0</strong>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin: 10px 0; padding: 10px; background: rgba(255,255,255,0.1); border-radius: 8px;">
+                        <span>Uptime:</span>
+                        <strong id="uptime">0s</strong>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin: 10px 0; padding: 10px; background: rgba(255,255,255,0.1); border-radius: 8px;">
+                        <span>Shadow Mode:</span>
+                        <strong id="shadow-mode">Unknown</strong>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin: 10px 0; padding: 10px; background: rgba(255,255,255,0.1); border-radius: 8px;">
+                        <span>Version:</span>
+                        <strong id="version">-</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Live Testing Section -->
+        <div class="test-section">
+            <h2 class="section-title">🧪 Live Policy Testing</h2>
+            <div class="test-form">
+                <input 
+                    type="text" 
+                    id="test-input" 
+                    class="test-input" 
+                    placeholder="Enter text to test against policies (e.g., 'My email is user@example.com')..."
+                />
+                <button class="btn" onclick="testPolicy()">Test Policy</button>
+            </div>
+            <div id="test-result" style="display: none; padding: 15px; border-radius: 8px; margin-top: 10px;"></div>
+        </div>
+
+        <!-- Attack Log -->
+        <div class="test-section">
+            <h2 class="section-title">📊 Recent Evaluations</h2>
+            <div class="attack-log" id="attack-log">
+                <p style="opacity: 0.6; text-align: center;">No recent evaluations</p>
+            </div>
         </div>
     </div>
+
+    <script>
+        const API_BASE = window.location.origin;
+        const API_KEY = 'changeme'; // Update with your API key
+        let evaluationLog = [];
+
+        // Fetch dashboard metrics
+        async function fetchDashboardMetrics() {
+            try {
+                const response = await fetch(`${API_BASE}/v1/dashboard`);
+                const data = await response.json();
+                
+                // Update status
+                document.getElementById('status-text').textContent = `Status: ${data.status.toUpperCase()}`;
+                document.getElementById('status-indicator').className = 
+                    `status-indicator ${data.status === 'healthy' ? 'online' : 'offline'}`;
+                
+                // Update metrics
+                document.getElementById('total-requests').textContent = data.requests.total.toLocaleString();
+                document.getElementById('allowed-count').textContent = data.requests.allow.toLocaleString();
+                document.getElementById('blocked-count').textContent = data.requests.block.toLocaleString();
+                document.getElementById('flagged-count').textContent = data.requests.flag.toLocaleString();
+                
+                // Update system status
+                document.getElementById('rules-count').textContent = data.rules.loaded;
+                document.getElementById('uptime').textContent = formatUptime(data.uptime_seconds);
+                document.getElementById('shadow-mode').textContent = data.shadow_mode ? 'Enabled' : 'Disabled';
+                document.getElementById('version').textContent = data.version;
+                
+                // Update top rules
+                const topRulesHtml = data.rules.top_hits.map(rule => `
+                    <div style="display: flex; justify-content: space-between; margin: 8px 0; padding: 10px; background: rgba(255,255,255,0.1); border-radius: 6px;">
+                        <code style="color: #4ade80;">${rule.id}</code>
+                        <strong>${rule.hits} hits</strong>
+                    </div>
+                `).join('');
+                document.getElementById('top-rules').innerHTML = topRulesHtml || '<p style="opacity: 0.6;">No rules triggered yet</p>';
+                
+            } catch (error) {
+                console.error('Failed to fetch metrics:', error);
+                document.getElementById('status-text').textContent = 'Status: ERROR';
+                document.getElementById('status-indicator').className = 'status-indicator offline';
+            }
+        }
+
+        // Test policy evaluation
+        async function testPolicy() {
+            const input = document.getElementById('test-input');
+            const resultDiv = document.getElementById('test-result');
+            const text = input.value.trim();
+            
+            if (!text) {
+                alert('Please enter text to test');
+                return;
+            }
+            
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = '<p>⏳ Evaluating...</p>';
+            
+            try {
+                const response = await fetch(`${API_BASE}/v1/evaluate`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        text: text,
+                        direction: 'user_to_llm',
+                        api_key: API_KEY
+                    })
+                });
+                
+                const result = await response.json();
+                const decision = result.decision || 'allow';
+                const ruleIds = result.rule_ids || [];
+                
+                // Display result
+                let bgColor = 'rgba(34, 197, 94, 0.2)';
+                let emoji = '✅';
+                if (decision === 'block') {
+                    bgColor = 'rgba(239, 68, 68, 0.2)';
+                    emoji = '🚫';
+                } else if (decision === 'flag') {
+                    bgColor = 'rgba(245, 158, 11, 0.2)';
+                    emoji = '⚠️';
+                }
+                
+                resultDiv.style.background = bgColor;
+                resultDiv.innerHTML = `
+                    <h3>${emoji} Decision: ${decision.toUpperCase()}</h3>
+                    ${ruleIds.length > 0 ? `<p><strong>Matched Rules:</strong> ${ruleIds.map(id => `<code>${id}</code>`).join(', ')}</p>` : ''}
+                    ${result.message ? `<p>${result.message}</p>` : ''}
+                `;
+                
+                // Add to log
+                addToLog(text, decision, ruleIds);
+                
+            } catch (error) {
+                resultDiv.style.background = 'rgba(239, 68, 68, 0.2)';
+                resultDiv.innerHTML = `<p>❌ Error: ${error.message}</p>`;
+            }
+        }
+
+        // Add evaluation to log
+        function addToLog(text, decision, rules) {
+            const timestamp = new Date().toLocaleTimeString();
+            const logItem = {
+                timestamp,
+                text: text.substring(0, 50) + (text.length > 50 ? '...' : ''),
+                decision,
+                rules
+            };
+            
+            evaluationLog.unshift(logItem);
+            if (evaluationLog.length > 10) evaluationLog.pop();
+            
+            const logHtml = evaluationLog.map(item => `
+                <div class="attack-item ${item.decision}">
+                    <strong>${item.timestamp}</strong> - ${item.decision.toUpperCase()}<br>
+                    <small>${item.text}</small>
+                    ${item.rules.length > 0 ? `<br><small><code>${item.rules.join(', ')}</code></small>` : ''}
+                </div>
+            `).join('');
+            
+            document.getElementById('attack-log').innerHTML = logHtml;
+        }
+
+        // Format uptime
+        function formatUptime(seconds) {
+            const hours = Math.floor(seconds / 3600);
+            const minutes = Math.floor((seconds % 3600) / 60);
+            const secs = Math.floor(seconds % 60);
+            return `${hours}h ${minutes}m ${secs}s`;
+        }
+
+        // Auto-refresh metrics every 5 seconds
+        fetchDashboardMetrics();
+        setInterval(fetchDashboardMetrics, 5000);
+
+        // Allow Enter key to test
+        document.getElementById('test-input').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') testPolicy();
+        });
+    </script>
 </body>
 </html>
