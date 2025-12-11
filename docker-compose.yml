@@ -5,16 +5,21 @@ services:
     build: 
       context: .
       dockerfile: Dockerfile
-    image: jimini:0.2.0
-    container_name: jimini-ai-policy
+    image: jimini:latest
+    container_name: jimini-gateway
     ports:
-      - "8000:8000"
+      - "9000:9000"
     env_file: 
       - .env
     environment:
-      - APP_ENV=staging
-      - JIMINI_SHADOW=true
+      - APP_ENV=production
+      - JIMINI_API_KEY=${JIMINI_API_KEY:-changeme}
+      - JIMINI_SHADOW=${JIMINI_SHADOW:-0}
+      - JIMINI_RULES_PATH=/app/policy_rules.yaml
       - PYTHONPATH=/app
+      - OTEL_EXPORTER_OTLP_ENDPOINT=${OTEL_EXPORTER_OTLP_ENDPOINT:-}
+      - WEBHOOK_URL=${WEBHOOK_URL:-}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
     restart: unless-stopped
     volumes:
       - ./logs:/app/logs
@@ -22,7 +27,7 @@ services:
       - ./policy_rules.yaml:/app/policy_rules.yaml:ro
       - ./packs:/app/packs:ro
     healthcheck:
-      test: ["CMD", "curl", "-fsS", "http://localhost:8000/health"]
+      test: ["CMD", "curl", "-fsS", "http://localhost:9000/health"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -43,7 +48,7 @@ services:
           cpus: '0.5'
           memory: 512M
 
-  # Optional: Redis for caching and ML model storage
+  # Optional: Redis for semantic caching
   redis:
     image: redis:7-alpine
     container_name: jimini-redis

@@ -1,8 +1,38 @@
 # Jimini
 
+[![CI/CD Pipeline](https://github.com/Jglowsoap/Jimini/actions/workflows/ci-cd.yml/badge.svg)](https://github.com/Jglowsoap/Jimini/actions/workflows/ci-cd.yml)
+[![Docker Pulls](https://img.shields.io/docker/pulls/jglowsoap/jimini?logo=docker)](https://github.com/Jglowsoap/Jimini/pkgs/container/jimini)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
+
 Jimini is a FastAPI gateway that evaluates unstructured text against policy rules before the content leaves or enters an AI system. It provides deterministic blocking and flagging based on regex patterns and optional LLM checks, keeps a tamper-evident audit trail, and exposes metrics for observability.
 
 **Zero Data Retention**: Jimini evaluates prompts and responses in-memory only, with no persistence of customer content. All policy decisions are made in real-time within your infrastructure.
+
+## 🚀 Quick Start
+
+### Try it in 30 seconds with Docker
+
+```bash
+docker run -p 9000:9000 -e JIMINI_API_KEY=demo ghcr.io/jglowsoap/jimini:latest
+
+# Open the dashboard
+open http://localhost:9000/ui/dashboard
+
+# Test the API
+curl -X POST http://localhost:9000/v1/evaluate \
+  -H "Content-Type: application/json" \
+  -d '{"text":"My SSN is 123-45-6789","direction":"user_to_llm","api_key":"demo"}'
+```
+
+### Or install from source
+
+```bash
+git clone https://github.com/Jglowsoap/Jimini.git
+cd Jimini
+pip install -e .
+jimini run-local --port 9000
+```
 
 ## Project Highlights
 
@@ -118,6 +148,96 @@ Hot reload is enabled by default; updates to the YAML file propagate without res
 ### CLI Helpers
 
 ```bash
+# Lint rules for syntax errors
+jimini lint policy_rules.yaml
+
+# Test specific rule packs
+jimini test --rule-pack hipaa --text "SSN: 123-45-6789" --format table
+
+# Run local gateway
+jimini run-local --port 9000 --shadow
+
+# Verify audit chain integrity
+jimini verify-audit
+```
+
+## 🐳 Deployment
+
+### Docker Compose (Production)
+
+```bash
+# Create .env file
+echo "JIMINI_API_KEY=your-secret-key" > .env
+echo "JIMINI_SHADOW=0" >> .env
+
+# Start services
+docker-compose up -d
+
+# View logs
+docker-compose logs -f jimini
+```
+
+### Fly.io (Public Demo)
+
+```bash
+# Install flyctl
+curl -L https://fly.io/install.sh | sh
+
+# Deploy to Fly.io
+fly launch --name jimini-demo
+fly secrets set JIMINI_API_KEY=demo JIMINI_SHADOW=1
+fly deploy
+
+# Your demo is live!
+fly open /ui/dashboard
+```
+
+### Kubernetes (Enterprise)
+
+```bash
+# Using Helm chart
+helm repo add jimini https://jglowsoap.github.io/Jimini/helm
+helm install jimini jimini/jimini \
+  --set apiKey=your-secret-key \
+  --set shadowMode=false
+```
+
+## 🔌 Integrations
+
+### LangChain
+
+```python
+from langchain_openai import ChatOpenAI
+from examples.langchain_integration import JiminiGuardrailCallback
+
+llm = ChatOpenAI(callbacks=[JiminiGuardrailCallback()])
+response = llm.predict("What's the weather?")  # ✅ Checked by Jimini
+```
+
+### OpenAI Proxy
+
+```bash
+# Start Jimini proxy
+uvicorn examples.openai_proxy:app --port 8080
+
+# Use with OpenAI SDK (zero code changes!)
+export OPENAI_API_BASE=http://localhost:8080/v1
+python your_app.py  # All requests go through Jimini
+```
+
+See [`examples/`](examples/) for more integrations including LlamaIndex, Anthropic Claude, and custom middleware.
+
+## 📊 Dashboard
+
+Access the interactive SOC dashboard at `http://localhost:9000/ui/dashboard`:
+
+- ✅ Real-time metrics (auto-refreshes every 5s)
+- ✅ Live policy testing playground
+- ✅ Top triggered rules
+- ✅ Recent evaluations log
+- ✅ System status monitoring
+
+## Working With Rules
 # Validate rule syntax
 jimini lint --rules policy_rules.yaml
 

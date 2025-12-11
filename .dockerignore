@@ -1,0 +1,65 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Virtual environments
+.venv/
+.venv-1/
+venv/
+ENV/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+coverage.xml
+.tox/
+
+# Logs
+logs/
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+
+# Documentation
+docs/_build/
+*.md
+!README.md
+
+# Backups
+*.backup
+*.bak
+backup_*/
+
+# Data files
+data/
+benchmark_results/
+attached_assets/
+
+# Development
+.replit
+.env
+.env.example
+
+# Build artifacts
+jimini.egg-info/
+jimini_cli.egg-info/

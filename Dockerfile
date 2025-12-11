@@ -1,6 +1,6 @@
-FROM python:3.12-slim
+FROM python:3.11-slim
 
-# Environment setup for production
+# Multi-stage build for optimized production image
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PYTHONPATH=/app \
@@ -21,7 +21,15 @@ RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
 
 # Copy the application code
-COPY . .
+COPY app/ ./app/
+COPY jimini_cli/ ./jimini_cli/
+COPY packs/ ./packs/
+COPY templates/ ./templates/
+COPY policy_rules.yaml .
+COPY setup.py .
+COPY pyproject.toml .
+COPY README.md .
+COPY LICENSE .
 
 # Install the package
 RUN pip install -e .
@@ -35,10 +43,10 @@ USER jimini
 
 # Health check for container orchestration
 HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
-    CMD curl -fsS http://localhost:8000/health || exit 1
+    CMD curl -fsS http://localhost:9000/health || exit 1
 
-# Expose the port (using 8000 for standard web apps)
-EXPOSE 8000
+# Expose the port
+EXPOSE 9000
 
 # Production environment variables
 ENV JIMINI_API_KEY=changeme \
@@ -46,10 +54,4 @@ ENV JIMINI_API_KEY=changeme \
     JIMINI_SHADOW=1
 
 # Run the application with production settings
-CMD ["uvicorn", "app.main:app", \
-     "--host", "0.0.0.0", \
-     "--port", "8000", \
-     "--workers", "4", \
-     "--proxy-headers", \
-     "--forwarded-allow-ips", "*", \
-     "--access-log"]
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "9000"]
