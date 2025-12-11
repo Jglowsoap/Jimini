@@ -710,6 +710,32 @@ async def soc_dashboard_ui():
     )
 
 
+@app.post(
+    "/v1/config/shadow-mode",
+    summary="Toggle Shadow Mode",
+    description="Toggle shadow mode on/off at runtime",
+    tags=["Configuration"]
+)
+async def toggle_shadow_mode(request: Request):
+    """
+    Toggle shadow mode between enabled and disabled.
+    Returns the new shadow mode state.
+    """
+    global SHADOW_MODE
+    from config.loader import get_current_config
+    
+    # Toggle the state
+    current_cfg = get_current_config()
+    current_cfg.app.shadow_mode = not current_cfg.app.shadow_mode
+    SHADOW_MODE = current_cfg.app.shadow_mode
+    
+    return {
+        "success": True,
+        "shadow_mode": SHADOW_MODE,
+        "message": f"Shadow mode {'enabled' if SHADOW_MODE else 'disabled'}"
+    }
+
+
 @app.get("/admin/metrics")
 async def admin_metrics(request: Request) -> Dict[str, Any]:
     """Admin endpoint for comprehensive metrics dump (RBAC protected)"""
