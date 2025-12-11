@@ -10,7 +10,7 @@ primary_region = 'ord'
 
 [env]
   JIMINI_RULES_PATH = '/app/policy_rules.yaml'
-  JIMINI_SHADOW = '0'
+  JIMINI_SHADOW_MODE = 'false'
 
 [[mounts]]
   source = 'jimini_logs'
