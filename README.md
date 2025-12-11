@@ -4,6 +4,7 @@
 [![Docker Pulls](https://img.shields.io/docker/pulls/jglowsoap/jimini?logo=docker)](https://github.com/Jglowsoap/Jimini/pkgs/container/jimini)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
+[![Live Demo](https://img.shields.io/badge/demo-live-brightgreen?logo=fly.io)](https://jimini-demo.fly.dev)
 
 Jimini is a FastAPI gateway that evaluates unstructured text against policy rules before the content leaves or enters an AI system. It provides deterministic blocking and flagging based on regex patterns and optional LLM checks, keeps a tamper-evident audit trail, and exposes metrics for observability.
 
@@ -11,7 +12,23 @@ Jimini is a FastAPI gateway that evaluates unstructured text against policy rule
 
 ## 🚀 Quick Start
 
-### Try it in 30 seconds with Docker
+### 🌐 Try the Live Demo
+
+**Live Instance**: [https://jimini-demo.fly.dev](https://jimini-demo.fly.dev)
+
+- **Dashboard**: [https://jimini-demo.fly.dev/ui/dashboard](https://jimini-demo.fly.dev/ui/dashboard) - Interactive policy testing
+- **API Docs**: [https://jimini-demo.fly.dev/docs](https://jimini-demo.fly.dev/docs) - Swagger UI
+- **Health**: [https://jimini-demo.fly.dev/health](https://jimini-demo.fly.dev/health) - Status endpoint
+
+```bash
+# Test the live API
+curl -X POST https://jimini-demo.fly.dev/v1/evaluate \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer changeme" \
+  -d '{"text":"My AWS key is AKIAIOSFODNN7EXAMPLE","direction":"input","endpoint":"/api/chat"}'
+```
+
+### 🐳 Run Locally with Docker (30 seconds)
 
 ```bash
 docker run -p 9000:9000 -e JIMINI_API_KEY=demo ghcr.io/jglowsoap/jimini:latest
@@ -22,10 +39,11 @@ open http://localhost:9000/ui/dashboard
 # Test the API
 curl -X POST http://localhost:9000/v1/evaluate \
   -H "Content-Type: application/json" \
-  -d '{"text":"My SSN is 123-45-6789","direction":"user_to_llm","api_key":"demo"}'
+  -H "Authorization: Bearer demo" \
+  -d '{"text":"My SSN is 123-45-6789","direction":"input","endpoint":"/api"}'
 ```
 
-### Or install from source
+### 📦 Or install from source
 
 ```bash
 git clone https://github.com/Jglowsoap/Jimini.git
