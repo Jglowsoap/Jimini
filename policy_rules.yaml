@@ -383,7 +383,7 @@
   llm_prompt: null
   max_chars: null
   min_count: 1
-  pattern: \b\d{1,8}\b
+  pattern: ^\d{7,8}$
   severity: medium
   shadow_override: null
   title: Alabama Driver's License Detection
@@ -397,7 +397,7 @@
   llm_prompt: null
   max_chars: null
   min_count: 1
-  pattern: \b\d{1,7}\b
+  pattern: ^\d{7}$
   severity: medium
   shadow_override: null
   title: Alaska Driver's License Detection
@@ -411,7 +411,7 @@
   llm_prompt: null
   max_chars: null
   min_count: 1
-  pattern: \b[A-Z]\d{8}\b|\b[A-Z]{2}\d{2,5}\b|\b\d{9}\b
+  pattern: ^(?:[A-Z]\d{8}|\d{9})$
   severity: medium
   shadow_override: null
   title: Arizona Driver's License Detection
@@ -425,7 +425,7 @@
   llm_prompt: null
   max_chars: null
   min_count: 1
-  pattern: \b\d{4,9}\b
+  pattern: ^\d{9}$
   severity: medium
   shadow_override: null
   title: Arkansas Driver's License Detection
@@ -439,7 +439,7 @@
   llm_prompt: null
   max_chars: null
   min_count: 1
-  pattern: \b[A-Z]\d{7}\b
+  pattern: ^[A-Z]\d{7}$
   severity: medium
   shadow_override: null
   title: California Driver's License Detection
@@ -453,7 +453,7 @@
   llm_prompt: null
   max_chars: null
   min_count: 1
-  pattern: \b\d{9}\b|\b[A-Z]{1,2}\d{1,6}\b
+  pattern: ^\d{9}$
   severity: medium
   shadow_override: null
   title: Colorado Driver's License Detection
@@ -467,7 +467,7 @@
   llm_prompt: null
   max_chars: null
   min_count: 1
-  pattern: \b\d{9}\b
+  pattern: ^\d{9}$
   severity: medium
   shadow_override: null
   title: Connecticut Driver's License Detection
@@ -481,7 +481,7 @@
   llm_prompt: null
   max_chars: null
   min_count: 1
-  pattern: \b\d{1,7}\b
+  pattern: ^\d{7}$
   severity: medium
   shadow_override: null
   title: Delaware Driver's License Detection
@@ -495,7 +495,7 @@
   llm_prompt: null
   max_chars: null
   min_count: 1
-  pattern: \b\d{7}\b|\b[A-Z]{1,3}\d{3,7}\b
+  pattern: ^\d{7}$
   severity: medium
   shadow_override: null
   title: District of Columbia Driver's License Detection
@@ -509,7 +509,7 @@
   llm_prompt: null
   max_chars: null
   min_count: 1
-  pattern: \b[A-Z]\d{12}\b
+  pattern: ^[A-Z]\d{12}$
   severity: medium
   shadow_override: null
   title: Florida Driver's License Detection
@@ -523,7 +523,7 @@
   llm_prompt: null
   max_chars: null
   min_count: 1
-  pattern: \b\d{7,9}\b
+  pattern: ^(?:\d{7}|\d{9})$
   severity: medium
   shadow_override: null
   title: Georgia Driver's License Detection
@@ -537,7 +537,7 @@
   llm_prompt: null
   max_chars: null
   min_count: 1
-  pattern: \b[A-Z]\d{8}\b|\b\d{9}\b
+  pattern: ^(?:[A-Z]\d{8}|\d{9})$
   severity: medium
   shadow_override: null
   title: Hawaii Driver's License Detection
@@ -551,7 +551,7 @@
   llm_prompt: null
   max_chars: null
   min_count: 1
-  pattern: \b[A-Z]{2}\d{6}[A-Z]\b|\b\d{9}\b
+  pattern: ^(?:[A-Z]{2}\d{6}[A-Z]|\d{9})$
   severity: medium
   shadow_override: null
   title: Idaho Driver's License Detection
@@ -565,7 +565,7 @@
   llm_prompt: null
   max_chars: null
   min_count: 1
-  pattern: \b[A-Z]\d{11}\b|\b\d{11}[A-Z]\b
+  pattern: ^[A-Z]\d{11}$
   severity: medium
   shadow_override: null
   title: Illinois Driver's License Detection
@@ -579,7 +579,7 @@
   llm_prompt: null
   max_chars: null
   min_count: 1
-  pattern: \b[A-Z]\d{9}\b|\b\d{10}\b
+  pattern: ^\d{10}$
   severity: medium
   shadow_override: null
   title: Indiana Driver's License Detection
@@ -593,7 +593,7 @@
   llm_prompt: null
   max_chars: null
   min_count: 1
-  pattern: \b\d{9}\b|\b\d{3}[A-Z]{2}\d{4}\b
+  pattern: ^(?:\d{9}|\d{3}[A-Z]{2}\d{4})$
   severity: medium
   shadow_override: null
   title: Iowa Driver's License Detection
@@ -607,7 +607,7 @@
   llm_prompt: null
   max_chars: null
   min_count: 1
-  pattern: \b[A-Z]\d{8}\b|\b\d{9}\b
+  pattern: ^(?:[A-Z]\d{8}|\d{9})$
   severity: medium
   shadow_override: null
   title: Kansas Driver's License Detection
@@ -621,7 +621,7 @@
   llm_prompt: null
   max_chars: null
   min_count: 1
-  pattern: \b[A-Z]\d{8}\b|\b\d{9}\b
+  pattern: ^(?:[A-Z]\d{8}|[A-Z]\d{9}|\d{9})$
   severity: medium
   shadow_override: null
   title: Kentucky Driver's License Detection
@@ -635,7 +635,7 @@
   llm_prompt: null
   max_chars: null
   min_count: 1
-  pattern: \b\d{1,9}\b
+  pattern: ^\d{9}$
   severity: medium
   shadow_override: null
   title: Louisiana Driver's License Detection
@@ -649,7 +649,7 @@
   llm_prompt: null
   max_chars: null
   min_count: 1
-  pattern: \b\d{7}[A-Z]?\b
+  pattern: ^(?:\d{7}|\d{7}[A-Z]|\d{8})$
   severity: medium
   shadow_override: null
   title: Maine Driver's License Detection
@@ -663,7 +663,7 @@
   llm_prompt: null
   max_chars: null
   min_count: 1
-  pattern: \b[A-Z]\d{12}\b
+  pattern: ^[A-Z]\d{12}$
   severity: medium
   shadow_override: null
   title: Maryland Driver's License Detection
@@ -677,7 +677,7 @@
   llm_prompt: null
   max_chars: null
   min_count: 1
-  pattern: \b[A-Z]\d{8}\b|\b\d{9}\b
+  pattern: ^(?:[A-Z]\d{8}|\d{9})$
   severity: medium
   shadow_override: null
   title: Massachusetts Driver's License Detection
@@ -691,7 +691,7 @@
   llm_prompt: null
   max_chars: null
   min_count: 1
-  pattern: \b[A-Z]\d{10,12}\b
+  pattern: ^(?:[A-Z]\d{10}|[A-Z]\d{12})$
   severity: medium
   shadow_override: null
   title: Michigan Driver's License Detection
@@ -705,7 +705,7 @@
   llm_prompt: null
   max_chars: null
   min_count: 1
-  pattern: \b[A-Z]\d{12}\b
+  pattern: ^[A-Z]\d{12}$
   severity: medium
   shadow_override: null
   title: Minnesota Driver's License Detection
@@ -719,7 +719,7 @@
   llm_prompt: null
   max_chars: null
   min_count: 1
-  pattern: \b\d{9}\b
+  pattern: ^\d{9}$
   severity: medium
   shadow_override: null
   title: Mississippi Driver's License Detection
@@ -733,7 +733,7 @@
   llm_prompt: null
   max_chars: null
   min_count: 1
-  pattern: \b[A-Z]\d{5,9}\b|\b[A-Z]\d{6}R\b|\b\d{8,9}\b
+  pattern: ^(?:\d{3}[A-Z]\d{6}|[A-Z]\d{5,9}|\d{8}[A-Z]{2}|\d{9}[A-Z]?|\d{9})$
   severity: medium
   shadow_override: null
   title: Missouri Driver's License Detection
@@ -747,7 +747,7 @@
   llm_prompt: null
   max_chars: null
   min_count: 1
-  pattern: \b\d{13}\b|\b\d{9}[A-Z]{3}\b|\b\d{14}\b
+  pattern: ^(?:[A-Z]{3}\d{10}|[A-Z]\d{8}|\d{9}|\d{13,14})$
   severity: medium
   shadow_override: null
   title: Montana Driver's License Detection
@@ -761,7 +761,7 @@
   llm_prompt: null
   max_chars: null
   min_count: 1
-  pattern: \b[A-Z]\d{3,8}\b
+  pattern: ^[A-Z]\d{6,8}$
   severity: medium
   shadow_override: null
   title: Nebraska Driver's License Detection
@@ -775,7 +775,7 @@
   llm_prompt: null
   max_chars: null
   min_count: 1
-  pattern: \b\d{4}\d{12}\b|\b\d{12}\b
+  pattern: ^(?:\d{9,10}|\d{12}|X\d{8})$
   severity: medium
   shadow_override: null
   title: Nevada Driver's License Detection
@@ -789,7 +789,7 @@
   llm_prompt: null
   max_chars: null
   min_count: 1
-  pattern: \b\d{2}[A-Z]{3}\d{5}\b
+  pattern: ^(?:\d{2}[A-Z]{3}\d{5})$
   severity: medium
   shadow_override: null
   title: New Hampshire Driver's License Detection
@@ -803,7 +803,7 @@
   llm_prompt: null
   max_chars: null
   min_count: 1
-  pattern: \b[A-Z]\d{14}\b
+  pattern: ^[A-Z]\d{14}$
   severity: medium
   shadow_override: null
   title: New Jersey Driver's License Detection
@@ -817,7 +817,7 @@
   llm_prompt: null
   max_chars: null
   min_count: 1
-  pattern: \b\d{8,9}\b
+  pattern: ^\d{8,9}$
   severity: medium
   shadow_override: null
   title: New Mexico Driver's License Detection
@@ -831,7 +831,7 @@
   llm_prompt: null
   max_chars: null
   min_count: 1
-  pattern: \b[A-Z]\d{7}\b|\b[A-Z]\d{18}\b|\b\d{8,9}\b|\b\d{16}\b
+  pattern: ^(?:[A-Z]\d{7}|\d{8,9}|\d{16}|[A-Z]\d{18}|[A-Z]{8})$
   severity: medium
   shadow_override: null
   title: New York Driver's License Detection
@@ -845,7 +845,7 @@
   llm_prompt: null
   max_chars: null
   min_count: 1
-  pattern: \b\d{1,12}\b
+  pattern: ^\d{1,12}$
   severity: medium
   shadow_override: null
   title: North Carolina Driver's License Detection
@@ -859,7 +859,7 @@
   llm_prompt: null
   max_chars: null
   min_count: 1
-  pattern: \b[A-Z]{3}\d{6}\b|\b\d{9}\b
+  pattern: ^(?:[A-Z]{3}\d{6}|\d{9})$
   severity: medium
   shadow_override: null
   title: North Dakota Driver's License Detection
@@ -873,7 +873,7 @@
   llm_prompt: null
   max_chars: null
   min_count: 1
-  pattern: \b[A-Z]\d{4,8}\b|\b[A-Z]{2}\d{3,7}\b|\b\d{8}\b
+  pattern: ^(?:[A-Z]\d{4,8}|[A-Z]{2}\d{3,7}|\d{8})$
   severity: medium
   shadow_override: null
   title: Ohio Driver's License Detection
@@ -887,7 +887,7 @@
   llm_prompt: null
   max_chars: null
   min_count: 1
-  pattern: \b[A-Z]\d{9}\b|\b\d{9}\b
+  pattern: ^(?:[A-Z]\d{9}|\d{9})$
   severity: medium
   shadow_override: null
   title: Oklahoma Driver's License Detection
@@ -901,7 +901,7 @@
   llm_prompt: null
   max_chars: null
   min_count: 1
-  pattern: \b\d{1,9}\b
+  pattern: ^\d{1,9}$
   severity: medium
   shadow_override: null
   title: Oregon Driver's License Detection
@@ -915,7 +915,7 @@
   llm_prompt: null
   max_chars: null
   min_count: 1
-  pattern: \b\d{8}\b
+  pattern: ^\d{8}$
   severity: medium
   shadow_override: null
   title: Pennsylvania Driver's License Detection
@@ -929,7 +929,7 @@
   llm_prompt: null
   max_chars: null
   min_count: 1
-  pattern: \b[A-Z]\d{6}\b|\b\d{7}\b
+  pattern: ^(?:\d{7}|[A-Z]\d{6})$
   severity: medium
   shadow_override: null
   title: Rhode Island Driver's License Detection
@@ -943,7 +943,7 @@
   llm_prompt: null
   max_chars: null
   min_count: 1
-  pattern: \b\d{5,11}\b
+  pattern: ^\d{5,11}$
   severity: medium
   shadow_override: null
   title: South Carolina Driver's License Detection
@@ -957,7 +957,7 @@
   llm_prompt: null
   max_chars: null
   min_count: 1
-  pattern: \b\d{6,10}\b|\b\d{12}\b
+  pattern: ^(?:\d{6,10}|\d{12})$
   severity: medium
   shadow_override: null
   title: South Dakota Driver's License Detection
@@ -971,7 +971,7 @@
   llm_prompt: null
   max_chars: null
   min_count: 1
-  pattern: \b\d{7,9}\b
+  pattern: ^\d{7,9}$
   severity: medium
   shadow_override: null
   title: Tennessee Driver's License Detection
@@ -985,7 +985,7 @@
   llm_prompt: null
   max_chars: null
   min_count: 1
-  pattern: \b\d{7,8}\b
+  pattern: ^\d{7,8}$
   severity: medium
   shadow_override: null
   title: Texas Driver's License Detection
@@ -999,7 +999,7 @@
   llm_prompt: null
   max_chars: null
   min_count: 1
-  pattern: \b\d{4,10}\b
+  pattern: ^\d{4,10}$
   severity: medium
   shadow_override: null
   title: Utah Driver's License Detection
@@ -1013,7 +1013,7 @@
   llm_prompt: null
   max_chars: null
   min_count: 1
-  pattern: \b\d{8}\b|\b\d{7}A\b
+  pattern: ^(?:\d{8}|\d{7}[A-Z])$
   severity: medium
   shadow_override: null
   title: Vermont Driver's License Detection
@@ -1027,7 +1027,7 @@
   llm_prompt: null
   max_chars: null
   min_count: 1
-  pattern: \b[A-Z]\d{8}\b|\b\d{9}\b
+  pattern: ^(?:[A-Z]\d{8,11}|\d{9})$
   severity: medium
   shadow_override: null
   title: Virginia Driver's License Detection
@@ -1041,7 +1041,7 @@
   llm_prompt: null
   max_chars: null
   min_count: 1
-  pattern: \b(?=.*[A-Z])[A-Z0-9]{1,12}\b|\bWDL\d{9}\b
+  pattern: ^[A-Z0-9\*]{12}$
   severity: medium
   shadow_override: null
   title: Washington Driver's License Detection
@@ -1055,7 +1055,7 @@
   llm_prompt: null
   max_chars: null
   min_count: 1
-  pattern: \b[A-Z]{1,2}\d{5,6}\b|\b\d{7}\b
+  pattern: ^(?:\d{7}|[A-Z]{1,2}\d{5,6})$
   severity: medium
   shadow_override: null
   title: West Virginia Driver's License Detection
@@ -1069,7 +1069,7 @@
   llm_prompt: null
   max_chars: null
   min_count: 1
-  pattern: \b[A-Z]\d{13}\b
+  pattern: ^[A-Z]\d{13}$
   severity: medium
   shadow_override: null
   title: Wisconsin Driver's License Detection
@@ -1083,7 +1083,7 @@
   llm_prompt: null
   max_chars: null
   min_count: 1
-  pattern: \b\d{9,10}\b
+  pattern: ^\d{9,10}$
   severity: medium
   shadow_override: null
   title: Wyoming Driver's License Detection
@@ -1265,7 +1265,7 @@
   llm_prompt: null
   max_chars: null
   min_count: 1
-  pattern: \b[0-9]{9}\b
+  pattern: \b\d{9}\b
   severity: high
   shadow_override: null
   title: US Passport Number (New Format) Detection
@@ -1279,7 +1279,7 @@
   llm_prompt: null
   max_chars: null
   min_count: 1
-  pattern: \b[A-Z]{2}[0-9]{7}\b
+  pattern: \b\d{9}\b
   severity: high
   shadow_override: null
   title: US Passport Number (Old Format) Detection
@@ -5590,7 +5590,7 @@
   llm_prompt: null
   max_chars: null
   min_count: 1
-  pattern: \b(?:\d{3}[-\s]?\d{2}[-\s]?\d{4})\b
+  pattern: \b\d{3}[-\s]?\d{2}[-\s]?\d{4}\b
   severity: error
   shadow_override: null
   title: 'PII: US Social Security Number'
@@ -5683,7 +5683,7 @@
   description: Block Social Security Numbers in standard format
   severity: critical
   category: pii
-  pattern: \b\d{3}-\d{2}-\d{4}\b
+  pattern: \b\d{3}[-\s]?\d{2}[-\s]?\d{4}\b
   endpoints:
   - '*'
   action: block
@@ -5733,7 +5733,7 @@
   description: Block US passport numbers
   severity: high
   category: pii
-  pattern: \b[A-Z]{1,2}\d{7,9}\b
+  pattern: \b\d{9}\b
   endpoints:
   - '*'
   action: block
@@ -5908,4 +5908,94 @@
   endpoints:
   - '*'
   action: flag
+  shadow_override: null
+- id: PII-PASSPORT-CARD-1.0
+  title: U.S. Passport Card Number
+  description: Detects U.S. Passport Card numbers (9 digits)
+  severity: high
+  category: pii
+  pattern: ^\d{9}$
+  endpoints:
+  - '*'
+  action: block
+  shadow_override: null
+- id: PII-DOD-ID-1.0
+  title: Department of Defense ID Number
+  description: Detects DoD ID numbers used on CAC (10 digits)
+  severity: high
+  category: pii
+  pattern: ^\d{10}$
+  endpoints:
+  - '*'
+  action: block
+  shadow_override: null
+- id: PII-ALIEN-NUMBER-1.0
+  title: Alien Registration Number (A-Number)
+  description: Detects USCIS A-Numbers (A followed by 8-9 digits)
+  severity: high
+  category: pii
+  pattern: \bA\d{8,9}\b
+  endpoints:
+  - '*'
+  action: block
+  shadow_override: null
+- id: PII-USCIS-NUMBER-1.0
+  title: USCIS Number (Green Card)
+  description: Detects USCIS numbers printed on I-551 (13 alphanumeric)
+  severity: high
+  category: pii
+  pattern: ^[A-Z0-9]{13}$
+  endpoints:
+  - '*'
+  action: block
+  shadow_override: null
+- id: PII-USCIS-RECEIPT-1.0
+  title: USCIS Receipt Number
+  description: Detects USCIS receipt numbers (3 letters + 10 digits)
+  severity: medium
+  category: pii
+  pattern: \b[A-Z]{3}\d{10}\b
+  endpoints:
+  - '*'
+  action: redact
+  shadow_override: null
+- id: PII-I94-1.0
+  title: Form I-94 Admission Number
+  description: Detects I-94 admission numbers (11 digits)
+  severity: high
+  category: pii
+  pattern: ^\d{11}$
+  endpoints:
+  - '*'
+  action: block
+  shadow_override: null
+- id: PII-SELECTIVE-SERVICE-1.0
+  title: Selective Service Number
+  description: Detects Selective Service registration numbers (10 digits)
+  severity: medium
+  category: pii
+  pattern: ^\d{10}$
+  endpoints:
+  - '*'
+  action: redact
+  shadow_override: null
+- id: PII-TWIC-1.0
+  title: Transportation Worker Identification Credential (TWIC)
+  description: Detects TWIC credential numbers (9 digits)
+  severity: high
+  category: pii
+  pattern: ^\d{9}$
+  endpoints:
+  - '*'
+  action: block
+  shadow_override: null
+- id: PII-PRECHECK-KTN-1.0
+  title: TSA PreCheck Known Traveler Number
+  description: Detects TSA PreCheck/Global Entry KTN (8-9 alphanumeric)
+  severity: medium
+  category: pii
+  pattern: ^[A-Z0-9]{8,9}$
+  endpoints:
+  - '*'
+  action: redact
   shadow_override: null
