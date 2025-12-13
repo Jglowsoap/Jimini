@@ -277,4 +277,4 @@ Regular security assessments should include:
 
 ---
 
-*This document is updated with each major release. For the latest version, see: https://github.com/jimini-ai/jimini/blob/main/docs/security-compliance.md*
+*This document is updated with each major release. For the latest version, see: https://github.com/Jglowsoap/Jimini/blob/main/docs/SECURITY-COMPLIANCE.md*

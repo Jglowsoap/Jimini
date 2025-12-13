@@ -1,7 +1,7 @@
 # Jimini Quick Reference
 
 Version: 0.2.0  
-Last Updated: December 5, 2025
+Last Updated: December 13, 2025
 
 ## Overview
 

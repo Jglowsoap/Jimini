@@ -186,7 +186,7 @@ app = FastAPI(
     contact={
         "name": "Jimini Support",
         "email": "support@jimini.ai",
-        "url": "https://github.com/jimini-ai/jimini"
+        "url": "https://github.com/Jglowsoap/Jimini"
     },
     license_info={
         "name": "MIT License",

@@ -4,8 +4,8 @@
 - **Name**: jimini
 - **Version**: 0.2.0  
 - **License**: MIT
-- **Build Date**: 2025-01-16
-- **Repository**: https://github.com/jimini-ai/jimini
+- **Build Date**: 2025-12-13
+- **Repository**: https://github.com/Jglowsoap/Jimini
 
 ## Runtime Dependencies
 
@@ -98,5 +98,5 @@ pip list --format=json | jq '.[] | select(.name=="jimini")'
 ```
 
 ---
-Generated: 2025-01-16
+Generated: 2025-12-13
 Jimini v0.2.0 - AI Policy Enforcement Gateway

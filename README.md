@@ -1162,8 +1162,8 @@ If pip refuses to install packages system-wide (Debian/Ubuntu), create a virtual
 
 ```bash
 # Clone repository
-git clone https://github.com/jimini-ai/jimini.git
-cd jimini
+git clone https://github.com/Jglowsoap/Jimini.git
+cd Jimini
 
 # Create virtual environment
 python3 -m venv .venv
@@ -1318,11 +1318,11 @@ pytest tests/test_custom_rules.py -v
 
 ### Examples Repository
 ```bash
-# Clone examples
-git clone https://github.com/jimini-ai/jimini-examples.git
+# Clone examples (see examples/ in main repo)
+git clone https://github.com/Jglowsoap/Jimini.git
 
 # Explore use cases
-cd jimini-examples
+cd Jimini/examples
 ls -la
 # ├── kubernetes/          # K8s deployment examples
 # ├── docker-compose/      # Multi-service setups  

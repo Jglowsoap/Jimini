@@ -73,4 +73,4 @@ Other endpoints reuse the same infrastructure:
 - `app/notifier.py`, `app/forwarders/` – Optional telemetry forwarders. Disabled unless configured.
 - `tests/` – Integration tests covering enforcement precedence, shadow behaviour, audit chain checks, and CLI helpers.
 
-This architecture description reflects the modules currently present in the repository (November 2025). Update the document whenever runtime dependencies or request flows change.
+This architecture description reflects the modules currently present in the repository (December 2025). Update the document whenever runtime dependencies or request flows change.
