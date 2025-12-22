@@ -131,6 +131,68 @@
         }
         .online { background: #22c55e; }
         .offline { background: #ef4444; }
+        .rule-card {
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 12px;
+            border-left: 4px solid #4ade80;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .rule-card:hover {
+            transform: translateX(5px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        .rule-card.action-block { border-left-color: #ef4444; }
+        .rule-card.action-flag { border-left-color: #f59e0b; }
+        .rule-card.action-redact { border-left-color: #3b82f6; }
+        .rule-card.action-allow { border-left-color: #22c55e; }
+        .rule-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 8px;
+        }
+        .rule-id {
+            font-family: monospace;
+            font-size: 1.1em;
+            font-weight: bold;
+            color: #4ade80;
+        }
+        .rule-badge {
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.75em;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        .badge-block { background: #ef4444; color: #fff; }
+        .badge-flag { background: #f59e0b; color: #000; }
+        .badge-redact { background: #3b82f6; color: #fff; }
+        .badge-allow { background: #22c55e; color: #000; }
+        .rule-description {
+            font-size: 0.9em;
+            opacity: 0.9;
+            margin-bottom: 8px;
+        }
+        .rule-meta {
+            display: flex;
+            gap: 15px;
+            font-size: 0.8em;
+            opacity: 0.7;
+            flex-wrap: wrap;
+        }
+        .rule-pattern {
+            font-family: monospace;
+            font-size: 0.8em;
+            background: rgba(0,0,0,0.3);
+            padding: 5px 8px;
+            border-radius: 4px;
+            margin-top: 8px;
+            word-break: break-all;
+            max-height: 60px;
+            overflow-y: auto;
+        }
         @media (max-width: 768px) {
             .dashboard-grid { grid-template-columns: 1fr; }
             .stats-grid { grid-template-columns: 1fr; }
@@ -204,6 +266,25 @@
                         <strong id="version">-</strong>
                     </div>
                 </div>
+            </div>
+        </div>
+
+        <!-- Rules List Section -->
+        <div class="test-section">
+            <h2 class="section-title">📋 Loaded Policy Rules</h2>
+            <div style="display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap;">
+                <select id="action-filter" class="test-input" style="flex: 0 0 150px; cursor: pointer;" onchange="fetchRules()">
+                    <option value="">All Actions</option>
+                    <option value="block">Block</option>
+                    <option value="flag">Flag</option>
+                    <option value="redact">Redact</option>
+                    <option value="allow">Allow</option>
+                </select>
+                <input type="text" id="rule-search" class="test-input" placeholder="Search rules..." style="flex: 1; min-width: 200px;" onkeyup="debounceSearch()"/>
+                <button class="btn" onclick="fetchRules()">🔄 Refresh</button>
+            </div>
+            <div id="rules-list" style="max-height: 400px; overflow-y: auto;">
+                <p style="opacity: 0.6; text-align: center;">Loading rules...</p>
             </div>
         </div>
 
@@ -396,8 +477,95 @@
             }
         }
 
+        // Fetch and display rules
+        let searchTimeout;
+        function debounceSearch() {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(fetchRules, 300);
+        }
+
+        async function fetchRules() {
+            const actionFilter = document.getElementById('action-filter').value;
+            const searchQuery = document.getElementById('rule-search').value;
+            const rulesListDiv = document.getElementById('rules-list');
+            
+            try {
+                let url = `${API_BASE}/v1/rules?page_size=100`;
+                if (actionFilter) url += `&action=${actionFilter}`;
+                if (searchQuery) url += `&search=${encodeURIComponent(searchQuery)}`;
+                
+                const response = await fetch(url, {
+                    headers: { 'Authorization': `Bearer ${API_KEY}` }
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                
+                const data = await response.json();
+                const rules = data.rules || [];
+                
+                if (rules.length === 0) {
+                    rulesListDiv.innerHTML = '<p style="opacity: 0.6; text-align: center;">No rules found</p>';
+                    return;
+                }
+                
+                const rulesHtml = rules.map(rule => {
+                    const action = rule.action || 'flag';
+                    const badgeClass = `badge-${action}`;
+                    const cardClass = `action-${action}`;
+                    const severity = rule.severity || 'medium';
+                    const appliesTo = rule.applies_to || 'both';
+                    
+                    // Truncate pattern for display
+                    let patternDisplay = '';
+                    if (rule.pattern) {
+                        patternDisplay = rule.pattern.length > 100 
+                            ? rule.pattern.substring(0, 100) + '...' 
+                            : rule.pattern;
+                    }
+                    
+                    return `
+                        <div class="rule-card ${cardClass}">
+                            <div class="rule-header">
+                                <span class="rule-id">${rule.id}</span>
+                                <span class="rule-badge ${badgeClass}">${action}</span>
+                            </div>
+                            ${rule.title ? `<div class="rule-description">${rule.title}</div>` : ''}
+                            <div class="rule-meta">
+                                <span>🎯 Severity: ${severity}</span>
+                                <span>📍 Applies to: ${appliesTo}</span>
+                                ${rule.min_count ? `<span>🔢 Min count: ${rule.min_count}</span>` : ''}
+                                ${rule.max_chars ? `<span>📏 Max chars: ${rule.max_chars}</span>` : ''}
+                            </div>
+                            ${patternDisplay ? `<div class="rule-pattern">Pattern: ${escapeHtml(patternDisplay)}</div>` : ''}
+                        </div>
+                    `;
+                }).join('');
+                
+                rulesListDiv.innerHTML = rulesHtml;
+                
+                // Update count in header
+                const totalText = data.total > rules.length ? `Showing ${rules.length} of ${data.total}` : `${rules.length} rules`;
+                rulesListDiv.insertAdjacentHTML('afterbegin', 
+                    `<p style="opacity: 0.6; margin-bottom: 15px; font-size: 0.9em;">${totalText}</p>`);
+                
+            } catch (error) {
+                console.error('Failed to fetch rules:', error);
+                rulesListDiv.innerHTML = `<p style="color: #ef4444;">❌ Failed to load rules: ${error.message}</p>`;
+            }
+        }
+
+        // Helper to escape HTML
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
         // Auto-refresh metrics every 5 seconds
         fetchDashboardMetrics();
+        fetchRules();
         setInterval(fetchDashboardMetrics, 5000);
 
         // Allow Enter key to test
